@@ -86,7 +86,7 @@ We expose one function, which takes Hindi/English text (name) and predicts relig
 Authors
 -------
 
-Rajashekar Chintalapati, Aaditya Dar and Gaurav Sood
+Rajashekar Chintalapati, Aaditya Dar, and Gaurav Sood
 
 
 Contributor Code of Conduct
