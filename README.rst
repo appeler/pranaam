@@ -6,7 +6,11 @@ pranaam: predict religion based on name
     :target: https://github.com/appeler/pranaam/actions?query=workflow%3Atest
 .. image:: https://ci.appveyor.com/api/projects/status/2ejr4mw900lvm8q5?svg=true
     :target: https://ci.appveyor.com/project/sodoku/pranaam
-
+.. image:: https://img.shields.io/pypi/v/pranaam.svg
+    :target: https://pypi.python.org/pypi/pranaam
+.. image:: https://readthedocs.org/projects/pranaam/badge/?version=latest
+    :target: http://pranaam.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
 
 Pranaam uses the Bihar Land Records data, plot-level land records (N= 41.87 million plots or 12.13 individuals/accounts across 35,626 villages), to build machine learning models that predict religion and caste from the name. Our final dataset has around 4M unique records. To learn how to transform the data and the models underlying the package, check the `notebooks <https://github.com/appeler/pranaam_dev/tree/main/pranaam/notebooks>`__.
 
