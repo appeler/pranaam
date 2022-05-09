@@ -57,7 +57,7 @@ class Tox(TestCommand):
 
 setup(
     name="pranaam",
-    version="0.0.1",
+    version="0.0.2",
     description="Predict religion and caste based on name",
     long_description=long_description,
     # The project's main homepage.
@@ -99,7 +99,7 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=["tqdm", "pandas", "gdown", "tensorflow"],
+    install_requires=["tqdm", "pandas", "tensorflow"],
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:

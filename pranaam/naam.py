@@ -23,6 +23,7 @@ class Naam(Base):
     model = None
     classes = ["not-muslim", "muslim"]
     cur_lang = "eng"
+    model_name = "eng_and_hindi_models_v1"
 
     @classmethod
     def pred_rel(cls, input, lang="eng", latest=False):
@@ -35,11 +36,11 @@ class Naam(Base):
         """
 
         if not cls.weights_loaded or cls.cur_lang != lang:
-            cls.model_path = cls.load_model_data(latest)
+            cls.model_path = cls.load_model_data(cls.model_name, latest)
             if lang == "eng":
-                cls.model = tf.keras.models.load_model(f"{cls.model_path}/saved_model/eng_model")
+                cls.model = tf.keras.models.load_model(f"{cls.model_path}/{cls.model_name}/eng_model")
             else:
-                cls.model = tf.keras.models.load_model(f"{cls.model_path}/saved_model/hin_model")
+                cls.model = tf.keras.models.load_model(f"{cls.model_path}/{cls.model_name}/hin_model")
             cls.weights_loaded = True
             cls.cur_lang = lang
 
