@@ -18,13 +18,13 @@ Pranaam uses the Bihar Land Records data, plot-level land records (N= 41.87 mill
 
 The first function we are releasing with the package is `pred_rel`, which predicts religion based on the name (currently only `muslim` or `not`). (For context, nearly 95% of India's population are Hindu or Muslim, with Sikhs, Buddhists, Christians, and other groups making up the rest.) The OOS accuracy assessed on unseen names is nearly 98% for both `Hindi <https://github.com/appeler/pranaam_dev/blob/main/pranaam/notebooks/05_train_hindi.ipynb>`__ and `English <https://github.com/appeler/pranaam_dev/blob/main/pranaam/notebooks/04_train_english.ipynb>`__ models. 
 
-Our training data is Hindi. To build models that classify names provided in English, we used the `indicate <https://github.com/in-rolls/indicate>`__ package to transliterate our training data to English.
+Our training data is in Hindi. To build models that classify names provided in English, we used the `indicate <https://github.com/in-rolls/indicate>`__ package to transliterate our training data to English.
 
-We are releasing this software in the hope that it enables activists and researchers. 
+We are releasing this software in the hope that it enables activists and researchers
 
-1) Highlight biases, 
+1) Highlight biases
 
-2) Fight biases, and 
+2) Fight biases
 
 3) Prevent biases (regress out some of these biases in models built on natural language corpus with person names).
 
