@@ -7,6 +7,5 @@ authors:
   given-names: "Gaurav"
 title: "pranaam: predict religion based on name"
 version: 0.0.2
-doi: 10.5281/zenodo.1234
 date-released: 2022-05-08
 url: "https://github.com/appeler/pranaam"
