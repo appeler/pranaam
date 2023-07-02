@@ -1,5 +1,5 @@
 ==================================================
-pranaam: predict religion based on name
+pranaam: predict religion from name
 ==================================================
 
 .. image:: https://github.com/appeler/pranaam/workflows/test/badge.svg
