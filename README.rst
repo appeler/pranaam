@@ -14,7 +14,7 @@ pranaam: predict religion from name
 .. image:: https://pepy.tech/badge/pranaam
     :target: https://pepy.tech/project/pranaam
 
-Pranaam uses the Bihar Land Records data, plot-level land records (N= 41.87 million plots or 12.13 individuals/accounts across 35,626 villages), to build machine learning models that predict religion and caste from the name. Our final dataset has around 4M unique records. To learn how to transform the data and the models underlying the package, check the `notebooks <https://github.com/appeler/pranaam_dev/tree/main/pranaam/notebooks>`__.
+Pranaam uses the Bihar Land Records data, plot-level land records (N= 41.87 million plots or 12.13 individuals/accounts across 35,626 villages), to build machine learning models that predict religion and caste from the name. Our final dataset has around 4M unique records. To learn how to transform the data and the models underlying the package, check the `notebooks <https://github.com/appeler/pranaam/tree/main/pranaam/notebooks>`__.
 
 The first function we are releasing with the package is `pred_rel`, which predicts religion based on the name (currently only `muslim` or `not`). (For context, nearly 95% of India's population are Hindu or Muslim, with Sikhs, Buddhists, Christians, and other groups making up the rest.) The OOS accuracy assessed on unseen names is nearly 98% for both `Hindi <https://github.com/appeler/pranaam_dev/blob/main/pranaam/notebooks/05_train_hindi.ipynb>`__ and `English <https://github.com/appeler/pranaam_dev/blob/main/pranaam/notebooks/04_train_english.ipynb>`__ models. 
 
