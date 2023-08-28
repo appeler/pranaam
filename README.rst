@@ -4,8 +4,6 @@ pranaam: predict religion from name
 
 .. image:: https://github.com/appeler/pranaam/workflows/test/badge.svg
     :target: https://github.com/appeler/pranaam/actions?query=workflow%3Atest
-.. image:: https://ci.appveyor.com/api/projects/status/2ejr4mw900lvm8q5?svg=true
-    :target: https://ci.appveyor.com/project/soodoku/pranaam
 .. image:: https://img.shields.io/pypi/v/pranaam.svg
     :target: https://pypi.python.org/pypi/pranaam
 .. image:: https://readthedocs.org/projects/pranaam/badge/?version=latest
