@@ -4,6 +4,7 @@ import os
 import tarfile
 import requests
 from .logging import get_logger
+from tqdm.auto import tqdm
 
 logger = get_logger()
 
@@ -16,8 +17,12 @@ def download_file(url, target, file_name):
     try:
         print("Download models from dataverse...")
         # download the file
-        r = requests.get(url, allow_redirects=True)
-        open(file_path, "wb").write(r.content)
+        with requests.Session() as s:
+            r = s.get(REPO_BASE_URL, stream=True, allow_redirects=True)
+        with tqdm(total=int(r.headers['Content-Length']), unit='iB', unit_scale=True, desc=file_name, initial=0, miniters=1, ascii=True, colour='cyan', leave=True) as pbar:
+            with open(file_path, 'wb') as fd:
+                for chunk in r.iter_content(chunk_size=1024**2):
+                    pbar.update(fd.write(chunk))
         # untar
         with tarfile.open(file_path, "r:gz") as tar_ref:
             def is_within_directory(directory, target):
