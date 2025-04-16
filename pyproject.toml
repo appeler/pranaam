@@ -25,13 +25,12 @@ classifiers = [
 ]
 keywords = ["predict", "religion", "name", "hindi", "english"]
 dependencies = [
+  "tensorflow<2.15",  # 👈 Pins to avoid Keras 3
   "tqdm",
-  "pandas",
-  "tensorflow"
   "gdown",
   "pandas",
   "numpy",
-  "setuptools>=65.5.1", 
+  "setuptools>=65.5.1",
   "wheel>=0.38.0"
 ]
 
@@ -54,7 +53,6 @@ include-package-data = true
 [tool.setuptools.package-data]
 pranaam = ["notebooks/*.ipynb"]
 
-# optional: if you still want to keep test config (e.g., pytest)
 [tool.pytest.ini_options]
 python_files = "test_*.py"
 testpaths = ["tests"]
