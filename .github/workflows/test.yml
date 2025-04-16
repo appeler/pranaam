@@ -1,14 +1,9 @@
-# This workflow will upload a Python Package using Twine when a release is created
-# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
-
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
 name: test
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:  # allows manual triggering
 
 jobs:
   testing:
@@ -16,18 +11,25 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.9']
+
     steps:
       - uses: actions/checkout@v3
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
+      - name: Install dependencies from pyproject.toml
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install nose coverage
+          pip uninstall -y tensorflow keras || true
+          pip install "tensorflow<2.15"
+          pip install --no-cache-dir --force-reinstall .[test]
+          pip install pytest  # fallback
 
-      - name: Run nose tests
-        run: nosetests -s
+      - name: Run tests with pytest
+        run: pytest
+
+      - name: Show TensorFlow and NumPy versions
+        run: python -c "import tensorflow as tf, numpy as np; print('TF:', tf.__version__, '| NumPy:', np.__version__)"
