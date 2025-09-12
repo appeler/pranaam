@@ -7,7 +7,7 @@ name = "pranaam"
 version = "0.1.0"
 description = "Predict religion and caste based on name"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.12"
 license = "MIT"
 authors = [
   { name = "Rajashekar Chintalapati", email = "rajshekar.ch@gmail.com" },
@@ -19,7 +19,6 @@ classifiers = [
   "Intended Audience :: Developers",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering :: Information Analysis",
   "Topic :: Software Development :: Libraries :: Python Modules",
   "Topic :: Utilities"

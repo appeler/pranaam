@@ -51,10 +51,10 @@ This installs TensorFlow 2.14.1, which is known to work correctly with the model
 
 ### Requirements
 
-- Python 3.10+
-- TensorFlow 2.10-2.14 (automatically handled by the package)
+- Python 3.10 or 3.11 (TensorFlow 2.14.1 compatibility requirement)
+- TensorFlow 2.14.1 (automatically installed)
 
-> **Note**: This package has been tested and verified to work correctly with TensorFlow 2.14.1 and Keras 2.14.0.
+> **Note**: This package requires TensorFlow 2.14.1 with Keras 2.14.0 for model compatibility. Python 3.12+ is not currently supported due to TensorFlow availability constraints.
 
 ## General API
 
