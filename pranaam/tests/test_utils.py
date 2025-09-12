@@ -1,0 +1,246 @@
+"""Tests for utils module."""
+
+import pytest
+import os
+import tarfile
+import tempfile
+from unittest.mock import patch, Mock, mock_open
+import requests
+
+from pranaam.utils import download_file, _safe_extract_tar, REPO_BASE_URL
+
+
+class TestDownloadFile:
+    """Test download_file function."""
+    
+    @patch('pranaam.utils.requests.Session')
+    @patch('pranaam.utils._safe_extract_tar')
+    @patch('builtins.open', new_callable=mock_open)
+    @patch('os.remove')
+    def test_successful_download(self, mock_remove, mock_file, mock_extract, mock_session):
+        """Test successful file download and extraction."""
+        # Setup mocks
+        mock_response = Mock()
+        mock_response.headers = {'Content-Length': '1000'}
+        mock_response.iter_content.return_value = [b'chunk1', b'chunk2']
+        mock_response.raise_for_status.return_value = None
+        
+        mock_session_instance = Mock()
+        mock_session_instance.get.return_value = mock_response
+        mock_session.return_value.__enter__.return_value = mock_session_instance
+        
+        # Call function
+        result = download_file("http://test.com", "/tmp/target", "test_file")
+        
+        # Verify
+        assert result is True
+        mock_session_instance.get.assert_called_once_with(
+            REPO_BASE_URL, stream=True, allow_redirects=True, timeout=30
+        )
+        mock_extract.assert_called_once_with("/tmp/target/test_file.tar.gz", "/tmp/target")
+        mock_remove.assert_called_once_with("/tmp/target/test_file.tar.gz")
+    
+    @patch('pranaam.utils.requests.Session')
+    def test_network_error(self, mock_session):
+        """Test handling of network errors."""
+        mock_session_instance = Mock()
+        mock_session_instance.get.side_effect = requests.exceptions.ConnectionError("Network error")
+        mock_session.return_value.__enter__.return_value = mock_session_instance
+        
+        result = download_file("http://test.com", "/tmp/target", "test_file")
+        
+        assert result is False
+    
+    @patch('pranaam.utils.requests.Session')
+    def test_http_error(self, mock_session):
+        """Test handling of HTTP errors."""
+        mock_response = Mock()
+        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("404 Not Found")
+        
+        mock_session_instance = Mock()
+        mock_session_instance.get.return_value = mock_response
+        mock_session.return_value.__enter__.return_value = mock_session_instance
+        
+        result = download_file("http://test.com", "/tmp/target", "test_file")
+        
+        assert result is False
+    
+    @patch('pranaam.utils.requests.Session')
+    @patch('pranaam.utils._safe_extract_tar')
+    @patch('builtins.open', new_callable=mock_open)
+    def test_extraction_error(self, mock_file, mock_extract, mock_session):
+        """Test handling of extraction errors."""
+        # Setup successful download but failed extraction
+        mock_response = Mock()
+        mock_response.headers = {'Content-Length': '1000'}
+        mock_response.iter_content.return_value = [b'chunk']
+        mock_response.raise_for_status.return_value = None
+        
+        mock_session_instance = Mock()
+        mock_session_instance.get.return_value = mock_response
+        mock_session.return_value.__enter__.return_value = mock_session_instance
+        
+        mock_extract.side_effect = tarfile.TarError("Corrupted tar file")
+        
+        result = download_file("http://test.com", "/tmp/target", "test_file")
+        
+        assert result is False
+    
+    @patch('pranaam.utils.requests.Session')
+    @patch('builtins.open', new_callable=mock_open)
+    def test_no_content_length(self, mock_file, mock_session):
+        """Test handling when Content-Length header is missing."""
+        mock_response = Mock()
+        mock_response.headers = {}  # No Content-Length
+        mock_response.iter_content.return_value = [b'chunk']
+        mock_response.raise_for_status.return_value = None
+        
+        mock_session_instance = Mock()
+        mock_session_instance.get.return_value = mock_response
+        mock_session.return_value.__enter__.return_value = mock_session_instance
+        
+        with patch('pranaam.utils._safe_extract_tar'):
+            with patch('os.remove'):
+                result = download_file("http://test.com", "/tmp/target", "test_file")
+        
+        assert result is True
+
+
+class TestSafeExtractTar:
+    """Test _safe_extract_tar function."""
+    
+    def test_safe_extraction(self):
+        """Test safe extraction of tar file."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create a test tar file
+            tar_path = os.path.join(temp_dir, "test.tar.gz")
+            test_file_path = os.path.join(temp_dir, "test.txt")
+            
+            # Create test content
+            with open(test_file_path, 'w') as f:
+                f.write("test content")
+            
+            # Create tar file
+            with tarfile.open(tar_path, "w:gz") as tar:
+                tar.add(test_file_path, arcname="test.txt")
+            
+            # Remove original file
+            os.remove(test_file_path)
+            
+            # Extract using our function
+            extract_dir = os.path.join(temp_dir, "extracted")
+            os.makedirs(extract_dir)
+            
+            _safe_extract_tar(tar_path, extract_dir)
+            
+            # Verify extraction
+            extracted_file = os.path.join(extract_dir, "test.txt")
+            assert os.path.exists(extracted_file)
+            
+            with open(extracted_file, 'r') as f:
+                assert f.read() == "test content"
+    
+    def test_path_traversal_prevention(self):
+        """Test prevention of path traversal attacks."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            tar_path = os.path.join(temp_dir, "malicious.tar.gz")
+            
+            # Create a tar file with path traversal attempt
+            with tarfile.open(tar_path, "w:gz") as tar:
+                # Create a TarInfo object with malicious path
+                info = tarfile.TarInfo(name="../../../malicious.txt")
+                info.size = len(b"malicious content")
+                tar.addfile(info, fileobj=tempfile.NamedTemporaryFile(delete=False))
+            
+            extract_dir = os.path.join(temp_dir, "extracted")
+            os.makedirs(extract_dir)
+            
+            # Should raise exception
+            with pytest.raises(Exception, match="Attempted path traversal"):
+                _safe_extract_tar(tar_path, extract_dir)
+    
+    def test_corrupted_tar_file(self):
+        """Test handling of corrupted tar files."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create a corrupted file (not a valid tar)
+            tar_path = os.path.join(temp_dir, "corrupted.tar.gz")
+            with open(tar_path, 'wb') as f:
+                f.write(b"not a tar file")
+            
+            extract_dir = os.path.join(temp_dir, "extracted")
+            os.makedirs(extract_dir)
+            
+            with pytest.raises(tarfile.TarError):
+                _safe_extract_tar(tar_path, extract_dir)
+    
+    def test_nonexistent_tar_file(self):
+        """Test handling of non-existent tar file."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            tar_path = os.path.join(temp_dir, "nonexistent.tar.gz")
+            extract_dir = os.path.join(temp_dir, "extracted")
+            os.makedirs(extract_dir)
+            
+            with pytest.raises((FileNotFoundError, tarfile.TarError)):
+                _safe_extract_tar(tar_path, extract_dir)
+
+
+class TestConstants:
+    """Test module constants."""
+    
+    def test_repo_base_url_default(self):
+        """Test default repository base URL."""
+        # Should have default Harvard Dataverse URL
+        assert "dataverse.harvard.edu" in REPO_BASE_URL
+    
+    @patch.dict(os.environ, {'PRANAAM_MODEL_URL': 'http://custom.url/model'})
+    def test_repo_base_url_custom(self):
+        """Test custom repository URL from environment."""
+        # Need to reimport to pick up environment variable
+        import importlib
+        import pranaam.utils
+        importlib.reload(pranaam.utils)
+        
+        assert pranaam.utils.REPO_BASE_URL == 'http://custom.url/model'
+
+
+class TestErrorLogging:
+    """Test error logging in utils functions."""
+    
+    @patch('pranaam.utils.logger')
+    @patch('pranaam.utils.requests.Session')
+    def test_network_error_logging(self, mock_session, mock_logger):
+        """Test that network errors are logged properly."""
+        mock_session_instance = Mock()
+        mock_session_instance.get.side_effect = requests.exceptions.ConnectionError("Network error")
+        mock_session.return_value.__enter__.return_value = mock_session_instance
+        
+        download_file("http://test.com", "/tmp", "test")
+        
+        mock_logger.error.assert_called()
+        args, kwargs = mock_logger.error.call_args
+        assert "Network error downloading models" in args[0]
+    
+    @patch('pranaam.utils.logger')
+    @patch('pranaam.utils.requests.Session')
+    @patch('pranaam.utils._safe_extract_tar')
+    @patch('builtins.open', new_callable=mock_open)
+    def test_extraction_error_logging(self, mock_file, mock_extract, mock_session, mock_logger):
+        """Test that extraction errors are logged properly."""
+        # Setup successful download
+        mock_response = Mock()
+        mock_response.headers = {'Content-Length': '1000'}
+        mock_response.iter_content.return_value = [b'chunk']
+        mock_response.raise_for_status.return_value = None
+        
+        mock_session_instance = Mock()
+        mock_session_instance.get.return_value = mock_response
+        mock_session.return_value.__enter__.return_value = mock_session_instance
+        
+        # Setup extraction failure
+        mock_extract.side_effect = tarfile.TarError("Extraction failed")
+        
+        download_file("http://test.com", "/tmp", "test")
+        
+        mock_logger.error.assert_called()
+        args, kwargs = mock_logger.error.call_args
+        assert "File extraction error" in args[0]

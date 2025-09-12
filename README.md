@@ -39,11 +39,28 @@ researchers
 
 ## Install
 
-We strongly recommend installing [pranaam]{.title-ref} inside a Python
-virtual environment. (see [venv
-documentation](https://docs.python.org/3/library/venv.html#creating-virtual-environments))
+We strongly recommend installing pranaam inside a Python virtual environment. (see [venv documentation](https://docs.python.org/3/library/venv.html#creating-virtual-environments))
 
-    pip install pranaam
+### Standard Installation
+
+```bash
+pip install pranaam
+```
+
+### If You Encounter Model Loading Issues
+
+If you see TensorFlow/Keras compatibility errors, install the compatible version:
+
+```bash
+pip install 'pranaam[tensorflow-compat]'
+```
+
+### Requirements
+
+- Python 3.10+
+- TensorFlow 2.10-2.14 (automatically handled by the package)
+
+> **Note**: This package has been tested and verified to work correctly with TensorFlow 2.14.1 and Keras 2.14.0.
 
 ## General API
 

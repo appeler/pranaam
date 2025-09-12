@@ -4,39 +4,71 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pranaam"
-version = "0.0.2"
+version = "0.1.0"
 description = "Predict religion and caste based on name"
-readme = "README.rst"
-requires-python = ">=3.9"
-license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
 authors = [
   { name = "Rajashekar Chintalapati", email = "rajshekar.ch@gmail.com" },
   { name = "Aaditya Dar" },
   { name = "Gaurav Sood", email = "gsood07@gmail.com" }
 ]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
-  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering :: Information Analysis",
   "Topic :: Software Development :: Libraries :: Python Modules",
   "Topic :: Utilities"
 ]
 keywords = ["predict", "religion", "name", "hindi", "english"]
 dependencies = [
-  "tensorflow<2.15",  # 👈 Pins to avoid Keras 3
-  "tqdm",
-  "gdown",
-  "pandas",
-  "numpy",
+  "tensorflow>=2.10.0,<2.15.0",  # Pin to TF 2.x with Keras 2 for model compatibility
+  "tqdm>=4.64.0",
+  "gdown>=4.7.0", 
+  "pandas>=1.5.0",
+  "numpy>=1.21.0,<2.0.0",
   "setuptools>=65.5.1",
-  "wheel>=0.38.0"
+  "wheel>=0.38.0",
 ]
 
 [project.optional-dependencies]
-dev = ["check-manifest"]
-test = ["coverage", "pytest"]
+dev = [
+  "check-manifest",
+  "black>=23.0.0",
+  "mypy>=1.0.0",
+  "pre-commit>=3.0.0",
+  "types-requests",
+  "types-tqdm"
+]
+test = [
+  "pytest>=7.0.0",
+  "pytest-cov>=4.0.0",
+  "coverage>=7.0.0",
+  "pytest-mock>=3.10.0",
+  "pytest-xdist>=3.0.0"
+]
+docs = [
+  "sphinx>=5.0.0",
+  "sphinx-rtd-theme>=1.0.0",
+  "myst-parser>=0.18.0"
+]
+streamlit = [
+  "streamlit>=1.20.0",
+  "scikit-learn>=1.0.0,<2.0.0",
+  "nltk>=3.8.0",
+  "joblib>=1.0.0"
+]
+# For users with TensorFlow/Keras 3 compatibility issues
+tensorflow-compat = [
+  "tensorflow==2.14.1"  # Last stable TF 2.x with Keras 2
+]
+all = [
+  "pranaam[dev,test,docs,streamlit]"
+]
 
 [project.urls]
 "Homepage" = "https://github.com/appeler/pranaam"
@@ -55,4 +87,68 @@ pranaam = ["notebooks/*.ipynb"]
 
 [tool.pytest.ini_options]
 python_files = "test_*.py"
-testpaths = ["tests"]
+testpaths = ["pranaam/tests"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+    "--disable-warnings"
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests"
+]
+# Uncomment when pytest-cov is installed:
+# addopts = "--cov=pranaam --cov-report=html --cov-report=term-missing"
+
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = ["tensorflow.*", "gdown.*"]
+ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["pranaam"]
+omit = ["*/tests/*", "*/test_*.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
