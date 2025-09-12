@@ -147,17 +147,17 @@ class Naam(Base):
             RuntimeError: If model loading fails
         """
         import tensorflow as tf
-        
+
         # Check TensorFlow version for better error messages
-        tf_version = tuple(map(int, tf.__version__.split('.')[:2]))
-        
+        tf_version = tuple(map(int, tf.__version__.split(".")[:2]))
+
         try:
             return tf.keras.models.load_model(model_path)
         except Exception as e:
             error_str = str(e).lower()
-            
+
             if (
-                "keras 3" in error_str 
+                "keras 3" in error_str
                 or "file format not supported" in error_str
                 or "savedmodel" in error_str
                 or tf_version >= (2, 16)  # TF 2.16+ uses Keras 3 by default
@@ -174,7 +174,7 @@ class Naam(Base):
                     )
                 else:
                     suggestion = f"Try: pip install 'pranaam[tensorflow-compat]'"
-                
+
                 raise RuntimeError(
                     f"Model format compatibility issue with TensorFlow {tf.__version__}. "
                     f"{suggestion}"
