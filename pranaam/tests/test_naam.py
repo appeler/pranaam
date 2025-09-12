@@ -12,28 +12,28 @@ from pranaam.naam import Naam, is_english
 class TestIsEnglish:
     """Test the is_english utility function."""
 
-    def test_english_text(self):
+    def test_english_text(self) -> None:
         """Test detection of English text."""
         assert is_english("Hello World") is True
         assert is_english("Shah Rukh Khan") is True
         assert is_english("123 ABC") is True
 
-    def test_hindi_text(self):
+    def test_hindi_text(self) -> None:
         """Test detection of Hindi text."""
         assert is_english("शाहरुख खान") is False
         assert is_english("अमिताभ बच्चन") is False
         assert is_english("हैलो वर्ल्ड") is False
 
-    def test_mixed_text(self):
+    def test_mixed_text(self) -> None:
         """Test mixed text (contains non-ASCII)."""
         assert is_english("Hello शाहरुख") is False
         assert is_english("Khan खान") is False
 
-    def test_empty_string(self):
+    def test_empty_string(self) -> None:
         """Test empty string."""
         assert is_english("") is True  # Empty string is ASCII
 
-    def test_special_characters(self):
+    def test_special_characters(self) -> None:
         """Test special characters."""
         assert is_english("Hello! @#$%") is True
         assert is_english("Test\nLine") is True
@@ -42,17 +42,17 @@ class TestIsEnglish:
 class TestNaamValidation:
     """Test input validation for Naam class."""
 
-    def test_invalid_language(self):
+    def test_invalid_language(self) -> None:
         """Test error for invalid language parameter."""
         with pytest.raises(ValueError, match="Unsupported language"):
             Naam.pred_rel(["Test Name"], lang="invalid")
 
-    def test_empty_names_list(self):
+    def test_empty_names_list(self) -> None:
         """Test error for empty names list."""
         with pytest.raises(ValueError, match="Input names list cannot be empty"):
             Naam.pred_rel([])
 
-    def test_empty_names_after_conversion(self):
+    def test_empty_names_after_conversion(self) -> None:
         """Test error for empty names after list conversion."""
         with pytest.raises(ValueError, match="Input names list cannot be empty"):
             Naam.pred_rel([])
@@ -63,7 +63,7 @@ class TestNaamInputHandling:
 
     @patch.object(Naam, "_load_model")
     @patch.object(Naam, "model")
-    def test_single_string_input(self, mock_model, mock_load_model):
+    def test_single_string_input(self, mock_model: Mock, mock_load_model: Mock) -> None:
         """Test handling of single string input."""
         # Setup mock model
         mock_model.predict.return_value = np.array([[0.2, 0.8]])
@@ -79,7 +79,7 @@ class TestNaamInputHandling:
 
     @patch.object(Naam, "_load_model")
     @patch.object(Naam, "model")
-    def test_list_input(self, mock_model, mock_load_model):
+    def test_list_input(self, mock_model: Mock, mock_load_model: Mock) -> None:
         """Test handling of list input."""
         mock_model.predict.return_value = np.array([[0.2, 0.8], [0.7, 0.3]])
         Naam.weights_loaded = True
@@ -94,7 +94,7 @@ class TestNaamInputHandling:
 
     @patch.object(Naam, "_load_model")
     @patch.object(Naam, "model")
-    def test_pandas_series_input(self, mock_model, mock_load_model):
+    def test_pandas_series_input(self, mock_model: Mock, mock_load_model: Mock) -> None:
         """Test handling of pandas Series input."""
         mock_model.predict.return_value = np.array([[0.2, 0.8]])
         Naam.weights_loaded = True
@@ -111,7 +111,7 @@ class TestNaamPredictions:
     """Test prediction functionality."""
 
     @patch.object(Naam, "_load_model")
-    def test_prediction_output_structure(self, mock_load_model):
+    def test_prediction_output_structure(self, mock_load_model: Mock) -> None:
         """Test that predictions return correct DataFrame structure."""
         # Mock the model
         mock_model = Mock()
@@ -134,7 +134,7 @@ class TestNaamPredictions:
         assert pd.api.types.is_numeric_dtype(result["pred_prob_muslim"])
 
     @patch.object(Naam, "_load_model")
-    def test_prediction_labels(self, mock_load_model):
+    def test_prediction_labels(self, mock_load_model: Mock) -> None:
         """Test that predictions use correct labels."""
         mock_model = Mock()
         mock_model.predict.return_value = np.array([[0.3, 0.7], [0.8, 0.2]])
@@ -150,7 +150,7 @@ class TestNaamPredictions:
         assert result.iloc[1]["pred_label"] == "not-muslim"
 
     @patch.object(Naam, "_load_model")
-    def test_prediction_probabilities(self, mock_load_model):
+    def test_prediction_probabilities(self, mock_load_model: Mock) -> None:
         """Test probability calculations."""
         mock_model = Mock()
         mock_model.predict.return_value = np.array([[0.3, 0.7]])
@@ -170,7 +170,7 @@ class TestNaamModelLoading:
 
     @patch("pranaam.naam.tf.keras.models.load_model")
     @patch.object(Naam, "load_model_data")
-    def test_model_loading_english(self, mock_load_data, mock_load_model):
+    def test_model_loading_english(self, mock_load_data: Mock, mock_load_model: Mock) -> None:
         """Test loading English model."""
         mock_load_data.return_value = "/fake/path"
         mock_model = Mock()
@@ -191,7 +191,7 @@ class TestNaamModelLoading:
 
     @patch("pranaam.naam.tf.keras.models.load_model")
     @patch.object(Naam, "load_model_data")
-    def test_model_loading_hindi(self, mock_load_data, mock_load_model):
+    def test_model_loading_hindi(self, mock_load_data: Mock, mock_load_model: Mock) -> None:
         """Test loading Hindi model."""
         mock_load_data.return_value = "/fake/path"
         mock_model = Mock()
@@ -207,7 +207,7 @@ class TestNaamModelLoading:
         assert Naam.cur_lang == "hin"
 
     @patch.object(Naam, "load_model_data")
-    def test_model_loading_failure_no_data(self, mock_load_data):
+    def test_model_loading_failure_no_data(self, mock_load_data: Mock) -> None:
         """Test model loading failure when data loading fails."""
         mock_load_data.return_value = None
 
@@ -216,7 +216,7 @@ class TestNaamModelLoading:
 
     @patch("pranaam.naam.tf.keras.models.load_model")
     @patch.object(Naam, "load_model_data")
-    def test_model_loading_failure_model_error(self, mock_load_data, mock_load_model):
+    def test_model_loading_failure_model_error(self, mock_load_data: Mock, mock_load_model: Mock) -> None:
         """Test model loading failure when TensorFlow fails."""
         mock_load_data.return_value = "/fake/path"
         mock_load_model.side_effect = Exception("TensorFlow error")
@@ -230,7 +230,7 @@ class TestNaamLanguageHandling:
 
     @patch.object(Naam, "_load_model")
     @patch.object(Naam, "model")
-    def test_language_change_triggers_reload(self, mock_model, mock_load_model):
+    def test_language_change_triggers_reload(self, mock_model: Mock, mock_load_model: Mock) -> None:
         """Test that changing language triggers model reload."""
         mock_model.predict.return_value = np.array([[0.5, 0.5]])
 
@@ -246,7 +246,7 @@ class TestNaamLanguageHandling:
 
     @patch.object(Naam, "_load_model")
     @patch.object(Naam, "model")
-    def test_same_language_no_reload(self, mock_model, mock_load_model):
+    def test_same_language_no_reload(self, mock_model: Mock, mock_load_model: Mock) -> None:
         """Test that same language doesn't trigger reload."""
         mock_model.predict.return_value = np.array([[0.5, 0.5]])
 
@@ -265,7 +265,7 @@ class TestNaamErrorHandling:
     """Test error handling in predictions."""
 
     @patch.object(Naam, "_load_model")
-    def test_prediction_with_no_model(self, mock_load_model):
+    def test_prediction_with_no_model(self, mock_load_model: Mock) -> None:
         """Test prediction fails when model is None."""
         Naam.model = None
         Naam.weights_loaded = True
@@ -274,7 +274,7 @@ class TestNaamErrorHandling:
             Naam.pred_rel(["Test"])
 
     @patch.object(Naam, "_load_model")
-    def test_prediction_tensorflow_error(self, mock_load_model):
+    def test_prediction_tensorflow_error(self, mock_load_model: Mock) -> None:
         """Test handling of TensorFlow prediction errors."""
         mock_model = Mock()
         mock_model.predict.side_effect = Exception("TensorFlow error")
@@ -289,7 +289,7 @@ class TestNaamIntegration:
     """Integration tests (require actual model download - marked as slow)."""
 
     @pytest.mark.slow
-    def test_real_prediction_english(self, sample_english_names):
+    def test_real_prediction_english(self, sample_english_names: list) -> None:
         """Test real predictions with English names (requires model download)."""
         result = Naam.pred_rel(sample_english_names[:2])  # Test with first 2 names
 
@@ -302,7 +302,7 @@ class TestNaamIntegration:
         assert all(0 <= prob <= 100 for prob in result["pred_prob_muslim"])
 
     @pytest.mark.slow
-    def test_real_prediction_hindi(self, sample_hindi_names):
+    def test_real_prediction_hindi(self, sample_hindi_names: list) -> None:
         """Test real predictions with Hindi names (requires model download)."""
         result = Naam.pred_rel(sample_hindi_names[:2], lang="hin")
 
