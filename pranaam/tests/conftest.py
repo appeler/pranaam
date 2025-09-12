@@ -3,25 +3,26 @@
 import pytest
 import pandas as pd
 from unittest.mock import Mock, MagicMock
+from typing import List, Any, Dict, Tuple, Generator
 import tempfile
 import os
 import numpy as np
 
 
 @pytest.fixture
-def sample_english_names():
+def sample_english_names() -> List[str]:
     """Sample English names for testing."""
     return ["Shah Rukh Khan", "Amitabh Bachchan", "Rajesh Khanna", "Mohammed Ali"]
 
 
 @pytest.fixture
-def sample_hindi_names():
+def sample_hindi_names() -> List[str]:
     """Sample Hindi names for testing."""
     return ["शाहरुख खान", "अमिताभ बच्चन", "राजेश खन्ना", "मोहम्मद अली"]
 
 
 @pytest.fixture
-def expected_predictions():
+def expected_predictions() -> Dict[str, Dict[str, Any]]:
     """Expected predictions for sample names."""
     return {
         "Shah Rukh Khan": {"label": "muslim", "prob_range": (60, 90)},
@@ -32,12 +33,12 @@ def expected_predictions():
 
 
 @pytest.fixture
-def mock_tensorflow_model():
+def mock_tensorflow_model() -> Mock:
     """Mock TensorFlow model for testing."""
     model = Mock()
 
     # Mock prediction results - returns probabilities for [not-muslim, muslim]
-    def mock_predict(names, verbose=0):
+    def mock_predict(names: Any, verbose: int = 0) -> Any:
         results = []
         for name in names:
             if any(
@@ -56,7 +57,7 @@ def mock_tensorflow_model():
 
 
 @pytest.fixture
-def temp_model_dir():
+def temp_model_dir() -> Generator[str, None, None]:
     """Temporary directory for model files."""
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create model directory structure
@@ -67,7 +68,7 @@ def temp_model_dir():
 
 
 @pytest.fixture
-def mock_requests_get():
+def mock_requests_get() -> Mock:
     """Mock requests.get for download testing."""
     mock_response = Mock()
     mock_response.headers = {"Content-Length": "1000"}
@@ -77,7 +78,7 @@ def mock_requests_get():
 
 
 @pytest.fixture(autouse=True)
-def reset_naam_class():
+def reset_naam_class() -> Generator[None, None, None]:
     """Reset Naam class state between tests."""
     from pranaam.naam import Naam
 
@@ -95,10 +96,9 @@ def reset_naam_class():
 
 
 @pytest.fixture
-def caplog_debug():
+def caplog_debug(caplog: pytest.LogCaptureFixture) -> pytest.LogCaptureFixture:
     """Capture log messages at DEBUG level."""
     import logging
-    import pytest
 
-    with pytest.LogCapture(level=logging.DEBUG) as log_capture:
-        yield log_capture
+    caplog.set_level(logging.DEBUG)
+    return caplog

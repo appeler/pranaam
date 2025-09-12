@@ -4,6 +4,7 @@ import pytest
 import os
 import tempfile
 from unittest.mock import patch, Mock
+from typing import Any
 
 from pranaam.base import Base
 
@@ -11,13 +12,13 @@ from pranaam.base import Base
 class TestBase:
     """Test Base class functionality."""
 
-    def test_base_class_attributes(self):
+    def test_base_class_attributes(self) -> None:
         """Test Base class has expected attributes."""
         assert hasattr(Base, "MODELFN")
         assert hasattr(Base, "load_model_data")
         assert Base.MODELFN is None
 
-    def test_load_model_data_no_modelfn(self):
+    def test_load_model_data_no_modelfn(self) -> None:
         """Test load_model_data when MODELFN is None."""
 
         # Create a test class without MODELFN set
@@ -32,8 +33,12 @@ class TestBase:
     @patch("os.path.exists")
     @patch("os.makedirs")
     def test_load_model_data_success(
-        self, mock_makedirs, mock_exists, mock_download, mock_files
-    ):
+        self,
+        mock_makedirs: Mock,
+        mock_exists: Mock,
+        mock_download: Mock,
+        mock_files: Mock,
+    ) -> None:
         """Test successful model data loading."""
         # Setup mocks
         mock_files.return_value.__truediv__.return_value = "/fake/model/path"
@@ -58,8 +63,12 @@ class TestBase:
     @patch("os.path.exists")
     @patch("os.makedirs")
     def test_load_model_data_file_exists_no_latest(
-        self, mock_makedirs, mock_exists, mock_download, mock_files
-    ):
+        self,
+        mock_makedirs: Mock,
+        mock_exists: Mock,
+        mock_download: Mock,
+        mock_files: Mock,
+    ) -> None:
         """Test model loading when file exists and latest=False."""
         mock_files.return_value.__truediv__.return_value = "/fake/model/path"
 
@@ -80,8 +89,12 @@ class TestBase:
     @patch("os.path.exists")
     @patch("os.makedirs")
     def test_load_model_data_force_latest(
-        self, mock_makedirs, mock_exists, mock_download, mock_files
-    ):
+        self,
+        mock_makedirs: Mock,
+        mock_exists: Mock,
+        mock_download: Mock,
+        mock_files: Mock,
+    ) -> None:
         """Test model loading with latest=True forces redownload."""
         mock_files.return_value.__truediv__.return_value = "/fake/model/path"
 
@@ -102,8 +115,12 @@ class TestBase:
     @patch("os.path.exists")
     @patch("os.makedirs")
     def test_load_model_data_download_failure(
-        self, mock_makedirs, mock_exists, mock_download, mock_files
-    ):
+        self,
+        mock_makedirs: Mock,
+        mock_exists: Mock,
+        mock_download: Mock,
+        mock_files: Mock,
+    ) -> None:
         """Test handling of download failure."""
         mock_files.return_value.__truediv__.return_value = "/fake/model/path"
 
@@ -124,8 +141,8 @@ class TestBase:
     @patch("os.path.exists")
     @patch("os.makedirs")
     def test_load_model_data_creates_directory(
-        self, mock_makedirs, mock_exists, mock_files
-    ):
+        self, mock_makedirs: Mock, mock_exists: Mock, mock_files: Mock
+    ) -> None:
         """Test that model directory is created if it doesn't exist."""
         mock_files.return_value.__truediv__.return_value = "/fake/model/path"
 
@@ -144,7 +161,7 @@ class TestBase:
 class TestBaseInheritance:
     """Test Base class inheritance patterns."""
 
-    def test_subclass_can_override_modelfn(self):
+    def test_subclass_can_override_modelfn(self) -> None:
         """Test that subclasses can override MODELFN."""
 
         class CustomBase(Base):
@@ -153,7 +170,7 @@ class TestBaseInheritance:
         assert CustomBase.MODELFN == "custom_model"
         assert Base.MODELFN is None  # Original unchanged
 
-    def test_multiple_subclasses_independent(self):
+    def test_multiple_subclasses_independent(self) -> None:
         """Test that multiple subclasses have independent MODELFN values."""
 
         class BaseA(Base):
@@ -176,8 +193,13 @@ class TestBaseLogging:
     @patch("os.path.exists")
     @patch("os.makedirs")
     def test_debug_logging_download(
-        self, mock_makedirs, mock_exists, mock_download, mock_files, mock_logger
-    ):
+        self,
+        mock_makedirs: Mock,
+        mock_exists: Mock,
+        mock_download: Mock,
+        mock_files: Mock,
+        mock_logger: Mock,
+    ) -> None:
         """Test debug logging during download."""
         mock_files.return_value.__truediv__.return_value = "/fake/model/path"
 
@@ -199,7 +221,9 @@ class TestBaseLogging:
     @patch("pranaam.base.logger")
     @patch("pranaam.base.files")
     @patch("os.path.exists")
-    def test_debug_logging_existing_model(self, mock_exists, mock_files, mock_logger):
+    def test_debug_logging_existing_model(
+        self, mock_exists: Mock, mock_files: Mock, mock_logger: Mock
+    ) -> None:
         """Test debug logging when using existing model."""
         mock_files.return_value.__truediv__.return_value = "/fake/model/path"
 
@@ -221,8 +245,13 @@ class TestBaseLogging:
     @patch("os.path.exists")
     @patch("os.makedirs")
     def test_error_logging_download_failure(
-        self, mock_makedirs, mock_exists, mock_download, mock_files, mock_logger
-    ):
+        self,
+        mock_makedirs: Mock,
+        mock_exists: Mock,
+        mock_download: Mock,
+        mock_files: Mock,
+        mock_logger: Mock,
+    ) -> None:
         """Test error logging when download fails."""
         mock_files.return_value.__truediv__.return_value = "/fake/model/path"
 

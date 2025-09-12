@@ -4,6 +4,7 @@ import pytest
 import sys
 from io import StringIO
 from unittest.mock import patch, Mock
+from typing import Any
 import pandas as pd
 
 from pranaam.pranaam import main, pred_rel
@@ -12,20 +13,20 @@ from pranaam.pranaam import main, pred_rel
 class TestCLIMain:
     """Test main CLI function."""
 
-    def test_help_option(self):
+    def test_help_option(self) -> None:
         """Test --help option displays help and exits."""
         with pytest.raises(SystemExit) as exc_info:
             main(["--help"])
 
         assert exc_info.value.code == 0
 
-    def test_missing_required_argument(self):
+    def test_missing_required_argument(self) -> None:
         """Test that missing --input argument returns error."""
         result = main([])
         assert result == 1
 
     @patch("pranaam.pranaam.pred_rel")
-    def test_successful_prediction(self, mock_pred_rel):
+    def test_successful_prediction(self, mock_pred_rel: Mock) -> None:
         """Test successful prediction with valid arguments."""
         # Setup mock return value
         mock_result = pd.DataFrame(
@@ -50,7 +51,7 @@ class TestCLIMain:
         assert "75.0" in output
 
     @patch("pranaam.pranaam.pred_rel")
-    def test_hindi_language_option(self, mock_pred_rel):
+    def test_hindi_language_option(self, mock_pred_rel: Mock) -> None:
         """Test Hindi language option."""
         mock_result = pd.DataFrame(
             {
@@ -67,7 +68,7 @@ class TestCLIMain:
         mock_pred_rel.assert_called_once_with("टेस्ट नाम", lang="hin", latest=False)
 
     @patch("pranaam.pranaam.pred_rel")
-    def test_latest_option(self, mock_pred_rel):
+    def test_latest_option(self, mock_pred_rel: Mock) -> None:
         """Test --latest option."""
         mock_result = pd.DataFrame(
             {
@@ -84,7 +85,7 @@ class TestCLIMain:
         mock_pred_rel.assert_called_once_with("Test Name", lang="eng", latest=True)
 
     @patch("pranaam.pranaam.pred_rel")
-    def test_all_options_combined(self, mock_pred_rel):
+    def test_all_options_combined(self, mock_pred_rel: Mock) -> None:
         """Test all options used together."""
         mock_result = pd.DataFrame(
             {"name": ["हिंदी नाम"], "pred_label": ["muslim"], "pred_prob_muslim": [65.0]}
@@ -96,13 +97,13 @@ class TestCLIMain:
         assert result == 0
         mock_pred_rel.assert_called_once_with("हिंदी नाम", lang="hin", latest=True)
 
-    def test_invalid_language(self):
+    def test_invalid_language(self) -> None:
         """Test invalid language option."""
         result = main(["--input", "Test Name", "--lang", "invalid"])
         assert result == 1
 
     @patch("pranaam.pranaam.pred_rel")
-    def test_prediction_error_handling(self, mock_pred_rel):
+    def test_prediction_error_handling(self, mock_pred_rel: Mock) -> None:
         """Test handling of prediction errors."""
         mock_pred_rel.side_effect = Exception("Prediction failed")
 
@@ -113,7 +114,7 @@ class TestCLIMain:
         error_output = mock_stderr.getvalue()
         assert "Error: Prediction failed" in error_output
 
-    def test_default_arguments(self):
+    def test_default_arguments(self) -> None:
         """Test default argument values."""
         # This test verifies the argument parser setup
         from pranaam.pranaam import main
@@ -147,7 +148,7 @@ class TestCLIMain:
 class TestCLIIntegration:
     """Integration tests for CLI."""
 
-    def test_cli_with_none_argv(self):
+    def test_cli_with_none_argv(self) -> None:
         """Test CLI function when argv is None."""
         # Should use sys.argv[1:] by default
         with patch("sys.argv", ["script_name", "--input", "Test Name"]):
@@ -167,7 +168,7 @@ class TestCLIIntegration:
                 mock_pred_rel.assert_called_once()
 
     @patch("pranaam.pranaam.pred_rel")
-    def test_output_formatting(self, mock_pred_rel):
+    def test_output_formatting(self, mock_pred_rel: Mock) -> None:
         """Test that output is formatted properly."""
         mock_result = pd.DataFrame(
             {
@@ -196,7 +197,7 @@ class TestCLIIntegration:
 class TestPredRelFunction:
     """Test the pred_rel function exposed at module level."""
 
-    def test_pred_rel_is_naam_pred_rel(self):
+    def test_pred_rel_is_naam_pred_rel(self) -> None:
         """Test that pred_rel is the same as Naam.pred_rel."""
         from pranaam.naam import Naam
         from pranaam.pranaam import pred_rel as module_pred_rel
@@ -207,12 +208,12 @@ class TestPredRelFunction:
 class TestCLIArgumentValidation:
     """Test CLI argument validation."""
 
-    def test_required_input_argument(self):
+    def test_required_input_argument(self) -> None:
         """Test that input argument is required."""
         result = main(["--lang", "eng"])  # Missing --input
         assert result == 1
 
-    def test_input_argument_accepts_any_string(self):
+    def test_input_argument_accepts_any_string(self) -> None:
         """Test that input accepts various string types."""
         test_inputs = [
             "Simple Name",
@@ -240,7 +241,7 @@ class TestCLIArgumentValidation:
                     test_input, lang="eng", latest=False
                 )
 
-    def test_language_choices(self):
+    def test_language_choices(self) -> None:
         """Test that only valid language choices are accepted."""
         valid_langs = ["eng", "hin"]
         invalid_langs = ["en", "hi", "english", "hindi", "spanish", ""]
@@ -270,7 +271,7 @@ class TestCLIErrorHandling:
     """Test error handling in CLI."""
 
     @patch("pranaam.pranaam.pred_rel")
-    def test_keyboard_interrupt(self, mock_pred_rel):
+    def test_keyboard_interrupt(self, mock_pred_rel: Mock) -> None:
         """Test handling of KeyboardInterrupt."""
         mock_pred_rel.side_effect = KeyboardInterrupt()
 
@@ -283,7 +284,7 @@ class TestCLIErrorHandling:
         assert "Error:" in error_output
 
     @patch("pranaam.pranaam.pred_rel")
-    def test_runtime_error(self, mock_pred_rel):
+    def test_runtime_error(self, mock_pred_rel: Mock) -> None:
         """Test handling of RuntimeError from prediction."""
         mock_pred_rel.side_effect = RuntimeError("Model loading failed")
 
@@ -295,7 +296,7 @@ class TestCLIErrorHandling:
         assert "Model loading failed" in error_output
 
     @patch("pranaam.pranaam.pred_rel")
-    def test_value_error(self, mock_pred_rel):
+    def test_value_error(self, mock_pred_rel: Mock) -> None:
         """Test handling of ValueError from prediction."""
         mock_pred_rel.side_effect = ValueError("Invalid input")
 

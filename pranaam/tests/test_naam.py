@@ -170,7 +170,9 @@ class TestNaamModelLoading:
 
     @patch("pranaam.naam.tf.keras.models.load_model")
     @patch.object(Naam, "load_model_data")
-    def test_model_loading_english(self, mock_load_data: Mock, mock_load_model: Mock) -> None:
+    def test_model_loading_english(
+        self, mock_load_data: Mock, mock_load_model: Mock
+    ) -> None:
         """Test loading English model."""
         mock_load_data.return_value = "/fake/path"
         mock_model = Mock()
@@ -191,7 +193,9 @@ class TestNaamModelLoading:
 
     @patch("pranaam.naam.tf.keras.models.load_model")
     @patch.object(Naam, "load_model_data")
-    def test_model_loading_hindi(self, mock_load_data: Mock, mock_load_model: Mock) -> None:
+    def test_model_loading_hindi(
+        self, mock_load_data: Mock, mock_load_model: Mock
+    ) -> None:
         """Test loading Hindi model."""
         mock_load_data.return_value = "/fake/path"
         mock_model = Mock()
@@ -216,7 +220,9 @@ class TestNaamModelLoading:
 
     @patch("pranaam.naam.tf.keras.models.load_model")
     @patch.object(Naam, "load_model_data")
-    def test_model_loading_failure_model_error(self, mock_load_data: Mock, mock_load_model: Mock) -> None:
+    def test_model_loading_failure_model_error(
+        self, mock_load_data: Mock, mock_load_model: Mock
+    ) -> None:
         """Test model loading failure when TensorFlow fails."""
         mock_load_data.return_value = "/fake/path"
         mock_load_model.side_effect = Exception("TensorFlow error")
@@ -230,7 +236,9 @@ class TestNaamLanguageHandling:
 
     @patch.object(Naam, "_load_model")
     @patch.object(Naam, "model")
-    def test_language_change_triggers_reload(self, mock_model: Mock, mock_load_model: Mock) -> None:
+    def test_language_change_triggers_reload(
+        self, mock_model: Mock, mock_load_model: Mock
+    ) -> None:
         """Test that changing language triggers model reload."""
         mock_model.predict.return_value = np.array([[0.5, 0.5]])
 
@@ -246,7 +254,9 @@ class TestNaamLanguageHandling:
 
     @patch.object(Naam, "_load_model")
     @patch.object(Naam, "model")
-    def test_same_language_no_reload(self, mock_model: Mock, mock_load_model: Mock) -> None:
+    def test_same_language_no_reload(
+        self, mock_model: Mock, mock_load_model: Mock
+    ) -> None:
         """Test that same language doesn't trigger reload."""
         mock_model.predict.return_value = np.array([[0.5, 0.5]])
 

@@ -2,7 +2,8 @@
 
 import pytest
 import logging
-from unittest.mock import patch
+from unittest.mock import patch, Mock
+from typing import Any
 
 from pranaam.logging import get_logger
 
@@ -68,6 +69,7 @@ class TestGetLogger:
 
         # Test formatter format string
         format_str = formatter._fmt
+        assert format_str is not None
         expected_components = [
             "%(asctime)s",
             "%(name)s",
@@ -105,7 +107,7 @@ class TestGetLogger:
 class TestLoggerFunctionality:
     """Test actual logging functionality."""
 
-    def test_logger_can_log_messages(self, caplog: pytest.LoggingPlugin) -> None:
+    def test_logger_can_log_messages(self, caplog: pytest.LogCaptureFixture) -> None:
         """Test that logger can actually log messages."""
         logger = get_logger("test_logging")
 
@@ -119,7 +121,9 @@ class TestLoggerFunctionality:
         assert "Test warning message" in caplog.text
         assert "Test error message" in caplog.text
 
-    def test_logger_debug_level_filtering(self, caplog: pytest.LoggingPlugin) -> None:
+    def test_logger_debug_level_filtering(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
         """Test that DEBUG messages are filtered out by default."""
         logger = get_logger("test_debug")
 
@@ -142,7 +146,7 @@ class TestLoggerFunctionality:
         assert "Debug message" in caplog.text
         assert "Info message" in caplog.text
 
-    def test_logger_formatting_output(self, caplog: pytest.LoggingPlugin) -> None:
+    def test_logger_formatting_output(self, caplog: pytest.LogCaptureFixture) -> None:
         """Test that log messages are properly formatted."""
         logger = get_logger("test_format")
 

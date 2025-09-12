@@ -12,7 +12,7 @@ from pranaam import pranaam
 
 
 class TestPredRel(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         eng_names = [
             {"name": "Shah Rukh Khan", "true_rel": "muslim"},
             {"name": "Amitabh Bachchan", "true_rel": "not-muslim"},
@@ -25,20 +25,20 @@ class TestPredRel(unittest.TestCase):
         ]
         self.hin_df = pd.DataFrame(hin_names)
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         pass
 
-    def test_pred_label(self):
+    def test_pred_label(self) -> None:
         odf = pranaam.pred_rel(self.eng_df["name"])
         self.assertIn("pred_label", odf.columns)
         self.assertTrue(odf.iloc[0]["pred_label"] == self.eng_df.iloc[0]["true_rel"])
         self.assertTrue(odf.iloc[1]["pred_label"] == self.eng_df.iloc[1]["true_rel"])
 
-    def test_pred_prob_muslim(self):
+    def test_pred_prob_muslim(self) -> None:
         odf = pranaam.pred_rel(self.eng_df["name"])
         self.assertIn("pred_prob_muslim", odf.columns)
 
-    def test_hindi(self):
+    def test_hindi(self) -> None:
         odf = pranaam.pred_rel(self.hin_df["name"], lang="hin")
         self.assertIn("pred_label", odf.columns)
         self.assertTrue(odf.iloc[0]["pred_label"] == self.hin_df.iloc[0]["true_rel"])

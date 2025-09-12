@@ -3,6 +3,7 @@
 import pytest
 import pandas as pd
 from unittest.mock import patch, Mock
+from typing import Any
 import numpy as np
 
 from pranaam import pred_rel, Naam
@@ -11,7 +12,7 @@ from pranaam import pred_rel, Naam
 class TestPackageIntegration:
     """Test package-level integration."""
 
-    def test_package_imports(self):
+    def test_package_imports(self) -> None:
         """Test that all expected symbols are importable."""
         from pranaam import pred_rel, Naam
 
@@ -20,18 +21,18 @@ class TestPackageIntegration:
         assert callable(pred_rel)
         assert hasattr(Naam, "pred_rel")
 
-    def test_pred_rel_is_naam_method(self):
+    def test_pred_rel_is_naam_method(self) -> None:
         """Test that package pred_rel is the Naam class method."""
         assert pred_rel == Naam.pred_rel
 
-    def test_package_version(self):
+    def test_package_version(self) -> None:
         """Test that package has version information."""
         import pranaam
 
         assert hasattr(pranaam, "__version__")
         assert pranaam.__version__ == "0.0.2"
 
-    def test_package_all_exports(self):
+    def test_package_all_exports(self) -> None:
         """Test __all__ exports are correct."""
         import pranaam
 
@@ -45,7 +46,9 @@ class TestEndToEndWorkflow:
 
     @patch.object(Naam, "_load_model")
     @patch.object(Naam, "model")
-    def test_single_name_workflow(self, mock_model, mock_load_model):
+    def test_single_name_workflow(
+        self, mock_model: Mock, mock_load_model: Mock
+    ) -> None:
         """Test complete workflow with single name."""
         # Setup mock model
         mock_model.predict.return_value = np.array([[0.2, 0.8]])
@@ -67,7 +70,9 @@ class TestEndToEndWorkflow:
 
     @patch.object(Naam, "_load_model")
     @patch.object(Naam, "model")
-    def test_batch_names_workflow(self, mock_model, mock_load_model):
+    def test_batch_names_workflow(
+        self, mock_model: Mock, mock_load_model: Mock
+    ) -> None:
         """Test complete workflow with multiple names."""
         # Setup mock model for batch prediction
         mock_model.predict.return_value = np.array(
@@ -92,7 +97,9 @@ class TestEndToEndWorkflow:
 
     @patch.object(Naam, "_load_model")
     @patch.object(Naam, "model")
-    def test_language_switching_workflow(self, mock_model, mock_load_model):
+    def test_language_switching_workflow(
+        self, mock_model: Mock, mock_load_model: Mock
+    ) -> None:
         """Test workflow with language switching."""
         mock_model.predict.return_value = np.array([[0.3, 0.7]])
         Naam.weights_loaded = True
@@ -115,11 +122,13 @@ class TestRealisticScenarios:
 
     @patch.object(Naam, "_load_model")
     @patch.object(Naam, "model")
-    def test_mixed_religion_predictions(self, mock_model, mock_load_model):
+    def test_mixed_religion_predictions(
+        self, mock_model: Mock, mock_load_model: Mock
+    ) -> None:
         """Test predictions for names of different religions."""
 
         # Mock different probabilities for different name types
-        def mock_predict(names, verbose=0):
+        def mock_predict(names: Any, verbose: int = 0) -> Any:
             results = []
             for name in names:
                 name_lower = name.lower()
@@ -161,7 +170,7 @@ class TestRealisticScenarios:
 
     @patch.object(Naam, "_load_model")
     @patch.object(Naam, "model")
-    def test_edge_case_names(self, mock_model, mock_load_model):
+    def test_edge_case_names(self, mock_model: Mock, mock_load_model: Mock) -> None:
         """Test with edge case names."""
         mock_model.predict.return_value = np.array(
             [
@@ -188,7 +197,7 @@ class TestRealisticScenarios:
 
     @patch.object(Naam, "_load_model")
     @patch.object(Naam, "model")
-    def test_probability_ranges(self, mock_model, mock_load_model):
+    def test_probability_ranges(self, mock_model: Mock, mock_load_model: Mock) -> None:
         """Test that probabilities are in expected ranges."""
         # Test various probability values
         test_probs = [
@@ -219,7 +228,7 @@ class TestRealisticScenarios:
 class TestErrorRecovery:
     """Test error recovery and graceful degradation."""
 
-    def test_invalid_input_recovery(self):
+    def test_invalid_input_recovery(self) -> None:
         """Test that invalid inputs provide clear error messages."""
         with pytest.raises(ValueError, match="Unsupported language"):
             pred_rel(["Test"], lang="invalid")
@@ -228,7 +237,7 @@ class TestErrorRecovery:
             pred_rel([])
 
     @patch.object(Naam, "_load_model")
-    def test_model_loading_failure_recovery(self, mock_load_model):
+    def test_model_loading_failure_recovery(self, mock_load_model: Mock) -> None:
         """Test recovery from model loading failures."""
         mock_load_model.side_effect = RuntimeError("Model loading failed")
         Naam.weights_loaded = False
@@ -237,7 +246,7 @@ class TestErrorRecovery:
             pred_rel(["Test Name"])
 
     @patch.object(Naam, "_load_model")
-    def test_prediction_failure_recovery(self, mock_load_model):
+    def test_prediction_failure_recovery(self, mock_load_model: Mock) -> None:
         """Test recovery from prediction failures."""
         mock_model = Mock()
         mock_model.predict.side_effect = Exception("TensorFlow error")
@@ -253,11 +262,13 @@ class TestPerformanceCharacteristics:
 
     @patch.object(Naam, "_load_model")
     @patch.object(Naam, "model")
-    def test_batch_processing_efficiency(self, mock_model, mock_load_model):
+    def test_batch_processing_efficiency(
+        self, mock_model: Mock, mock_load_model: Mock
+    ) -> None:
         """Test that batch processing is more efficient than individual calls."""
         call_count = 0
 
-        def count_predict_calls(names, verbose=0):
+        def count_predict_calls(names: Any, verbose: int = 0) -> Any:
             nonlocal call_count
             call_count += 1
             return np.array([[0.5, 0.5]] * len(names))
@@ -285,7 +296,7 @@ class TestPerformanceCharacteristics:
 
     @patch.object(Naam, "_load_model")
     @patch.object(Naam, "model")
-    def test_model_caching(self, mock_model, mock_load_model):
+    def test_model_caching(self, mock_model: Mock, mock_load_model: Mock) -> None:
         """Test that model is cached and not reloaded unnecessarily."""
         mock_model.predict.return_value = np.array([[0.5, 0.5]])
         Naam.weights_loaded = True

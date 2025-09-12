@@ -41,12 +41,15 @@ class Naam(Base):
 
     @classmethod
     def pred_rel(
-        cls, names: Union[str, List[str]], lang: str = "eng", latest: bool = False
+        cls,
+        names: Union[str, List[str], pd.Series],
+        lang: str = "eng",
+        latest: bool = False,
     ) -> pd.DataFrame:
         """Predict religion based on name(s).
 
         Args:
-            names: Single name string or list of names
+            names: Single name string, list of names, or pandas Series of names
             lang: Language of input ('eng' for English, 'hin' for Hindi)
             latest: Whether to download latest model version
 
@@ -60,9 +63,11 @@ class Naam(Base):
         if lang not in ["eng", "hin"]:
             raise ValueError(f"Unsupported language: {lang}. Use 'eng' or 'hin'")
 
-        # Convert single string to list for consistent processing
+        # Convert single string or pandas Series to list for consistent processing
         if isinstance(names, str):
             name_list = [names]
+        elif isinstance(names, pd.Series):
+            name_list = names.tolist()
         else:
             name_list = list(names)
 
