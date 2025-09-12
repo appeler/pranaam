@@ -40,6 +40,7 @@ dev = [
   "black>=23.0.0",
   "mypy>=1.0.0",
   "pre-commit>=3.0.0",
+  "pandas-stubs>=2.0.0",
   "types-requests",
   "types-tqdm"
 ]
