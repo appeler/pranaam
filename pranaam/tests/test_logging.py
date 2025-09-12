@@ -10,19 +10,19 @@ from pranaam.logging import get_logger
 class TestGetLogger:
     """Test get_logger function."""
 
-    def test_default_logger_name(self):
+    def test_default_logger_name(self) -> None:
         """Test getting logger with default name."""
         logger = get_logger()
         assert logger.name == "pranaam"
         assert isinstance(logger, logging.Logger)
 
-    def test_custom_logger_name(self):
+    def test_custom_logger_name(self) -> None:
         """Test getting logger with custom name."""
         logger = get_logger("custom_name")
         assert logger.name == "custom_name"
         assert isinstance(logger, logging.Logger)
 
-    def test_logger_configuration(self):
+    def test_logger_configuration(self) -> None:
         """Test that logger is properly configured."""
         with patch("logging.getLogger") as mock_get_logger:
             mock_logger = mock_get_logger.return_value
@@ -34,7 +34,7 @@ class TestGetLogger:
             mock_logger.addHandler.assert_called_once()
             mock_logger.setLevel.assert_called_once_with(logging.INFO)
 
-    def test_no_duplicate_handlers(self):
+    def test_no_duplicate_handlers(self) -> None:
         """Test that handlers are not duplicated on multiple calls."""
         with patch("logging.getLogger") as mock_get_logger:
             mock_logger = mock_get_logger.return_value
@@ -46,7 +46,7 @@ class TestGetLogger:
             mock_logger.addHandler.assert_not_called()
             mock_logger.setLevel.assert_not_called()
 
-    def test_handler_formatter(self):
+    def test_handler_formatter(self) -> None:
         """Test that handler has proper formatter."""
         # Clear any existing loggers to ensure clean test
         logger_name = "test_formatter_logger"
@@ -77,7 +77,7 @@ class TestGetLogger:
         for component in expected_components:
             assert component in format_str
 
-    def test_logger_level(self):
+    def test_logger_level(self) -> None:
         """Test that logger is set to INFO level."""
         logger_name = "test_level_logger"
         if logger_name in logging.Logger.manager.loggerDict:
@@ -86,14 +86,14 @@ class TestGetLogger:
         logger = get_logger(logger_name)
         assert logger.level == logging.INFO
 
-    def test_same_logger_instance(self):
+    def test_same_logger_instance(self) -> None:
         """Test that same logger name returns same instance."""
         logger1 = get_logger("same_name")
         logger2 = get_logger("same_name")
 
         assert logger1 is logger2
 
-    def test_different_logger_instances(self):
+    def test_different_logger_instances(self) -> None:
         """Test that different logger names return different instances."""
         logger1 = get_logger("name1")
         logger2 = get_logger("name2")
@@ -105,7 +105,7 @@ class TestGetLogger:
 class TestLoggerFunctionality:
     """Test actual logging functionality."""
 
-    def test_logger_can_log_messages(self, caplog):
+    def test_logger_can_log_messages(self, caplog: pytest.LoggingPlugin) -> None:
         """Test that logger can actually log messages."""
         logger = get_logger("test_logging")
 
@@ -119,7 +119,7 @@ class TestLoggerFunctionality:
         assert "Test warning message" in caplog.text
         assert "Test error message" in caplog.text
 
-    def test_logger_debug_level_filtering(self, caplog):
+    def test_logger_debug_level_filtering(self, caplog: pytest.LoggingPlugin) -> None:
         """Test that DEBUG messages are filtered out by default."""
         logger = get_logger("test_debug")
 
@@ -142,7 +142,7 @@ class TestLoggerFunctionality:
         assert "Debug message" in caplog.text
         assert "Info message" in caplog.text
 
-    def test_logger_formatting_output(self, caplog):
+    def test_logger_formatting_output(self, caplog: pytest.LoggingPlugin) -> None:
         """Test that log messages are properly formatted."""
         logger = get_logger("test_format")
 
@@ -160,26 +160,26 @@ class TestLoggerFunctionality:
 class TestLoggerEdgeCases:
     """Test edge cases and error conditions."""
 
-    def test_logger_with_empty_name(self):
+    def test_logger_with_empty_name(self) -> None:
         """Test logger with empty string name."""
         logger = get_logger("")
         # Empty string gets converted to "pranaam" by our function
         assert logger.name == "pranaam"
         assert isinstance(logger, logging.Logger)
 
-    def test_logger_with_none_name(self):
+    def test_logger_with_none_name(self) -> None:
         """Test logger with None name (should use default)."""
         logger = get_logger(None)
         assert logger.name == "pranaam"
 
-    def test_logger_with_special_characters(self):
+    def test_logger_with_special_characters(self) -> None:
         """Test logger name with special characters."""
         special_name = "test.logger-with_special123"
         logger = get_logger(special_name)
         assert logger.name == special_name
 
     @patch("logging.StreamHandler")
-    def test_handler_creation_error(self, mock_handler):
+    def test_handler_creation_error(self, mock_handler: Mock) -> None:
         """Test handling of handler creation errors."""
         mock_handler.side_effect = Exception("Handler creation failed")
 
@@ -187,7 +187,7 @@ class TestLoggerEdgeCases:
         with pytest.raises(Exception, match="Handler creation failed"):
             get_logger("test_handler_error")
 
-    def test_multiple_calls_same_name(self):
+    def test_multiple_calls_same_name(self) -> None:
         """Test multiple calls with same name don't create duplicate config."""
         logger_name = "test_multiple_calls"
 
