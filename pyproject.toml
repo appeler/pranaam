@@ -99,7 +99,7 @@ markers = [
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests"
 ]
-# Uncomment when pytest-cov is installed:
+# Coverage options (enabled in CI)
 # addopts = "--cov=pranaam --cov-report=html --cov-report=term-missing"
 
 

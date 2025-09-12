@@ -1,5 +1,6 @@
 import sys
 from contextlib import contextmanager
+
 try:
     from StringIO import StringIO
 except Exception as e:

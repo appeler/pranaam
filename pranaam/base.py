@@ -10,17 +10,17 @@ logger = get_logger()
 
 class Base:
     """Base class for model data management and loading."""
-    
+
     MODELFN: Optional[str] = None
 
     @classmethod
     def load_model_data(cls, file_name: str, latest: bool = False) -> Optional[str]:
         """Load model data, downloading if necessary.
-        
+
         Args:
             file_name: Name of the model file to load
             latest: Whether to force download of latest version
-            
+
         Returns:
             Path to the model directory, or None if loading failed
         """
@@ -34,7 +34,9 @@ class Base:
                 os.makedirs(f"{model_fn}")
             if not os.path.exists(f"{model_fn}/{file_name}") or latest:
                 logger.debug(
-                    "Downloading model data from the server (this is done only first time) ({0!s})...".format(model_fn)
+                    "Downloading model data from the server (this is done only first time) ({0!s})...".format(
+                        model_fn
+                    )
                 )
                 if not download_file(REPO_BASE_URL, f"{model_fn}", file_name):
                     logger.error("ERROR: Cannot download model data file")

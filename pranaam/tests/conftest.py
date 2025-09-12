@@ -14,7 +14,7 @@ def sample_english_names():
     return ["Shah Rukh Khan", "Amitabh Bachchan", "Rajesh Khanna", "Mohammed Ali"]
 
 
-@pytest.fixture  
+@pytest.fixture
 def sample_hindi_names():
     """Sample Hindi names for testing."""
     return ["शाहरुख खान", "अमिताभ बच्चन", "राजेश खन्ना", "मोहम्मद अली"]
@@ -35,19 +35,22 @@ def expected_predictions():
 def mock_tensorflow_model():
     """Mock TensorFlow model for testing."""
     model = Mock()
-    
+
     # Mock prediction results - returns probabilities for [not-muslim, muslim]
     def mock_predict(names, verbose=0):
         results = []
         for name in names:
-            if any(muslim_name in str(name).lower() for muslim_name in ['shah', 'khan', 'mohammed', 'ali']):
+            if any(
+                muslim_name in str(name).lower()
+                for muslim_name in ["shah", "khan", "mohammed", "ali"]
+            ):
                 # Higher probability for muslim class
                 results.append([0.2, 0.8])
             else:
-                # Higher probability for not-muslim class  
+                # Higher probability for not-muslim class
                 results.append([0.8, 0.2])
         return np.array(results)
-    
+
     model.predict = mock_predict
     return model
 
@@ -67,8 +70,8 @@ def temp_model_dir():
 def mock_requests_get():
     """Mock requests.get for download testing."""
     mock_response = Mock()
-    mock_response.headers = {'Content-Length': '1000'}
-    mock_response.iter_content.return_value = [b'test data chunk']
+    mock_response.headers = {"Content-Length": "1000"}
+    mock_response.iter_content.return_value = [b"test data chunk"]
     mock_response.raise_for_status.return_value = None
     return mock_response
 
@@ -77,14 +80,14 @@ def mock_requests_get():
 def reset_naam_class():
     """Reset Naam class state between tests."""
     from pranaam.naam import Naam
-    
+
     # Store original values
     original_weights_loaded = Naam.weights_loaded
     original_model = Naam.model
     original_cur_lang = Naam.cur_lang
-    
+
     yield
-    
+
     # Reset to original values
     Naam.weights_loaded = original_weights_loaded
     Naam.model = original_model
@@ -96,6 +99,6 @@ def caplog_debug():
     """Capture log messages at DEBUG level."""
     import logging
     import pytest
-    
+
     with pytest.LogCapture(level=logging.DEBUG) as log_capture:
         yield log_capture
