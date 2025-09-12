@@ -29,7 +29,6 @@ class Base:
             # Use modern importlib.resources instead of deprecated pkg_resources
             package_dir = files(__package__)
             model_fn = str(package_dir / cls.MODELFN)
-            print(f"Model path {model_fn}")
             if not os.path.exists(model_fn):
                 os.makedirs(f"{model_fn}")
             if not os.path.exists(f"{model_fn}/{file_name}") or latest:

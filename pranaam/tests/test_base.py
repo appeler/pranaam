@@ -124,7 +124,9 @@ class TestBase:
         mock_files.return_value.__truediv__.return_value = "/fake/model/path"
 
         # Directory exists, but file doesn't exist
-        mock_exists.side_effect = lambda path: path == "/fake/model/path" and not path.endswith("/test_model")
+        mock_exists.side_effect = (
+            lambda path: path == "/fake/model/path" and not path.endswith("/test_model")
+        )
         mock_download.return_value = False  # Download fails
 
         class TestClass(Base):
@@ -202,7 +204,9 @@ class TestBaseLogging:
         mock_files.return_value.__truediv__.return_value = "/fake/model/path"
 
         # Directory exists, but file doesn't exist
-        mock_exists.side_effect = lambda path: path == "/fake/model/path" and not path.endswith("/test_model")
+        mock_exists.side_effect = (
+            lambda path: path == "/fake/model/path" and not path.endswith("/test_model")
+        )
         mock_download.return_value = True
 
         class TestClass(Base):
@@ -253,7 +257,9 @@ class TestBaseLogging:
         mock_files.return_value.__truediv__.return_value = "/fake/model/path"
 
         # Directory exists, but file doesn't exist
-        mock_exists.side_effect = lambda path: path == "/fake/model/path" and not path.endswith("/test_model")
+        mock_exists.side_effect = (
+            lambda path: path == "/fake/model/path" and not path.endswith("/test_model")
+        )
         mock_download.return_value = False  # Download fails
 
         class TestClass(Base):
