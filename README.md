@@ -47,13 +47,7 @@ We strongly recommend installing pranaam inside a Python virtual environment. (s
 pip install pranaam
 ```
 
-### If You Encounter Model Loading Issues
-
-If you see TensorFlow/Keras compatibility errors, install the compatible version:
-
-```bash
-pip install 'pranaam[tensorflow-compat]'
-```
+This installs TensorFlow 2.14.1, which is known to work correctly with the models.
 
 ### Requirements
 

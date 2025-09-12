@@ -55,7 +55,7 @@ class Naam(Base):
 
         Raises:
             ValueError: If invalid language specified
-            RuntimeError: If model loading fails
+            RuntimeError: If model loading fails or TensorFlow not available
         """
         if lang not in ["eng", "hin"]:
             raise ValueError(f"Unsupported language: {lang}. Use 'eng' or 'hin'")
