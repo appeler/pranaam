@@ -51,7 +51,7 @@ jobs:
     - name: Build package
       if: matrix.python-version == '3.11'
       run: |
-        pip install build
+        pip install build twine
         python -m build
         python -m twine check dist/* --strict
 
