@@ -37,22 +37,22 @@ def download_file(url: str, target: str, file_name: str) -> bool:
                 REPO_BASE_URL, stream=True, allow_redirects=True, timeout=30
             )
             response.raise_for_status()
-        content_length = response.headers.get("Content-Length")
-        total_size = int(content_length) if content_length else None
+            content_length = response.headers.get("Content-Length")
+            total_size = int(content_length) if content_length else None
 
-        with tqdm(
-            total=total_size,
-            unit="iB",
-            unit_scale=True,
-            desc=file_name,
-            ascii=True,
-            colour="cyan",
-        ) as pbar:
-            with open(file_path, "wb") as file_handle:
-                for chunk in response.iter_content(chunk_size=1024**2):
-                    if chunk:  # filter out keep-alive chunks
-                        size = file_handle.write(chunk)
-                        pbar.update(size)
+            with tqdm(
+                total=total_size,
+                unit="iB",
+                unit_scale=True,
+                desc=file_name,
+                ascii=True,
+                colour="cyan",
+            ) as pbar:
+                with open(file_path, "wb") as file_handle:
+                    for chunk in response.iter_content(chunk_size=1024**2):
+                        if chunk:  # filter out keep-alive chunks
+                            size = file_handle.write(chunk)
+                            pbar.update(size)
         # Extract tar file with safety checks
         _safe_extract_tar(file_path, target)
         # Clean up downloaded tar file

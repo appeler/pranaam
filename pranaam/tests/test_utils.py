@@ -18,8 +18,14 @@ class TestDownloadFile:
     @patch("pranaam.utils._safe_extract_tar")
     @patch("builtins.open", new_callable=mock_open)
     @patch("os.remove")
+    @patch("pranaam.utils.tqdm")
     def test_successful_download(
-        self, mock_remove: Mock, mock_file: Mock, mock_extract: Mock, mock_session: Mock
+        self,
+        mock_tqdm: Mock,
+        mock_remove: Mock,
+        mock_file: Mock,
+        mock_extract: Mock,
+        mock_session: Mock,
     ) -> None:
         """Test successful file download and extraction."""
         # Setup mocks
@@ -31,6 +37,9 @@ class TestDownloadFile:
         mock_session_instance = Mock()
         mock_session_instance.get.return_value = mock_response
         mock_session.return_value.__enter__.return_value = mock_session_instance
+
+        # Mock tqdm context manager
+        mock_tqdm.return_value.__enter__.return_value.update = Mock()
 
         # Call function
         result = download_file("http://test.com", "/tmp/target", "test_file")
@@ -99,7 +108,10 @@ class TestDownloadFile:
 
     @patch("pranaam.utils.requests.Session")
     @patch("builtins.open", new_callable=mock_open)
-    def test_no_content_length(self, mock_file: Mock, mock_session: Mock) -> None:
+    @patch("pranaam.utils.tqdm")
+    def test_no_content_length(
+        self, mock_tqdm: Mock, mock_file: Mock, mock_session: Mock
+    ) -> None:
         """Test handling when Content-Length header is missing."""
         mock_response = Mock()
         mock_response.headers = {}  # No Content-Length
@@ -109,6 +121,9 @@ class TestDownloadFile:
         mock_session_instance = Mock()
         mock_session_instance.get.return_value = mock_response
         mock_session.return_value.__enter__.return_value = mock_session_instance
+
+        # Mock tqdm context manager
+        mock_tqdm.return_value.__enter__.return_value.update = Mock()
 
         with patch("pranaam.utils._safe_extract_tar"):
             with patch("os.remove"):
@@ -160,8 +175,12 @@ class TestSafeExtractTar:
             with tarfile.open(tar_path, "w:gz") as tar:
                 # Create a TarInfo object with malicious path
                 info = tarfile.TarInfo(name="../../../malicious.txt")
-                info.size = len(b"malicious content")
-                tar.addfile(info, fileobj=tempfile.NamedTemporaryFile(delete=False))
+                content = b"malicious content"
+                info.size = len(content)
+                # Create a temporary file with the actual content
+                import io
+
+                tar.addfile(info, fileobj=io.BytesIO(content))
 
             extract_dir = os.path.join(temp_dir, "extracted")
             os.makedirs(extract_dir)
@@ -238,8 +257,14 @@ class TestErrorLogging:
     @patch("pranaam.utils.requests.Session")
     @patch("pranaam.utils._safe_extract_tar")
     @patch("builtins.open", new_callable=mock_open)
+    @patch("pranaam.utils.tqdm")
     def test_extraction_error_logging(
-        self, mock_file: Mock, mock_extract: Mock, mock_session: Mock, mock_logger: Mock
+        self,
+        mock_tqdm: Mock,
+        mock_file: Mock,
+        mock_extract: Mock,
+        mock_session: Mock,
+        mock_logger: Mock,
     ) -> None:
         """Test that extraction errors are logged properly."""
         # Setup successful download
@@ -251,6 +276,9 @@ class TestErrorLogging:
         mock_session_instance = Mock()
         mock_session_instance.get.return_value = mock_response
         mock_session.return_value.__enter__.return_value = mock_session_instance
+
+        # Mock tqdm context manager
+        mock_tqdm.return_value.__enter__.return_value.update = Mock()
 
         # Setup extraction failure
         mock_extract.side_effect = tarfile.TarError("Extraction failed")

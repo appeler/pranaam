@@ -139,6 +139,8 @@ class TestLoggerFunctionality:
         # Clear and test at DEBUG level - debug should appear
         caplog.clear()
         with caplog.at_level(logging.DEBUG):
+            # Ensure logger accepts DEBUG level
+            logger.setLevel(logging.DEBUG)
             logger.debug("Debug message")
             logger.info("Info message")
 

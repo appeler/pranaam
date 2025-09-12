@@ -140,15 +140,18 @@ class TestNaamPredictions:
     def test_prediction_probabilities(self, mock_load_model: Mock) -> None:
         """Test probability calculations."""
         mock_model = Mock()
-        mock_model.predict.return_value = np.array([[0.3, 0.7]])
+        # Mock raw logits that will become [0.3, 0.7] after softmax
+        # Using logits that softmax to approximately [0.4, 0.6] (60% muslim)
+        mock_model.predict.return_value = np.array([[0.0, 0.405]])
         Naam.model = mock_model
         Naam.weights_loaded = True
         Naam.cur_lang = "eng"
 
         result = Naam.pred_rel(["Test Name"])
 
-        # Probability should be rounded percentage of muslim class
-        expected_prob = np.around(0.7 * 100)  # 70
+        # Probability should be rounded percentage of muslim class after softmax
+        # softmax([0.0, 0.405]) ≈ [0.4, 0.6] -> 60% muslim
+        expected_prob = 60.0
         assert result.iloc[0]["pred_prob_muslim"] == expected_prob
 
 
