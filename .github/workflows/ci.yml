@@ -24,7 +24,6 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        # Install with tensorflow-compat for guaranteed compatibility
         pip install -e .[test,dev,tensorflow-compat]
         
     - name: Verify installation
