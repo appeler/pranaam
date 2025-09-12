@@ -22,8 +22,9 @@ class TestCLIMain:
 
     def test_missing_required_argument(self) -> None:
         """Test that missing --input argument returns error."""
-        result = main([])
-        assert result == 1
+        with pytest.raises(SystemExit) as exc_info:
+            main([])
+        assert exc_info.value.code == 2
 
     @patch("pranaam.pranaam.pred_rel")
     def test_successful_prediction(self, mock_pred_rel: Mock) -> None:
@@ -99,8 +100,9 @@ class TestCLIMain:
 
     def test_invalid_language(self) -> None:
         """Test invalid language option."""
-        result = main(["--input", "Test Name", "--lang", "invalid"])
-        assert result == 1
+        with pytest.raises(SystemExit) as exc_info:
+            main(["--input", "Test Name", "--lang", "invalid"])
+        assert exc_info.value.code == 2
 
     @patch("pranaam.pranaam.pred_rel")
     def test_prediction_error_handling(self, mock_pred_rel: Mock) -> None:
@@ -210,8 +212,9 @@ class TestCLIArgumentValidation:
 
     def test_required_input_argument(self) -> None:
         """Test that input argument is required."""
-        result = main(["--lang", "eng"])  # Missing --input
-        assert result == 1
+        with pytest.raises(SystemExit) as exc_info:
+            main(["--lang", "eng"])  # Missing --input
+        assert exc_info.value.code == 2
 
     def test_input_argument_accepts_any_string(self) -> None:
         """Test that input accepts various string types."""
@@ -263,8 +266,9 @@ class TestCLIArgumentValidation:
 
         # Invalid languages should fail
         for lang in invalid_langs:
-            result = main(["--input", "Test", "--lang", lang])
-            assert result == 1
+            with pytest.raises(SystemExit) as exc_info:
+                main(["--input", "Test", "--lang", lang])
+            assert exc_info.value.code == 2
 
 
 class TestCLIErrorHandling:

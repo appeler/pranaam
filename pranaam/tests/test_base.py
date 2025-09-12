@@ -43,9 +43,8 @@ class TestBase:
         # Setup mocks
         mock_files.return_value.__truediv__.return_value = "/fake/model/path"
 
-        mock_exists.side_effect = (
-            lambda path: path == "/fake/model/path"
-        )  # Dir exists, file doesn't
+        # Directory doesn't exist (so makedirs gets called), file doesn't exist (so download gets called)
+        mock_exists.return_value = False
         mock_download.return_value = True
 
         # Create test class
@@ -124,9 +123,8 @@ class TestBase:
         """Test handling of download failure."""
         mock_files.return_value.__truediv__.return_value = "/fake/model/path"
 
-        mock_exists.side_effect = (
-            lambda path: path == "/fake/model/path"
-        )  # Dir exists, file doesn't
+        # Directory exists, but file doesn't exist
+        mock_exists.side_effect = lambda path: path == "/fake/model/path" and not path.endswith("/test_model")
         mock_download.return_value = False  # Download fails
 
         class TestClass(Base):
@@ -203,9 +201,8 @@ class TestBaseLogging:
         """Test debug logging during download."""
         mock_files.return_value.__truediv__.return_value = "/fake/model/path"
 
-        mock_exists.side_effect = (
-            lambda path: path == "/fake/model/path"
-        )  # Dir exists, file doesn't
+        # Directory exists, but file doesn't exist
+        mock_exists.side_effect = lambda path: path == "/fake/model/path" and not path.endswith("/test_model")
         mock_download.return_value = True
 
         class TestClass(Base):
@@ -255,9 +252,8 @@ class TestBaseLogging:
         """Test error logging when download fails."""
         mock_files.return_value.__truediv__.return_value = "/fake/model/path"
 
-        mock_exists.side_effect = (
-            lambda path: path == "/fake/model/path"
-        )  # Dir exists, file doesn't
+        # Directory exists, but file doesn't exist
+        mock_exists.side_effect = lambda path: path == "/fake/model/path" and not path.endswith("/test_model")
         mock_download.return_value = False  # Download fails
 
         class TestClass(Base):
