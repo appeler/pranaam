@@ -1,0 +1,487 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Examples &mdash; pranaam 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Contributing" href="contributing.html" />
+    <link rel="prev" title="API Reference" href="api.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            pranaam
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basic-examples">Basic Examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#single-name-prediction">Single Name Prediction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#multiple-names">Multiple Names</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#data-analysis-examples">Data Analysis Examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#working-with-csv-files">Working with CSV Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#batch-processing">Batch Processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#statistical-analysis">Statistical Analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#hindi-language-examples">Hindi Language Examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#devanagari-script">Devanagari Script</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mixed-script-dataset">Mixed Script Dataset</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#advanced-usage">Advanced Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#custom-confidence-thresholds">Custom Confidence Thresholds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#error-handling">Error Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#performance-optimization">Performance Optimization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#integration-examples">Integration Examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#flask-web-application">Flask Web Application</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#command-line-scripts">Command Line Scripts</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#real-world-use-cases">Real-world Use Cases</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#research-applications">Research Applications</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#business-intelligence">Business Intelligence</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pranaam</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Examples</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/examples.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="examples">
+<h1>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h1>
+<p>This page contains practical examples of using pranaam in various scenarios.</p>
+<section id="basic-examples">
+<h2>Basic Examples<a class="headerlink" href="#basic-examples" title="Link to this heading"></a></h2>
+<section id="single-name-prediction">
+<h3>Single Name Prediction<a class="headerlink" href="#single-name-prediction" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pranaam</span>
+
+<span class="c1"># Basic prediction</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">pranaam</span><span class="o">.</span><span class="n">pred_rel</span><span class="p">(</span><span class="s2">&quot;Abdul Kalam&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+<span class="c1"># Output:</span>
+<span class="c1">#        name pred_label  pred_prob_muslim</span>
+<span class="c1"># 0  Abdul Kalam     muslim              85.5</span>
+</pre></div>
+</div>
+</section>
+<section id="multiple-names">
+<h3>Multiple Names<a class="headerlink" href="#multiple-names" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pranaam</span>
+
+<span class="c1"># List of names</span>
+<span class="n">bollywood_actors</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;Shah Rukh Khan&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Amitabh Bachchan&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Salman Khan&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Aamir Khan&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Akshay Kumar&quot;</span>
+<span class="p">]</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="n">pranaam</span><span class="o">.</span><span class="n">pred_rel</span><span class="p">(</span><span class="n">bollywood_actors</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="s2">&quot;eng&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="data-analysis-examples">
+<h2>Data Analysis Examples<a class="headerlink" href="#data-analysis-examples" title="Link to this heading"></a></h2>
+<section id="working-with-csv-files">
+<h3>Working with CSV Files<a class="headerlink" href="#working-with-csv-files" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pranaam</span>
+
+<span class="c1"># Read names from CSV</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;names.csv&#39;</span><span class="p">)</span>
+
+<span class="c1"># Predict religion for name column</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">pranaam</span><span class="o">.</span><span class="n">pred_rel</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span> <span class="n">lang</span><span class="o">=</span><span class="s2">&quot;eng&quot;</span><span class="p">)</span>
+
+<span class="c1"># Merge predictions with original data</span>
+<span class="n">df_with_predictions</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="p">,</span> <span class="n">predictions</span><span class="p">[[</span><span class="s1">&#39;pred_label&#39;</span><span class="p">,</span> <span class="s1">&#39;pred_prob_muslim&#39;</span><span class="p">]]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Save results</span>
+<span class="n">df_with_predictions</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;results.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="batch-processing">
+<h3>Batch Processing<a class="headerlink" href="#batch-processing" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pranaam</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">process_large_dataset</span><span class="p">(</span><span class="n">names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Process large datasets in batches to manage memory.&quot;&quot;&quot;</span>
+    <span class="n">all_results</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">),</span> <span class="n">batch_size</span><span class="p">):</span>
+        <span class="n">batch</span> <span class="o">=</span> <span class="n">names</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="n">batch_size</span><span class="p">]</span>
+        <span class="n">batch_results</span> <span class="o">=</span> <span class="n">pranaam</span><span class="o">.</span><span class="n">pred_rel</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="s2">&quot;eng&quot;</span><span class="p">)</span>
+        <span class="n">all_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batch_results</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processed batch </span><span class="si">{</span><span class="n">i</span><span class="o">//</span><span class="n">batch_size</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">//</span><span class="n">batch_size</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">all_results</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Usage</span>
+<span class="n">large_name_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Name&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10000</span><span class="p">)]</span>  <span class="c1"># Your actual names</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">process_large_dataset</span><span class="p">(</span><span class="n">large_name_list</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="statistical-analysis">
+<h3>Statistical Analysis<a class="headerlink" href="#statistical-analysis" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pranaam</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+<span class="c1"># Sample dataset</span>
+<span class="n">politicians</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;Narendra Modi&quot;</span><span class="p">,</span> <span class="s2">&quot;Rahul Gandhi&quot;</span><span class="p">,</span> <span class="s2">&quot;Mamata Banerjee&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Arvind Kejriwal&quot;</span><span class="p">,</span> <span class="s2">&quot;Yogi Adityanath&quot;</span><span class="p">,</span> <span class="s2">&quot;Akhilesh Yadav&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Mayawati&quot;</span><span class="p">,</span> <span class="s2">&quot;Sharad Pawar&quot;</span><span class="p">,</span> <span class="s2">&quot;Uddhav Thackeray&quot;</span>
+<span class="p">]</span>
+
+<span class="c1"># Get predictions</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">pranaam</span><span class="o">.</span><span class="n">pred_rel</span><span class="p">(</span><span class="n">politicians</span><span class="p">)</span>
+
+<span class="c1"># Statistical summary</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Religion Distribution:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;pred_label&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">())</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Average Confidence Scores:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">results</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;pred_label&#39;</span><span class="p">)[</span><span class="s1">&#39;pred_prob_muslim&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+
+<span class="c1"># Visualization</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;pred_prob_muslim&#39;</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Muslim Probability Score&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Count&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Distribution of Prediction Confidence Scores&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="hindi-language-examples">
+<h2>Hindi Language Examples<a class="headerlink" href="#hindi-language-examples" title="Link to this heading"></a></h2>
+<section id="devanagari-script">
+<h3>Devanagari Script<a class="headerlink" href="#devanagari-script" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pranaam</span>
+
+<span class="c1"># Hindi names in Devanagari script</span>
+<span class="n">hindi_names</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;शाहरुख खान&quot;</span><span class="p">,</span>     <span class="c1"># Shah Rukh Khan</span>
+    <span class="s2">&quot;अमिताभ बच्चन&quot;</span><span class="p">,</span>    <span class="c1"># Amitabh Bachchan</span>
+    <span class="s2">&quot;आमिर खान&quot;</span><span class="p">,</span>       <span class="c1"># Aamir Khan</span>
+    <span class="s2">&quot;अक्षय कुमार&quot;</span><span class="p">,</span>     <span class="c1"># Akshay Kumar</span>
+    <span class="s2">&quot;सलमान खान&quot;</span>       <span class="c1"># Salman Khan</span>
+<span class="p">]</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="n">pranaam</span><span class="o">.</span><span class="n">pred_rel</span><span class="p">(</span><span class="n">hindi_names</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="s2">&quot;hin&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="mixed-script-dataset">
+<h3>Mixed Script Dataset<a class="headerlink" href="#mixed-script-dataset" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pranaam</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="c1"># Dataset with mixed English and Hindi names</span>
+<span class="n">mixed_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Shah Rukh Khan&quot;</span><span class="p">,</span> <span class="s2">&quot;शाहरुख खान&quot;</span><span class="p">,</span> <span class="s2">&quot;Amitabh Bachchan&quot;</span><span class="p">,</span> <span class="s2">&quot;अमिताभ बच्चन&quot;</span><span class="p">],</span>
+    <span class="s1">&#39;script&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;English&#39;</span><span class="p">,</span> <span class="s1">&#39;Hindi&#39;</span><span class="p">,</span> <span class="s1">&#39;English&#39;</span><span class="p">,</span> <span class="s1">&#39;Hindi&#39;</span><span class="p">]</span>
+<span class="p">})</span>
+
+<span class="c1"># Process by script type</span>
+<span class="n">english_results</span> <span class="o">=</span> <span class="n">pranaam</span><span class="o">.</span><span class="n">pred_rel</span><span class="p">(</span>
+    <span class="n">mixed_data</span><span class="p">[</span><span class="n">mixed_data</span><span class="p">[</span><span class="s1">&#39;script&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;English&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+    <span class="n">lang</span><span class="o">=</span><span class="s2">&quot;eng&quot;</span>
+<span class="p">)</span>
+
+<span class="n">hindi_results</span> <span class="o">=</span> <span class="n">pranaam</span><span class="o">.</span><span class="n">pred_rel</span><span class="p">(</span>
+    <span class="n">mixed_data</span><span class="p">[</span><span class="n">mixed_data</span><span class="p">[</span><span class="s1">&#39;script&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Hindi&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+    <span class="n">lang</span><span class="o">=</span><span class="s2">&quot;hin&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># Combine results</span>
+<span class="n">all_results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">english_results</span><span class="p">,</span> <span class="n">hindi_results</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="advanced-usage">
+<h2>Advanced Usage<a class="headerlink" href="#advanced-usage" title="Link to this heading"></a></h2>
+<section id="custom-confidence-thresholds">
+<h3>Custom Confidence Thresholds<a class="headerlink" href="#custom-confidence-thresholds" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pranaam</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="c1"># Get predictions with custom confidence analysis</span>
+<span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Mohammed Ali&quot;</span><span class="p">,</span> <span class="s2">&quot;John Smith&quot;</span><span class="p">,</span> <span class="s2">&quot;Ahmad Khan&quot;</span><span class="p">,</span> <span class="s2">&quot;David Wilson&quot;</span><span class="p">]</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">pranaam</span><span class="o">.</span><span class="n">pred_rel</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+
+<span class="c1"># Add confidence categories</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">categorize_confidence</span><span class="p">(</span><span class="n">prob</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">prob</span> <span class="o">&gt;=</span> <span class="mi">80</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;High&quot;</span>
+    <span class="k">elif</span> <span class="n">prob</span> <span class="o">&gt;=</span> <span class="mi">60</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;Medium&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;Low&quot;</span>
+
+<span class="n">results</span><span class="p">[</span><span class="s1">&#39;confidence_level&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;pred_prob_muslim&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">categorize_confidence</span><span class="p">)</span>
+
+<span class="c1"># Filter high-confidence predictions only</span>
+<span class="n">high_confidence</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;confidence_level&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;High&#39;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;High confidence predictions:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">high_confidence</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="error-handling">
+<h3>Error Handling<a class="headerlink" href="#error-handling" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pranaam</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">safe_predict</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="s2">&quot;eng&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Predict with error handling.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">pranaam</span><span class="o">.</span><span class="n">pred_rel</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="n">lang</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">results</span>
+    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ValueError: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">FileNotFoundError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Model file error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+<span class="c1"># Usage</span>
+<span class="n">problematic_input</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Valid Name&quot;</span><span class="p">]</span>  <span class="c1"># Contains invalid entries</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">safe_predict</span><span class="p">([</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">problematic_input</span> <span class="k">if</span> <span class="n">name</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+<section id="performance-optimization">
+<h3>Performance Optimization<a class="headerlink" href="#performance-optimization" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pranaam</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+<span class="c1"># Preload models for better performance in production</span>
+<span class="c1"># First call loads the model into memory</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">pranaam</span><span class="o">.</span><span class="n">pred_rel</span><span class="p">(</span><span class="s2">&quot;Test Name&quot;</span><span class="p">)</span>
+
+<span class="c1"># Subsequent calls are faster</span>
+<span class="n">large_dataset</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Name&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">)]</span>
+
+<span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">pranaam</span><span class="o">.</span><span class="n">pred_rel</span><span class="p">(</span><span class="n">large_dataset</span><span class="p">)</span>
+<span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processed </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">large_dataset</span><span class="p">)</span><span class="si">}</span><span class="s2"> names in </span><span class="si">{</span><span class="n">end_time</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Average: </span><span class="si">{</span><span class="p">(</span><span class="n">end_time</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">large_dataset</span><span class="p">)</span><span class="o">*</span><span class="mi">1000</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> ms per name&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="integration-examples">
+<h2>Integration Examples<a class="headerlink" href="#integration-examples" title="Link to this heading"></a></h2>
+<section id="flask-web-application">
+<h3>Flask Web Application<a class="headerlink" href="#flask-web-application" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flask</span><span class="w"> </span><span class="kn">import</span> <span class="n">Flask</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">jsonify</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pranaam</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/predict&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">predict_religion</span><span class="p">():</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">json</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;names&#39;</span><span class="p">,</span> <span class="p">[])</span>
+    <span class="n">lang</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;lang&#39;</span><span class="p">,</span> <span class="s1">&#39;eng&#39;</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">pranaam</span><span class="o">.</span><span class="n">pred_rel</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="n">lang</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">results</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s1">&#39;records&#39;</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)}),</span> <span class="mi">400</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="command-line-scripts">
+<h3>Command Line Scripts<a class="headerlink" href="#command-line-scripts" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Using the built-in CLI</span>
+predict_religion<span class="w"> </span>--input<span class="w"> </span><span class="s2">&quot;Shah Rukh Khan&quot;</span><span class="w"> </span>--lang<span class="w"> </span>eng
+
+<span class="c1"># Batch processing from file</span>
+predict_religion<span class="w"> </span>--input-file<span class="w"> </span>names.txt<span class="w"> </span>--output-file<span class="w"> </span>results.csv<span class="w"> </span>--lang<span class="w"> </span>eng
+</pre></div>
+</div>
+</section>
+</section>
+<section id="real-world-use-cases">
+<h2>Real-world Use Cases<a class="headerlink" href="#real-world-use-cases" title="Link to this heading"></a></h2>
+<section id="research-applications">
+<h3>Research Applications<a class="headerlink" href="#research-applications" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pranaam</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="c1"># Academic research on name-based demographics</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">analyze_author_demographics</span><span class="p">(</span><span class="n">author_names</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Analyze religious demographics of academic authors.&quot;&quot;&quot;</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">pranaam</span><span class="o">.</span><span class="n">pred_rel</span><span class="p">(</span><span class="n">author_names</span><span class="p">)</span>
+
+    <span class="c1"># Calculate statistics</span>
+    <span class="n">total_authors</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+    <span class="n">muslim_authors</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;pred_label&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;muslim&#39;</span><span class="p">])</span>
+
+    <span class="n">demographics</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;total_authors&#39;</span><span class="p">:</span> <span class="n">total_authors</span><span class="p">,</span>
+        <span class="s1">&#39;muslim_percentage&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">muslim_authors</span> <span class="o">/</span> <span class="n">total_authors</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="s1">&#39;non_muslim_percentage&#39;</span><span class="p">:</span> <span class="p">((</span><span class="n">total_authors</span> <span class="o">-</span> <span class="n">muslim_authors</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_authors</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">demographics</span><span class="p">,</span> <span class="n">results</span>
+
+<span class="c1"># Example usage</span>
+<span class="n">ieee_authors</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;A. Sharma&quot;</span><span class="p">,</span> <span class="s2">&quot;M. Ahmed&quot;</span><span class="p">,</span> <span class="s2">&quot;R. Singh&quot;</span><span class="p">,</span> <span class="s2">&quot;S. Ali&quot;</span><span class="p">]</span>
+<span class="n">stats</span><span class="p">,</span> <span class="n">detailed_results</span> <span class="o">=</span> <span class="n">analyze_author_demographics</span><span class="p">(</span><span class="n">ieee_authors</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="business-intelligence">
+<h3>Business Intelligence<a class="headerlink" href="#business-intelligence" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pranaam</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="c1"># Customer base analysis</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">analyze_customer_base</span><span class="p">(</span><span class="n">customer_df</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Analyze customer demographics for business insights.&quot;&quot;&quot;</span>
+    <span class="c1"># Predict religion from customer names</span>
+    <span class="n">predictions</span> <span class="o">=</span> <span class="n">pranaam</span><span class="o">.</span><span class="n">pred_rel</span><span class="p">(</span><span class="n">customer_df</span><span class="p">[</span><span class="s1">&#39;customer_name&#39;</span><span class="p">])</span>
+
+    <span class="c1"># Merge with customer data</span>
+    <span class="n">analysis_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">customer_df</span><span class="p">,</span> <span class="n">predictions</span><span class="p">[[</span><span class="s1">&#39;pred_label&#39;</span><span class="p">,</span> <span class="s1">&#39;pred_prob_muslim&#39;</span><span class="p">]]],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Business insights</span>
+    <span class="n">demographic_summary</span> <span class="o">=</span> <span class="n">analysis_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;pred_label&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">({</span>
+        <span class="s1">&#39;purchase_amount&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;sum&#39;</span><span class="p">,</span> <span class="s1">&#39;count&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;pred_prob_muslim&#39;</span><span class="p">:</span> <span class="s1">&#39;mean&#39;</span>
+    <span class="p">})</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">analysis_df</span><span class="p">,</span> <span class="n">demographic_summary</span>
+
+<span class="c1"># Example usage</span>
+<span class="n">customer_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s1">&#39;customer_name&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Ahmed Khan&#39;</span><span class="p">,</span> <span class="s1">&#39;Priya Sharma&#39;</span><span class="p">,</span> <span class="s1">&#39;Mohammad Ali&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;purchase_amount&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1500</span><span class="p">,</span> <span class="mi">2000</span><span class="p">,</span> <span class="mi">1200</span><span class="p">]</span>
+<span class="p">})</span>
+
+<span class="n">results</span><span class="p">,</span> <span class="n">summary</span> <span class="o">=</span> <span class="n">analyze_customer_base</span><span class="p">(</span><span class="n">customer_data</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="api.html" class="btn btn-neutral float-left" title="API Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="contributing.html" class="btn btn-neutral float-right" title="Contributing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2025, Rajashekar Chintalapati, Aaditya Dar, Gaurav Sood.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

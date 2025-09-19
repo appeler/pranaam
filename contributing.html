@@ -1,0 +1,428 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contributing &mdash; pranaam 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=01f34227"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Examples" href="examples.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            pranaam
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#code-of-conduct">Code of Conduct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#getting-started">Getting Started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#development-setup">Development Setup</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#development-workflow">Development Workflow</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#code-quality-standards">Code Quality Standards</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-tests">Running Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#code-quality-checks">Code Quality Checks</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#types-of-contributions">Types of Contributions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#bug-reports">Bug Reports</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#feature-requests">Feature Requests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#code-contributions">Code Contributions</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#submission-guidelines">Submission Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pull-request-process">Pull Request Process</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pull-request-requirements">Pull Request Requirements</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#code-style-guidelines">Code Style Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#python-code-style">Python Code Style</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#documentation-style">Documentation Style</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#testing-guidelines">Testing Guidelines</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#project-structure">Project Structure</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#understanding-the-codebase">Understanding the Codebase</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#key-components">Key Components</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-process">Release Process</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#version-management">Version Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#release-checklist">Release Checklist</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#communication">Communication</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#getting-help">Getting Help</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#maintainer-response">Maintainer Response</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#recognition">Recognition</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pranaam</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Contributing</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/contributing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="contributing">
+<h1>Contributing<a class="headerlink" href="#contributing" title="Link to this heading"></a></h1>
+<p>We welcome contributions to pranaam! This guide will help you get started.</p>
+<section id="code-of-conduct">
+<h2>Code of Conduct<a class="headerlink" href="#code-of-conduct" title="Link to this heading"></a></h2>
+<p>The project welcomes contributions from everyone! It depends on it. To maintain this welcoming atmosphere and to collaborate in a fun and productive way, we expect contributors to the project to abide by the <a class="reference external" href="http://contributor-covenant.org/version/1/0/0/">Contributor Code of Conduct</a>.</p>
+</section>
+<section id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h2>
+<section id="development-setup">
+<h3>Development Setup<a class="headerlink" href="#development-setup" title="Link to this heading"></a></h3>
+<ol class="arabic">
+<li><p>Fork the repository on GitHub</p></li>
+<li><p>Clone your fork locally:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/yourusername/pranaam.git
+<span class="nb">cd</span><span class="w"> </span>pranaam
+</pre></div>
+</div>
+</li>
+<li><p>Create a virtual environment:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
+<span class="nb">source</span><span class="w"> </span>venv/bin/activate<span class="w">  </span><span class="c1"># On Windows: venv\Scripts\activate</span>
+</pre></div>
+</div>
+</li>
+<li><p>Install development dependencies:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="o">[</span>dev,test,docs<span class="o">]</span>
+</pre></div>
+</div>
+</li>
+<li><p>Install pre-commit hooks:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pre-commit<span class="w"> </span>install
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<section id="development-workflow">
+<h2>Development Workflow<a class="headerlink" href="#development-workflow" title="Link to this heading"></a></h2>
+<section id="code-quality-standards">
+<h3>Code Quality Standards<a class="headerlink" href="#code-quality-standards" title="Link to this heading"></a></h3>
+<p>We maintain high code quality standards:</p>
+<ul class="simple">
+<li><p><strong>Type Safety</strong>: 100% MyPy compliance required</p></li>
+<li><p><strong>Code Formatting</strong>: Black formatting (line length 88)</p></li>
+<li><p><strong>Testing</strong>: Comprehensive test coverage</p></li>
+<li><p><strong>Documentation</strong>: All public APIs must be documented</p></li>
+</ul>
+</section>
+<section id="running-tests">
+<h3>Running Tests<a class="headerlink" href="#running-tests" title="Link to this heading"></a></h3>
+<p>Run the full test suite:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest
+</pre></div>
+</div>
+<p>Run specific test categories:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>-m<span class="w"> </span>unit<span class="w">          </span><span class="c1"># Unit tests only</span>
+pytest<span class="w"> </span>-m<span class="w"> </span>integration<span class="w">   </span><span class="c1"># Integration tests only</span>
+pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;not slow&quot;</span><span class="w">    </span><span class="c1"># Skip slow tests</span>
+</pre></div>
+</div>
+<p>Run with coverage:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>--cov<span class="o">=</span>pranaam<span class="w"> </span>--cov-report<span class="o">=</span>html
+</pre></div>
+</div>
+</section>
+<section id="code-quality-checks">
+<h3>Code Quality Checks<a class="headerlink" href="#code-quality-checks" title="Link to this heading"></a></h3>
+<p>Format code with Black:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>black<span class="w"> </span>pranaam/
+</pre></div>
+</div>
+<p>Type check with MyPy:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mypy<span class="w"> </span>pranaam/
+</pre></div>
+</div>
+<p>Both commands must pass without errors before submitting a PR.</p>
+</section>
+</section>
+<section id="types-of-contributions">
+<h2>Types of Contributions<a class="headerlink" href="#types-of-contributions" title="Link to this heading"></a></h2>
+<section id="bug-reports">
+<h3>Bug Reports<a class="headerlink" href="#bug-reports" title="Link to this heading"></a></h3>
+<p>When reporting bugs, please include:</p>
+<ul class="simple">
+<li><p>Python version and operating system</p></li>
+<li><p>TensorFlow version</p></li>
+<li><p>Complete error traceback</p></li>
+<li><p>Minimal code example to reproduce the issue</p></li>
+<li><p>Expected vs. actual behavior</p></li>
+</ul>
+</section>
+<section id="feature-requests">
+<h3>Feature Requests<a class="headerlink" href="#feature-requests" title="Link to this heading"></a></h3>
+<p>Before submitting feature requests:</p>
+<ul class="simple">
+<li><p>Check existing issues and discussions</p></li>
+<li><p>Provide clear use case and rationale</p></li>
+<li><p>Consider implementation complexity</p></li>
+<li><p>Discuss API design implications</p></li>
+</ul>
+</section>
+<section id="code-contributions">
+<h3>Code Contributions<a class="headerlink" href="#code-contributions" title="Link to this heading"></a></h3>
+<p>Areas where we welcome contributions:</p>
+<ul class="simple">
+<li><p><strong>New Language Support</strong>: Adding support for additional Indian languages</p></li>
+<li><p><strong>Model Improvements</strong>: Better accuracy or efficiency</p></li>
+<li><p><strong>Performance Optimizations</strong>: Faster prediction times</p></li>
+<li><p><strong>Documentation</strong>: Improved examples and guides</p></li>
+<li><p><strong>Testing</strong>: Additional test cases and edge cases</p></li>
+<li><p><strong>Bug Fixes</strong>: Resolving reported issues</p></li>
+</ul>
+</section>
+</section>
+<section id="submission-guidelines">
+<h2>Submission Guidelines<a class="headerlink" href="#submission-guidelines" title="Link to this heading"></a></h2>
+<section id="pull-request-process">
+<h3>Pull Request Process<a class="headerlink" href="#pull-request-process" title="Link to this heading"></a></h3>
+<ol class="arabic">
+<li><p>Create a feature branch:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>feature/your-feature-name
+</pre></div>
+</div>
+</li>
+<li><p>Make your changes following our coding standards</p></li>
+<li><p>Add or update tests as needed</p></li>
+<li><p>Update documentation if applicable</p></li>
+<li><p>Ensure all tests pass:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest
+black<span class="w"> </span>--check<span class="w"> </span>pranaam/
+mypy<span class="w"> </span>pranaam/
+</pre></div>
+</div>
+</li>
+<li><p>Commit your changes with clear commit messages</p></li>
+<li><p>Push to your fork and submit a pull request</p></li>
+</ol>
+</section>
+<section id="pull-request-requirements">
+<h3>Pull Request Requirements<a class="headerlink" href="#pull-request-requirements" title="Link to this heading"></a></h3>
+<p>Your PR must:</p>
+<ul class="simple">
+<li><p>Pass all CI checks (tests, linting, type checking)</p></li>
+<li><p>Include appropriate tests for new functionality</p></li>
+<li><p>Update documentation for API changes</p></li>
+<li><p>Follow semantic versioning principles</p></li>
+<li><p>Include a clear description of changes</p></li>
+</ul>
+</section>
+</section>
+<section id="code-style-guidelines">
+<h2>Code Style Guidelines<a class="headerlink" href="#code-style-guidelines" title="Link to this heading"></a></h2>
+<section id="python-code-style">
+<h3>Python Code Style<a class="headerlink" href="#python-code-style" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Follow PEP 8 with Black formatting</p></li>
+<li><p>Use type hints for all function signatures</p></li>
+<li><p>Write docstrings for all public functions and classes</p></li>
+<li><p>Maximum line length: 88 characters</p></li>
+<li><p>Use meaningful variable and function names</p></li>
+</ul>
+</section>
+<section id="documentation-style">
+<h3>Documentation Style<a class="headerlink" href="#documentation-style" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Use reStructuredText (.rst) format</p></li>
+<li><p>Include code examples for new features</p></li>
+<li><p>Write clear, concise explanations</p></li>
+<li><p>Update API documentation for code changes</p></li>
+</ul>
+</section>
+<section id="testing-guidelines">
+<h3>Testing Guidelines<a class="headerlink" href="#testing-guidelines" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Write unit tests for all new functions</p></li>
+<li><p>Include integration tests for complex features</p></li>
+<li><p>Test edge cases and error conditions</p></li>
+<li><p>Mock external dependencies appropriately</p></li>
+<li><p>Aim for high test coverage (&gt;90%)</p></li>
+</ul>
+</section>
+</section>
+<section id="project-structure">
+<h2>Project Structure<a class="headerlink" href="#project-structure" title="Link to this heading"></a></h2>
+<section id="understanding-the-codebase">
+<h3>Understanding the Codebase<a class="headerlink" href="#understanding-the-codebase" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>pranaam/
+├── __init__.py              # Package initialization
+├── naam.py                  # Core Naam class with pred_rel method
+├── base.py                  # Base class for model data management
+├── utils.py                 # Utility functions
+├── logging.py               # Centralized logging configuration
+├── pranaam.py              # CLI entry point and function exports
+├── notebooks/              # Training notebooks for model development
+└── tests/                  # Comprehensive test suite
+    ├── conftest.py         # pytest fixtures
+    ├── test_naam.py        # Core functionality tests
+    ├── test_integration.py # End-to-end integration tests
+    └── ...                 # Additional test modules
+</pre></div>
+</div>
+</section>
+<section id="key-components">
+<h3>Key Components<a class="headerlink" href="#key-components" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>naam.py</strong>: Core prediction logic and model loading</p></li>
+<li><p><strong>base.py</strong>: Model data management using importlib.resources</p></li>
+<li><p><strong>utils.py</strong>: Helper functions for data processing</p></li>
+<li><p><strong>logging.py</strong>: Centralized logging configuration</p></li>
+<li><p><strong>tests/</strong>: Comprehensive test suite with 75+ tests</p></li>
+</ul>
+</section>
+</section>
+<section id="release-process">
+<h2>Release Process<a class="headerlink" href="#release-process" title="Link to this heading"></a></h2>
+<section id="version-management">
+<h3>Version Management<a class="headerlink" href="#version-management" title="Link to this heading"></a></h3>
+<p>We follow semantic versioning (MAJOR.MINOR.PATCH):</p>
+<ul class="simple">
+<li><p><strong>MAJOR</strong>: Breaking API changes</p></li>
+<li><p><strong>MINOR</strong>: New features, backward compatible</p></li>
+<li><p><strong>PATCH</strong>: Bug fixes, backward compatible</p></li>
+</ul>
+</section>
+<section id="release-checklist">
+<h3>Release Checklist<a class="headerlink" href="#release-checklist" title="Link to this heading"></a></h3>
+<p>Before releasing a new version:</p>
+<ol class="arabic simple">
+<li><p>Update version in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code></p></li>
+<li><p>Update <code class="docutils literal notranslate"><span class="pre">CLAUDE.md</span></code> with changes and test status</p></li>
+<li><p>Run full test suite: <code class="docutils literal notranslate"><span class="pre">pytest</span></code> (must be 75/75 passing)</p></li>
+<li><p>Check formatting: <code class="docutils literal notranslate"><span class="pre">black</span> <span class="pre">--check</span> <span class="pre">pranaam/</span></code></p></li>
+<li><p>Type check: <code class="docutils literal notranslate"><span class="pre">mypy</span> <span class="pre">pranaam/</span></code> (must pass with zero errors)</p></li>
+<li><p>Build package: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">build</span></code></p></li>
+<li><p>Validate: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">twine</span> <span class="pre">check</span> <span class="pre">dist/*</span></code></p></li>
+<li><p>Test in clean environment</p></li>
+<li><p>Verify CI passes on GitHub Actions</p></li>
+</ol>
+</section>
+</section>
+<section id="communication">
+<h2>Communication<a class="headerlink" href="#communication" title="Link to this heading"></a></h2>
+<section id="getting-help">
+<h3>Getting Help<a class="headerlink" href="#getting-help" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>GitHub Issues</strong>: Bug reports and feature requests</p></li>
+<li><p><strong>GitHub Discussions</strong>: General questions and ideas</p></li>
+<li><p><strong>Documentation</strong>: Check our comprehensive docs first</p></li>
+</ul>
+</section>
+<section id="maintainer-response">
+<h3>Maintainer Response<a class="headerlink" href="#maintainer-response" title="Link to this heading"></a></h3>
+<p>We aim to:</p>
+<ul class="simple">
+<li><p>Acknowledge issues within 48 hours</p></li>
+<li><p>Review pull requests within 1 week</p></li>
+<li><p>Provide constructive feedback</p></li>
+<li><p>Maintain respectful, professional communication</p></li>
+</ul>
+</section>
+</section>
+<section id="recognition">
+<h2>Recognition<a class="headerlink" href="#recognition" title="Link to this heading"></a></h2>
+<p>Contributors are recognized in:</p>
+<ul class="simple">
+<li><p>Release notes for significant contributions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AUTHORS.md</span></code> file (if we create one)</p></li>
+<li><p>GitHub contributors page</p></li>
+</ul>
+<p>Thank you for contributing to pranaam! Your efforts help make this tool better for researchers, activists, and developers working to understand and address bias in AI systems.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="examples.html" class="btn btn-neutral float-left" title="Examples" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2025, Rajashekar Chintalapati, Aaditya Dar, Gaurav Sood.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
