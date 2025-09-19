@@ -1,0 +1,8 @@
+# Documentation build requirements
+sphinx>=5.0.0
+sphinx-rtd-theme>=1.0.0
+myst-parser>=0.18.0
+tomli>=2.0.0;python_version<"3.11"
+
+# For live documentation serving (optional)
+sphinx-autobuild>=2021.3.14

@@ -1,7 +1,7 @@
 # pranaam: predict religion from name
 
 [![ci](https://github.com/appeler/pranaam/actions/workflows/ci.yml/badge.svg)](https://github.com/appeler/pranaam/actions/workflows/ci.yml)[![image](https://img.shields.io/pypi/v/pranaam.svg)](https://pypi.python.org/pypi/pranaam)
-[![Documentation Status](https://readthedocs.org/projects/pranaam/badge/?version=latest)](http://pranaam.readthedocs.io/en/latest/?badge=latest)
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://appeler.github.io/pranaam/)
 [![image](https://static.pepy.tech/badge/pranaam)](https://pepy.tech/project/pranaam)
 
 Pranaam uses the Bihar Land Records data, plot-level land records (N=
