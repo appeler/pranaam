@@ -121,6 +121,7 @@ extend-exclude = '''
   | \.venv
   | build
   | dist
+  | notebooks
 )/
 '''
 
@@ -139,6 +140,7 @@ warn_no_return = true
 warn_unreachable = true
 strict_equality = true
 show_error_codes = true
+exclude = ["pranaam/notebooks/"]
 
 [[tool.mypy.overrides]]
 module = ["tensorflow.*", "gdown.*"]
@@ -159,6 +161,7 @@ exclude_lines = [
 [tool.ruff]
 target-version = "py310"
 line-length = 88
+extend-exclude = ["pranaam/notebooks/"]
 
 [tool.ruff.lint]
 select = [
