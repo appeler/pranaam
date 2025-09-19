@@ -1,14 +1,14 @@
 """Tests for utils module."""
 
-import pytest
 import os
 import tarfile
 import tempfile
-from unittest.mock import patch, Mock, mock_open
-from typing import Any
+from unittest.mock import Mock, mock_open, patch
+
+import pytest
 import requests
 
-from pranaam.utils import download_file, _safe_extract_tar, REPO_BASE_URL
+from pranaam.utils import REPO_BASE_URL, _safe_extract_tar, download_file
 
 
 class TestDownloadFile:
@@ -163,7 +163,7 @@ class TestSafeExtractTar:
             extracted_file = os.path.join(extract_dir, "test.txt")
             assert os.path.exists(extracted_file)
 
-            with open(extracted_file, "r") as f:
+            with open(extracted_file) as f:
                 assert f.read() == "test content"
 
     def test_path_traversal_prevention(self) -> None:
@@ -227,6 +227,7 @@ class TestConstants:
         """Test custom repository URL from environment."""
         # Need to reimport to pick up environment variable
         import importlib
+
         import pranaam.utils
 
         importlib.reload(pranaam.utils)

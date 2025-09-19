@@ -2,7 +2,6 @@
 
 import os
 import tarfile
-from typing import Optional
 
 import requests
 from tqdm.auto import tqdm

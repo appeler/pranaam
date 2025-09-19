@@ -1,13 +1,12 @@
 """Tests for CLI functionality."""
 
-import pytest
-import sys
 from io import StringIO
-from unittest.mock import patch, Mock
-from typing import Any
-import pandas as pd
+from unittest.mock import Mock, patch
 
-from pranaam.pranaam import main, pred_rel
+import pandas as pd
+import pytest
+
+from pranaam.pranaam import main
 
 
 class TestCLIMain:
@@ -119,7 +118,6 @@ class TestCLIMain:
     def test_default_arguments(self) -> None:
         """Test default argument values."""
         # This test verifies the argument parser setup
-        from pranaam.pranaam import main
         import argparse
 
         # Create parser same way as in main function
@@ -182,7 +180,7 @@ class TestCLIIntegration:
         mock_pred_rel.return_value = mock_result
 
         with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
-            result = main(["--input", "Test Names"])
+            main(["--input", "Test Names"])
 
         output = mock_stdout.getvalue()
 

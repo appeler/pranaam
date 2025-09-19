@@ -1,10 +1,10 @@
 """Comprehensive tests for naam module."""
 
-import pytest
-import pandas as pd
+from unittest.mock import Mock, patch
+
 import numpy as np
-from unittest.mock import patch, Mock, MagicMock
-import tensorflow as tf
+import pandas as pd
+import pytest
 
 from pranaam.naam import Naam, is_english
 

@@ -1,7 +1,8 @@
 import sys
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
-from typing import Generator, Any, Callable
 from io import StringIO
+from typing import Any
 
 
 @contextmanager

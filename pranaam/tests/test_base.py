@@ -1,10 +1,6 @@
 """Tests for base module."""
 
-import pytest
-import os
-import tempfile
-from unittest.mock import patch, Mock
-from typing import Any
+from unittest.mock import Mock, patch
 
 from pranaam.base import Base
 

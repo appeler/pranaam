@@ -35,6 +35,10 @@ jobs:
       run: |
         black --check --diff pranaam/
 
+    - name: Lint with ruff
+      run: |
+        ruff check pranaam/
+
     - name: Type check with mypy
       run: |
         mypy pranaam/
@@ -47,6 +51,36 @@ jobs:
       if: matrix.python-version == '3.11'
       run: |
         pytest --tb=short --maxfail=10
+
+  e2e-tests:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install compatible dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[tensorflow-compat,test]
+
+    - name: Verify TensorFlow compatibility
+      run: |
+        python -c "import tensorflow as tf; import keras; print(f'TensorFlow: {tf.__version__}, Keras: {keras.__version__}')"
+        python -c "assert '2.14' in __import__('tensorflow').__version__, 'Wrong TensorFlow version'"
+
+    - name: Run E2E tests (with model download)
+      run: |
+        pytest pranaam/tests/test_e2e.py -v -m integration --tb=short
+      env:
+        # Prevent timeouts during model download
+        PYTEST_TIMEOUT: 600
         
     - name: Build package
       if: matrix.python-version == '3.11'

@@ -2,7 +2,6 @@
 
 import argparse
 import sys
-from typing import List, Optional
 
 from .naam import Naam
 
@@ -10,7 +9,7 @@ from .naam import Naam
 pred_rel = Naam.pred_rel
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     """Main CLI entry point for religion prediction.
 
     Args:
@@ -42,7 +41,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(result.to_string(index=False))
         return 0
 
-    except SystemExit as e:
+    except SystemExit:
         # Re-raise SystemExit for help and argument errors
         raise
     except Exception as e:

@@ -38,6 +38,7 @@ dependencies = [
 dev = [
   "check-manifest",
   "black>=23.0.0",
+  "ruff>=0.1.0",
   "mypy>=1.0.0",
   "pre-commit>=3.0.0",
   "pandas-stubs>=2.0.0",
@@ -63,8 +64,12 @@ streamlit = [
   "nltk>=3.8.0",
   "joblib>=1.0.0"
 ]
+tensorflow-compat = [
+  "tensorflow==2.14.1",
+  "keras==2.14.0"
+]
 all = [
-  "pranaam[dev,test,docs,streamlit]"
+  "pranaam[dev,test,docs,streamlit,tensorflow-compat]"
 ]
 
 [project.urls]
@@ -93,8 +98,9 @@ addopts = [
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
-    "unit: marks tests as unit tests"
+    "integration: marks tests as integration tests (requires model download)",
+    "unit: marks tests as unit tests",
+    "e2e: marks tests as end-to-end tests with real models"
 ]
 # Coverage options (enabled in CI)
 # addopts = "--cov=pranaam --cov-report=html --cov-report=term-missing"
@@ -149,3 +155,27 @@ exclude_lines = [
     "raise AssertionError",
     "raise NotImplementedError",
 ]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+]
+per-file-ignores = {"__init__.py" = ["F401"], "tests/*" = ["B011", "S101"]}
+
+[tool.ruff.lint.isort]
+known-first-party = ["pranaam"]

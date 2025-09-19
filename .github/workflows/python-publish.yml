@@ -1,37 +1,195 @@
-# This workflow will upload a Python Package using Twine when a release is created
-# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
+# Release and Publish Workflow
+# 
+# This consolidated workflow handles both GitHub release creation and PyPI publishing
+# using PyPI's trusted publisher program for secure, token-free publishing.
+#
+# Triggers:
+# - Version tags (v*): Creates release + publishes to PyPI
+# - GitHub releases: Publishes to PyPI only  
+# - Manual trigger: Allows TestPyPI or PyPI publishing
+#
+# For trusted publishing setup:
+# 1. Go to https://pypi.org/manage/account/publishing/
+# 2. Add GitHub as trusted publisher: appeler/pranaam
+# 3. Workflow filename: python-publish.yml
+# 4. Environment name: pypi
 
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-name: Upload Python Package to PyPI
+name: Release and Publish
 
 on:
+  # Automatic release creation and PyPI publishing on version tags
+  push:
+    tags:
+      - 'v*'  # v1.0.0, v0.1.0, etc.
+  
+  # PyPI publishing on manual releases (no release creation needed)
   release:
     types: [published]
+  
+  # Manual trigger for emergency publishing or testing
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'testpypi'
+        type: choice
+        options:
+          - 'testpypi'
+          - 'pypi'
+      create_release:
+        description: 'Create GitHub release (only for manual PyPI publishing)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write  # Required for release creation
+  id-token: write  # Required for PyPI trusted publishing
 
 jobs:
-  deploy:
-
+  create-release:
+    name: Create GitHub Release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-
+    
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install build twine
-    - name: Build package
-      run: |
-        python -m build
-        python -m twine check dist/*
-    - name: Publish package
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        password: ${{ secrets.PYPI_API_TOKEN }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      
+      - name: Validate version consistency
+        run: |
+          PYPROJECT_VERSION=$(grep -E '^version = ' pyproject.toml | sed 's/version = "//' | sed 's/"//')
+          if [ "$PYPROJECT_VERSION" != "${{ steps.version.outputs.version }}" ]; then
+            echo "❌ Version mismatch:"
+            echo "   Tag version: ${{ steps.version.outputs.version }}"
+            echo "   pyproject.toml version: $PYPROJECT_VERSION"
+            echo "Please ensure the tag version matches pyproject.toml"
+            exit 1
+          fi
+          echo "✅ Version consistency validated"
+      
+      - name: Generate release notes
+        run: |
+          cat > release_notes.md << EOF
+          ## Release ${{ steps.version.outputs.version }}
+          
+          ### Installation
+          
+          \`\`\`bash
+          pip install pranaam==${{ steps.version.outputs.version }}
+          \`\`\`
+          
+          For TensorFlow compatibility:
+          \`\`\`bash
+          pip install 'pranaam[tensorflow-compat]==${{ steps.version.outputs.version }}'
+          \`\`\`
+          
+          ### Documentation
+          
+          📖 [Documentation](https://appeler.github.io/pranaam/)
+          
+          ### What's Changed
+          
+          This release includes the latest updates and improvements to pranaam.
+          See the [full changelog](https://github.com/appeler/pranaam/compare/\$(git describe --tags --abbrev=0 HEAD^)...${{ steps.version.outputs.tag }}) for details.
+          EOF
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ steps.version.outputs.version }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.version, '-') }}
+          generate_release_notes: true
+
+  build:
+    name: Build Python package
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+      
+      - name: Build package
+        run: python -m build
+      
+      - name: Verify build
+        run: |
+          python -m twine check dist/*
+          ls -la dist/
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish-testpypi:
+    name: Publish to TestPyPI
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'testpypi'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/pranaam
+    permissions:
+      id-token: write
+    
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  publish-pypi:
+    name: Publish to PyPI
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'release' && github.event.action == 'published') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'pypi')
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/pranaam
+    permissions:
+      id-token: write
+    
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

@@ -1,9 +1,8 @@
 import os
-from typing import Optional
 from importlib.resources import files
 
-from .utils import download_file, REPO_BASE_URL
 from .logging import get_logger
+from .utils import REPO_BASE_URL, download_file
 
 logger = get_logger()
 
@@ -11,10 +10,10 @@ logger = get_logger()
 class Base:
     """Base class for model data management and loading."""
 
-    MODELFN: Optional[str] = None
+    MODELFN: str | None = None
 
     @classmethod
-    def load_model_data(cls, file_name: str, latest: bool = False) -> Optional[str]:
+    def load_model_data(cls, file_name: str, latest: bool = False) -> str | None:
         """Load model data, downloading if necessary.
 
         Args:
@@ -24,7 +23,7 @@ class Base:
         Returns:
             Path to the model directory, or None if loading failed
         """
-        model_path: Optional[str] = None
+        model_path: str | None = None
         if cls.MODELFN:
             # Use modern importlib.resources instead of deprecated pkg_resources
             package_dir = files(__package__)
@@ -33,14 +32,12 @@ class Base:
                 os.makedirs(f"{model_fn}")
             if not os.path.exists(f"{model_fn}/{file_name}") or latest:
                 logger.debug(
-                    "Downloading model data from the server (this is done only first time) ({0!s})...".format(
-                        model_fn
-                    )
+                    f"Downloading model data from the server (this is done only first time) ({model_fn!s})..."
                 )
                 if not download_file(REPO_BASE_URL, f"{model_fn}", file_name):
                     logger.error("ERROR: Cannot download model data file")
             else:
-                logger.debug("Using model data from {0!s}...".format(model_fn))
+                logger.debug(f"Using model data from {model_fn!s}...")
             model_path = model_fn
 
         return model_path

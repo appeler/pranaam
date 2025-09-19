@@ -1,7 +1,5 @@
 """Main prediction module for religion classification."""
 
-from typing import List, Optional, Union
-
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -33,16 +31,16 @@ class Naam(Base):
 
     MODELFN: str = "model"
     weights_loaded: bool = False
-    model: Optional[tf.keras.Model] = None
-    model_path: Optional[str] = None
-    classes: List[str] = ["not-muslim", "muslim"]
+    model: tf.keras.Model | None = None
+    model_path: str | None = None
+    classes: list[str] = ["not-muslim", "muslim"]
     cur_lang: str = "eng"
     model_name: str = "eng_and_hindi_models_v1"
 
     @classmethod
     def pred_rel(
         cls,
-        names: Union[str, List[str], pd.Series],
+        names: str | list[str] | pd.Series,
         lang: str = "eng",
         latest: bool = False,
     ) -> pd.DataFrame:
@@ -178,7 +176,7 @@ class Naam(Base):
                         f"3. Downgrade: pip install 'tensorflow<2.16'"
                     )
                 else:
-                    suggestion = f"Try: pip install 'pranaam[tensorflow-compat]'"
+                    suggestion = "Try: pip install 'pranaam[tensorflow-compat]'"
 
                 raise RuntimeError(
                     f"Model format compatibility issue with TensorFlow {tf.__version__}. "

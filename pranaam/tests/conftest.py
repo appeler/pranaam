@@ -1,28 +1,29 @@
 """Test configuration and fixtures for pranaam tests."""
 
-import pytest
-import pandas as pd
-from unittest.mock import Mock, MagicMock
-from typing import List, Any, Dict, Tuple, Generator
-import tempfile
 import os
+import tempfile
+from collections.abc import Generator
+from typing import Any
+from unittest.mock import Mock
+
 import numpy as np
+import pytest
 
 
 @pytest.fixture
-def sample_english_names() -> List[str]:
+def sample_english_names() -> list[str]:
     """Sample English names for testing."""
     return ["Shah Rukh Khan", "Amitabh Bachchan", "Rajesh Khanna", "Mohammed Ali"]
 
 
 @pytest.fixture
-def sample_hindi_names() -> List[str]:
+def sample_hindi_names() -> list[str]:
     """Sample Hindi names for testing."""
     return ["शाहरुख खान", "अमिताभ बच्चन", "राजेश खन्ना", "मोहम्मद अली"]
 
 
 @pytest.fixture
-def expected_predictions() -> Dict[str, Dict[str, Any]]:
+def expected_predictions() -> dict[str, dict[str, Any]]:
     """Expected predictions for sample names."""
     return {
         "Shah Rukh Khan": {"label": "muslim", "prob_range": (60, 90)},

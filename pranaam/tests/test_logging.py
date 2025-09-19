@@ -1,9 +1,9 @@
 """Tests for logging module."""
 
-import pytest
 import logging
-from unittest.mock import patch, Mock
-from typing import Any
+from unittest.mock import Mock, patch
+
+import pytest
 
 from pranaam.logging import get_logger
 
