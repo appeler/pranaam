@@ -230,11 +230,11 @@ class TestRealModelDownloadAndPrediction:
 
         # Test with invalid language
         with pytest.raises(ValueError):
-            pranaam.pred_rel("Test Name", lang="invalid")
+            pranaam.pred_rel("Test Name", lang="invalid")  # type: ignore
 
         # Test with None input
         with pytest.raises((ValueError, TypeError)):
-            pranaam.pred_rel(None, lang="eng")  # type: ignore
+            pranaam.pred_rel(None, lang="eng")
 
         print("\n🛡️ ERROR HANDLING VERIFIED")
 
