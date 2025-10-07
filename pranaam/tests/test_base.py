@@ -27,20 +27,22 @@ class TestBase:
 
     @patch("pranaam.base.files")
     @patch("pranaam.base.download_file")
-    @patch("os.path.exists")
-    @patch("os.makedirs")
+    @patch("pathlib.Path.exists")
+    @patch("pathlib.Path.mkdir")
     def test_load_model_data_success(
         self,
-        mock_makedirs: Mock,
+        mock_mkdir: Mock,
         mock_exists: Mock,
         mock_download: Mock,
         mock_files: Mock,
     ) -> None:
         """Test successful model data loading."""
-        # Setup mocks
-        mock_files.return_value.__truediv__.return_value = Path("/fake/model/path")
+        # Setup mocks - make files() return a mock that converts to a valid path string
+        mock_package_dir = Mock()
+        mock_package_dir.__str__.return_value = "/fake/package"
+        mock_files.return_value = mock_package_dir
 
-        # Directory doesn't exist (so makedirs gets called), file doesn't exist (so download gets called)
+        # File doesn't exist (so download gets called)
         mock_exists.return_value = False
         mock_download.return_value = True
 
@@ -50,25 +52,28 @@ class TestBase:
 
         result = TestClass.load_model_data("test_model", latest=False)
 
-        assert result == Path("/fake/model/path")
-        mock_makedirs.assert_called_once_with(Path("/fake/model/path"))
+        assert result == Path("/fake/package/model")
+        mock_mkdir.assert_called_once_with(exist_ok=True)
         mock_download.assert_called_once()
 
     @patch("pranaam.base.files")
     @patch("pranaam.base.download_file")
-    @patch("os.path.exists")
-    @patch("os.makedirs")
+    @patch("pathlib.Path.exists")
+    @patch("pathlib.Path.mkdir")
     def test_load_model_data_file_exists_no_latest(
         self,
-        mock_makedirs: Mock,
+        mock_mkdir: Mock,
         mock_exists: Mock,
         mock_download: Mock,
         mock_files: Mock,
     ) -> None:
         """Test model loading when file exists and latest=False."""
-        mock_files.return_value.__truediv__.return_value = Path("/fake/model/path")
+        # Setup mocks
+        mock_package_dir = Mock()
+        mock_package_dir.__str__.return_value = "/fake/package"
+        mock_files.return_value = mock_package_dir
 
-        # Both directory and file exist
+        # File exists
         mock_exists.return_value = True
 
         class TestClass(Base):
@@ -76,23 +81,26 @@ class TestBase:
 
         result = TestClass.load_model_data("test_model", latest=False)
 
-        assert result == Path("/fake/model/path")
+        assert result == Path("/fake/package/model")
         # Should not download since file exists and latest=False
         mock_download.assert_not_called()
 
     @patch("pranaam.base.files")
     @patch("pranaam.base.download_file")
-    @patch("os.path.exists")
-    @patch("os.makedirs")
+    @patch("pathlib.Path.exists")
+    @patch("pathlib.Path.mkdir")
     def test_load_model_data_force_latest(
         self,
-        mock_makedirs: Mock,
+        mock_mkdir: Mock,
         mock_exists: Mock,
         mock_download: Mock,
         mock_files: Mock,
     ) -> None:
         """Test model loading with latest=True forces redownload."""
-        mock_files.return_value.__truediv__.return_value = Path("/fake/model/path")
+        # Setup mocks
+        mock_package_dir = Mock()
+        mock_package_dir.__str__.return_value = "/fake/package"
+        mock_files.return_value = mock_package_dir
 
         mock_exists.return_value = True  # File exists
         mock_download.return_value = True
@@ -102,28 +110,29 @@ class TestBase:
 
         result = TestClass.load_model_data("test_model", latest=True)
 
-        assert result == Path("/fake/model/path")
+        assert result == Path("/fake/package/model")
         # Should download even though file exists because latest=True
         mock_download.assert_called_once()
 
     @patch("pranaam.base.files")
     @patch("pranaam.base.download_file")
-    @patch("os.path.exists")
-    @patch("os.makedirs")
+    @patch("pathlib.Path.exists")
+    @patch("pathlib.Path.mkdir")
     def test_load_model_data_download_failure(
         self,
-        mock_makedirs: Mock,
+        mock_mkdir: Mock,
         mock_exists: Mock,
         mock_download: Mock,
         mock_files: Mock,
     ) -> None:
         """Test handling of download failure."""
-        mock_files.return_value.__truediv__.return_value = Path("/fake/model/path")
+        # Setup mocks
+        mock_package_dir = Mock()
+        mock_package_dir.__str__.return_value = "/fake/package"
+        mock_files.return_value = mock_package_dir
 
-        # Directory exists, but file doesn't exist
-        mock_exists.side_effect = lambda path: str(
-            path
-        ) == "/fake/model/path" and not str(path).endswith("/test_model")
+        # File doesn't exist
+        mock_exists.return_value = False
         mock_download.return_value = False  # Download fails
 
         class TestClass(Base):
@@ -132,18 +141,21 @@ class TestBase:
         result = TestClass.load_model_data("test_model")
 
         # Should still return path even if download fails
-        assert result == Path("/fake/model/path")
+        assert result == Path("/fake/package/model")
 
     @patch("pranaam.base.files")
-    @patch("os.path.exists")
-    @patch("os.makedirs")
+    @patch("pathlib.Path.exists")
+    @patch("pathlib.Path.mkdir")
     def test_load_model_data_creates_directory(
-        self, mock_makedirs: Mock, mock_exists: Mock, mock_files: Mock
+        self, mock_mkdir: Mock, mock_exists: Mock, mock_files: Mock
     ) -> None:
         """Test that model directory is created if it doesn't exist."""
-        mock_files.return_value.__truediv__.return_value = Path("/fake/model/path")
+        # Setup mocks
+        mock_package_dir = Mock()
+        mock_package_dir.__str__.return_value = "/fake/package"
+        mock_files.return_value = mock_package_dir
 
-        mock_exists.return_value = False  # Directory doesn't exist
+        mock_exists.return_value = False  # File doesn't exist
 
         class TestClass(Base):
             MODELFN = "model"
@@ -151,8 +163,8 @@ class TestBase:
         with patch("pranaam.base.download_file", return_value=True):
             result = TestClass.load_model_data("test_model")
 
-        mock_makedirs.assert_called_once_with(Path("/fake/model/path"))
-        assert result == Path("/fake/model/path")
+        mock_mkdir.assert_called_once_with(exist_ok=True)
+        assert result == Path("/fake/package/model")
 
 
 class TestBaseInheritance:
@@ -187,23 +199,24 @@ class TestBaseLogging:
     @patch("pranaam.base.logger")
     @patch("pranaam.base.files")
     @patch("pranaam.base.download_file")
-    @patch("os.path.exists")
-    @patch("os.makedirs")
+    @patch("pathlib.Path.exists")
+    @patch("pathlib.Path.mkdir")
     def test_debug_logging_download(
         self,
-        mock_makedirs: Mock,
+        mock_mkdir: Mock,
         mock_exists: Mock,
         mock_download: Mock,
         mock_files: Mock,
         mock_logger: Mock,
     ) -> None:
         """Test debug logging during download."""
-        mock_files.return_value.__truediv__.return_value = Path("/fake/model/path")
+        # Setup mocks
+        mock_package_dir = Mock()
+        mock_package_dir.__str__.return_value = "/fake/package"
+        mock_files.return_value = mock_package_dir
 
-        # Directory exists, but file doesn't exist
-        mock_exists.side_effect = lambda path: str(
-            path
-        ) == "/fake/model/path" and not str(path).endswith("/test_model")
+        # File doesn't exist
+        mock_exists.return_value = False
         mock_download.return_value = True
 
         class TestClass(Base):
@@ -218,12 +231,16 @@ class TestBaseLogging:
 
     @patch("pranaam.base.logger")
     @patch("pranaam.base.files")
-    @patch("os.path.exists")
+    @patch("pathlib.Path.exists")
+    @patch("pathlib.Path.mkdir")
     def test_debug_logging_existing_model(
-        self, mock_exists: Mock, mock_files: Mock, mock_logger: Mock
+        self, mock_mkdir: Mock, mock_exists: Mock, mock_files: Mock, mock_logger: Mock
     ) -> None:
         """Test debug logging when using existing model."""
-        mock_files.return_value.__truediv__.return_value = Path("/fake/model/path")
+        # Setup mocks
+        mock_package_dir = Mock()
+        mock_package_dir.__str__.return_value = "/fake/package"
+        mock_files.return_value = mock_package_dir
 
         mock_exists.return_value = True  # File exists
 
@@ -240,23 +257,24 @@ class TestBaseLogging:
     @patch("pranaam.base.logger")
     @patch("pranaam.base.files")
     @patch("pranaam.base.download_file")
-    @patch("os.path.exists")
-    @patch("os.makedirs")
+    @patch("pathlib.Path.exists")
+    @patch("pathlib.Path.mkdir")
     def test_error_logging_download_failure(
         self,
-        mock_makedirs: Mock,
+        mock_mkdir: Mock,
         mock_exists: Mock,
         mock_download: Mock,
         mock_files: Mock,
         mock_logger: Mock,
     ) -> None:
         """Test error logging when download fails."""
-        mock_files.return_value.__truediv__.return_value = Path("/fake/model/path")
+        # Setup mocks
+        mock_package_dir = Mock()
+        mock_package_dir.__str__.return_value = "/fake/package"
+        mock_files.return_value = mock_package_dir
 
-        # Directory exists, but file doesn't exist
-        mock_exists.side_effect = lambda path: str(
-            path
-        ) == "/fake/model/path" and not str(path).endswith("/test_model")
+        # File doesn't exist
+        mock_exists.return_value = False
         mock_download.return_value = False  # Download fails
 
         class TestClass(Base):
