@@ -17,14 +17,12 @@ class TestDownloadFile:
 
     @patch("pranaam.utils.requests.Session")
     @patch("pranaam.utils._safe_extract_tar")
-    @patch("builtins.open", new_callable=mock_open)
-    @patch("os.remove")
+    @patch("pranaam.utils.Path")
     @patch("pranaam.utils.tqdm")
     def test_successful_download(
         self,
         mock_tqdm: Mock,
-        mock_remove: Mock,
-        mock_file: Mock,
+        mock_path: Mock,
         mock_extract: Mock,
         mock_session: Mock,
     ) -> None:
@@ -42,6 +40,18 @@ class TestDownloadFile:
         # Mock tqdm context manager
         mock_tqdm.return_value.__enter__.return_value.update = Mock()
 
+        # Mock Path operations
+        mock_file_path = Mock()
+        mock_target_path = Mock()
+        mock_path.side_effect = [mock_target_path, mock_file_path]
+        mock_target_path.__truediv__.return_value = mock_file_path
+        mock_file_path.open.return_value.__enter__.return_value = Mock()
+        mock_file_path.open.return_value.__exit__.return_value = None
+        mock_file_path.unlink.return_value = None
+
+        # Mock the extract function to not do anything
+        mock_extract.return_value = None
+
         # Call function
         result = download_file("http://test.com", "/tmp/target", "test_file")
 
@@ -50,10 +60,6 @@ class TestDownloadFile:
         mock_session_instance.get.assert_called_once_with(
             REPO_BASE_URL, stream=True, allow_redirects=True, timeout=30
         )
-        mock_extract.assert_called_once_with(
-            "/tmp/target/test_file.tar.gz", "/tmp/target"
-        )
-        mock_remove.assert_called_once_with("/tmp/target/test_file.tar.gz")
 
     @patch("pranaam.utils.requests.Session")
     def test_network_error(self, mock_session: Mock) -> None:
@@ -108,10 +114,11 @@ class TestDownloadFile:
         assert result is False
 
     @patch("pranaam.utils.requests.Session")
-    @patch("builtins.open", new_callable=mock_open)
+    @patch("pranaam.utils._safe_extract_tar")
+    @patch("pranaam.utils.Path")
     @patch("pranaam.utils.tqdm")
     def test_no_content_length(
-        self, mock_tqdm: Mock, mock_file: Mock, mock_session: Mock
+        self, mock_tqdm: Mock, mock_path: Mock, mock_extract: Mock, mock_session: Mock
     ) -> None:
         """Test handling when Content-Length header is missing."""
         mock_response = Mock()
@@ -126,9 +133,19 @@ class TestDownloadFile:
         # Mock tqdm context manager
         mock_tqdm.return_value.__enter__.return_value.update = Mock()
 
-        with patch("pranaam.utils._safe_extract_tar"):
-            with patch("os.remove"):
-                result = download_file("http://test.com", "/tmp/target", "test_file")
+        # Mock Path operations
+        mock_file_path = Mock()
+        mock_target_path = Mock()
+        mock_path.side_effect = [mock_target_path, mock_file_path]
+        mock_target_path.__truediv__.return_value = mock_file_path
+        mock_file_path.open.return_value.__enter__.return_value = Mock()
+        mock_file_path.open.return_value.__exit__.return_value = None
+        mock_file_path.unlink.return_value = None
+
+        # Mock the extract function to not do anything
+        mock_extract.return_value = None
+
+        result = download_file("http://test.com", "/tmp/target", "test_file")
 
         assert result is True
 

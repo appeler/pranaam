@@ -1,5 +1,6 @@
 """Comprehensive tests for naam module."""
 
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import numpy as np
@@ -164,7 +165,7 @@ class TestNaamModelLoading:
         self, mock_load_data: Mock, mock_load_model: Mock
     ) -> None:
         """Test loading English model."""
-        mock_load_data.return_value = "/fake/path"
+        mock_load_data.return_value = Path("/fake/path")
         mock_model = Mock()
         mock_load_model.return_value = mock_model
 
@@ -187,7 +188,7 @@ class TestNaamModelLoading:
         self, mock_load_data: Mock, mock_load_model: Mock
     ) -> None:
         """Test loading Hindi model."""
-        mock_load_data.return_value = "/fake/path"
+        mock_load_data.return_value = Path("/fake/path")
         mock_model = Mock()
         mock_load_model.return_value = mock_model
 
@@ -214,7 +215,7 @@ class TestNaamModelLoading:
         self, mock_load_data: Mock, mock_load_model: Mock
     ) -> None:
         """Test model loading failure when TensorFlow fails."""
-        mock_load_data.return_value = "/fake/path"
+        mock_load_data.return_value = Path("/fake/path")
         mock_load_model.side_effect = Exception("TensorFlow error")
 
         with pytest.raises(RuntimeError, match="Failed to load eng model"):

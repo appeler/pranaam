@@ -1,7 +1,7 @@
 """Tests for base module."""
 
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, patch
 
 from pranaam.base import Base
 
@@ -31,16 +31,14 @@ class TestBase:
     @patch("pathlib.Path.mkdir")
     def test_load_model_data_success(
         self,
-        mock_mkdir: Mock,
-        mock_exists: Mock,
-        mock_download: Mock,
-        mock_files: Mock,
+        mock_mkdir: MagicMock,
+        mock_exists: MagicMock,
+        mock_download: MagicMock,
+        mock_files: MagicMock,
     ) -> None:
         """Test successful model data loading."""
-        # Setup mocks - make files() return a mock that converts to a valid path string
-        mock_package_dir = Mock()
-        mock_package_dir.__str__.return_value = "/fake/package"
-        mock_files.return_value = mock_package_dir
+        # Setup mocks - make files() return a string that can be used as a path
+        mock_files.return_value = "/fake/package"
 
         # File doesn't exist (so download gets called)
         mock_exists.return_value = False
@@ -62,16 +60,14 @@ class TestBase:
     @patch("pathlib.Path.mkdir")
     def test_load_model_data_file_exists_no_latest(
         self,
-        mock_mkdir: Mock,
-        mock_exists: Mock,
-        mock_download: Mock,
-        mock_files: Mock,
+        mock_mkdir: MagicMock,
+        mock_exists: MagicMock,
+        mock_download: MagicMock,
+        mock_files: MagicMock,
     ) -> None:
         """Test model loading when file exists and latest=False."""
         # Setup mocks
-        mock_package_dir = Mock()
-        mock_package_dir.__str__.return_value = "/fake/package"
-        mock_files.return_value = mock_package_dir
+        mock_files.return_value = "/fake/package"
 
         # File exists
         mock_exists.return_value = True
@@ -91,16 +87,14 @@ class TestBase:
     @patch("pathlib.Path.mkdir")
     def test_load_model_data_force_latest(
         self,
-        mock_mkdir: Mock,
-        mock_exists: Mock,
-        mock_download: Mock,
-        mock_files: Mock,
+        mock_mkdir: MagicMock,
+        mock_exists: MagicMock,
+        mock_download: MagicMock,
+        mock_files: MagicMock,
     ) -> None:
         """Test model loading with latest=True forces redownload."""
         # Setup mocks
-        mock_package_dir = Mock()
-        mock_package_dir.__str__.return_value = "/fake/package"
-        mock_files.return_value = mock_package_dir
+        mock_files.return_value = "/fake/package"
 
         mock_exists.return_value = True  # File exists
         mock_download.return_value = True
@@ -120,16 +114,14 @@ class TestBase:
     @patch("pathlib.Path.mkdir")
     def test_load_model_data_download_failure(
         self,
-        mock_mkdir: Mock,
-        mock_exists: Mock,
-        mock_download: Mock,
-        mock_files: Mock,
+        mock_mkdir: MagicMock,
+        mock_exists: MagicMock,
+        mock_download: MagicMock,
+        mock_files: MagicMock,
     ) -> None:
         """Test handling of download failure."""
         # Setup mocks
-        mock_package_dir = Mock()
-        mock_package_dir.__str__.return_value = "/fake/package"
-        mock_files.return_value = mock_package_dir
+        mock_files.return_value = "/fake/package"
 
         # File doesn't exist
         mock_exists.return_value = False
@@ -147,13 +139,11 @@ class TestBase:
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.mkdir")
     def test_load_model_data_creates_directory(
-        self, mock_mkdir: Mock, mock_exists: Mock, mock_files: Mock
+        self, mock_mkdir: MagicMock, mock_exists: MagicMock, mock_files: MagicMock
     ) -> None:
         """Test that model directory is created if it doesn't exist."""
         # Setup mocks
-        mock_package_dir = Mock()
-        mock_package_dir.__str__.return_value = "/fake/package"
-        mock_files.return_value = mock_package_dir
+        mock_files.return_value = "/fake/package"
 
         mock_exists.return_value = False  # File doesn't exist
 
@@ -203,17 +193,15 @@ class TestBaseLogging:
     @patch("pathlib.Path.mkdir")
     def test_debug_logging_download(
         self,
-        mock_mkdir: Mock,
-        mock_exists: Mock,
-        mock_download: Mock,
-        mock_files: Mock,
-        mock_logger: Mock,
+        mock_mkdir: MagicMock,
+        mock_exists: MagicMock,
+        mock_download: MagicMock,
+        mock_files: MagicMock,
+        mock_logger: MagicMock,
     ) -> None:
         """Test debug logging during download."""
         # Setup mocks
-        mock_package_dir = Mock()
-        mock_package_dir.__str__.return_value = "/fake/package"
-        mock_files.return_value = mock_package_dir
+        mock_files.return_value = "/fake/package"
 
         # File doesn't exist
         mock_exists.return_value = False
@@ -234,13 +222,15 @@ class TestBaseLogging:
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.mkdir")
     def test_debug_logging_existing_model(
-        self, mock_mkdir: Mock, mock_exists: Mock, mock_files: Mock, mock_logger: Mock
+        self,
+        mock_mkdir: MagicMock,
+        mock_exists: MagicMock,
+        mock_files: MagicMock,
+        mock_logger: MagicMock,
     ) -> None:
         """Test debug logging when using existing model."""
         # Setup mocks
-        mock_package_dir = Mock()
-        mock_package_dir.__str__.return_value = "/fake/package"
-        mock_files.return_value = mock_package_dir
+        mock_files.return_value = "/fake/package"
 
         mock_exists.return_value = True  # File exists
 
@@ -261,17 +251,15 @@ class TestBaseLogging:
     @patch("pathlib.Path.mkdir")
     def test_error_logging_download_failure(
         self,
-        mock_mkdir: Mock,
-        mock_exists: Mock,
-        mock_download: Mock,
-        mock_files: Mock,
-        mock_logger: Mock,
+        mock_mkdir: MagicMock,
+        mock_exists: MagicMock,
+        mock_download: MagicMock,
+        mock_files: MagicMock,
+        mock_logger: MagicMock,
     ) -> None:
         """Test error logging when download fails."""
         # Setup mocks
-        mock_package_dir = Mock()
-        mock_package_dir.__str__.return_value = "/fake/package"
-        mock_files.return_value = mock_package_dir
+        mock_files.return_value = "/fake/package"
 
         # File doesn't exist
         mock_exists.return_value = False

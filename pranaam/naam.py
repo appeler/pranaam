@@ -161,36 +161,7 @@ class Naam(Base):
         """
         import tensorflow as tf
 
-        # Check TensorFlow version for better error messages
-        tf_version = tuple(map(int, tf.__version__.split(".")[:2]))
-
         try:
             return tf.keras.models.load_model(model_path)
         except Exception as e:
-            error_str = str(e).lower()
-
-            if (
-                "keras 3" in error_str
-                or "file format not supported" in error_str
-                or "savedmodel" in error_str
-                or tf_version >= (2, 16)  # TF 2.16+ uses Keras 3 by default
-            ):
-                # Provide helpful error message based on TF version
-                if tf_version >= (2, 16):
-                    suggestion = (
-                        f"TensorFlow {tf.__version__} with Keras 3 detected. "
-                        f"Models were trained with Keras 2. "
-                        f"Options:\n"
-                        f"1. Install compatible version: pip install 'pranaam[tensorflow-compat]'\n"
-                        f"2. Use TF_USE_LEGACY_KERAS=1 environment variable\n"
-                        f"3. Downgrade: pip install 'tensorflow<2.16'"
-                    )
-                else:
-                    suggestion = "Try: pip install 'pranaam[tensorflow-compat]'"
-
-                raise RuntimeError(
-                    f"Model format compatibility issue with TensorFlow {tf.__version__}. "
-                    f"{suggestion}"
-                ) from e
-            else:
-                raise RuntimeError(f"Model loading failed: {e}") from e
+            raise RuntimeError(f"Model loading failed: {e}") from e
