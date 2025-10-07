@@ -4,7 +4,7 @@ import os
 import tarfile
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, mock_open, patch
+from unittest.mock import MagicMock, Mock, mock_open, patch
 
 import pytest
 import requests
@@ -41,8 +41,8 @@ class TestDownloadFile:
         mock_tqdm.return_value.__enter__.return_value.update = Mock()
 
         # Mock Path operations
-        mock_file_path = Mock()
-        mock_target_path = Mock()
+        mock_file_path = MagicMock()
+        mock_target_path = MagicMock()
         mock_path.side_effect = [mock_target_path, mock_file_path]
         mock_target_path.__truediv__.return_value = mock_file_path
         mock_file_path.open.return_value.__enter__.return_value = Mock()
@@ -134,8 +134,8 @@ class TestDownloadFile:
         mock_tqdm.return_value.__enter__.return_value.update = Mock()
 
         # Mock Path operations
-        mock_file_path = Mock()
-        mock_target_path = Mock()
+        mock_file_path = MagicMock()
+        mock_target_path = MagicMock()
         mock_path.side_effect = [mock_target_path, mock_file_path]
         mock_target_path.__truediv__.return_value = mock_file_path
         mock_file_path.open.return_value.__enter__.return_value = Mock()
