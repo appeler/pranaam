@@ -58,7 +58,7 @@ class TestDownloadFile:
         # Verify
         assert result is True
         mock_session_instance.get.assert_called_once_with(
-            REPO_BASE_URL, stream=True, allow_redirects=True, timeout=30
+            REPO_BASE_URL, stream=True, allow_redirects=True, timeout=120
         )
 
     @patch("pranaam.utils.requests.Session")
