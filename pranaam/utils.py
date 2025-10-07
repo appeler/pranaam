@@ -46,7 +46,7 @@ def download_file(url: str, target: str, file_name: str) -> bool:
             file_path.open("wb") as file_handle,
         ):
             response = session.get(
-                REPO_BASE_URL, stream=True, allow_redirects=True, timeout=30
+                REPO_BASE_URL, stream=True, allow_redirects=True, timeout=120
             )
             response.raise_for_status()
             content_length = response.headers.get("Content-Length")

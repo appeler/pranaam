@@ -78,9 +78,10 @@ jobs:
     - name: Run E2E tests (with model download)
       run: |
         pytest pranaam/tests/test_e2e.py -v -m integration --tb=short
+      timeout-minutes: 15
       env:
         # Prevent timeouts during model download
-        PYTEST_TIMEOUT: 600
+        PYTEST_TIMEOUT: 900
         
     - name: Build package
       run: |
