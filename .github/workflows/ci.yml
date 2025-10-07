@@ -83,7 +83,6 @@ jobs:
         PYTEST_TIMEOUT: 600
         
     - name: Build package
-      if: matrix.python-version == '3.11'
       run: |
         pip install build twine
         python -m build
