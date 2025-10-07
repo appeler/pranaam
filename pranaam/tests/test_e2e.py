@@ -234,7 +234,7 @@ class TestRealModelDownloadAndPrediction:
 
         # Test with None input
         with pytest.raises((ValueError, TypeError)):
-            pranaam.pred_rel(None, lang="eng")
+            pranaam.pred_rel(None, lang="eng")  # type: ignore
 
         print("\n🛡️ ERROR HANDLING VERIFIED")
 
