@@ -5,14 +5,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pranaam.naam &mdash; pranaam 0.1.0 documentation</title>
+  <title>pranaam.naam &mdash; pranaam 0.2.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/documentation_options.js?v=938c9ccc"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -75,6 +75,9 @@
   <h1>Source code for pranaam.naam</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Main prediction module for religion classification.&quot;&quot;&quot;</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Final</span><span class="p">,</span> <span class="n">Literal</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
@@ -112,10 +115,10 @@
     <span class="n">MODELFN</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;model&quot;</span>
     <span class="n">weights_loaded</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">Model</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">model_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">classes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;not-muslim&quot;</span><span class="p">,</span> <span class="s2">&quot;muslim&quot;</span><span class="p">]</span>
+    <span class="n">model_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">classes</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;not-muslim&quot;</span><span class="p">,</span> <span class="s2">&quot;muslim&quot;</span><span class="p">]</span>
     <span class="n">cur_lang</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;eng&quot;</span>
-    <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;eng_and_hindi_models_v1&quot;</span>
+    <span class="n">model_name</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;eng_and_hindi_models_v1&quot;</span>
 
 <div class="viewcode-block" id="Naam.pred_rel">
 <a class="viewcode-back" href="../../api.html#pranaam.naam.Naam.pred_rel">[docs]</a>
@@ -123,7 +126,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">pred_rel</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">names</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
-        <span class="n">lang</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;eng&quot;</span><span class="p">,</span>
+        <span class="n">lang</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;eng&quot;</span><span class="p">,</span> <span class="s2">&quot;hin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;eng&quot;</span><span class="p">,</span>
         <span class="n">latest</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Predict religion based on name(s).</span>
@@ -194,7 +197,7 @@
 
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_load_model</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">lang</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">latest</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load_model</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">lang</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;eng&quot;</span><span class="p">,</span> <span class="s2">&quot;hin&quot;</span><span class="p">],</span> <span class="n">latest</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the appropriate model for the specified language.</span>
 
 <span class="sd">        Args:</span>
@@ -210,12 +213,12 @@
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Failed to load model data&quot;</span><span class="p">)</span>
 
             <span class="n">model_subpath</span> <span class="o">=</span> <span class="s2">&quot;eng_model&quot;</span> <span class="k">if</span> <span class="n">lang</span> <span class="o">==</span> <span class="s2">&quot;eng&quot;</span> <span class="k">else</span> <span class="s2">&quot;hin_model&quot;</span>
-            <span class="n">model_full_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">model_path</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">model_name</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">model_subpath</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">model_full_path</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">model_path</span> <span class="o">/</span> <span class="bp">cls</span><span class="o">.</span><span class="n">model_name</span> <span class="o">/</span> <span class="n">model_subpath</span>
 
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading </span><span class="si">{</span><span class="n">lang</span><span class="si">}</span><span class="s2"> model from </span><span class="si">{</span><span class="n">model_full_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
             <span class="c1"># Try different loading methods based on TensorFlow version</span>
-            <span class="bp">cls</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_load_model_with_compatibility</span><span class="p">(</span><span class="n">model_full_path</span><span class="p">,</span> <span class="n">lang</span><span class="p">)</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_load_model_with_compatibility</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">model_full_path</span><span class="p">),</span> <span class="n">lang</span><span class="p">)</span>
             <span class="bp">cls</span><span class="o">.</span><span class="n">weights_loaded</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="bp">cls</span><span class="o">.</span><span class="n">cur_lang</span> <span class="o">=</span> <span class="n">lang</span>
 
@@ -225,7 +228,7 @@
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_load_model_with_compatibility</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span> <span class="n">model_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">lang</span><span class="p">:</span> <span class="nb">str</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">model_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">lang</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;eng&quot;</span><span class="p">,</span> <span class="s2">&quot;hin&quot;</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">Model</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load model with TensorFlow/Keras version compatibility handling.</span>
 
@@ -241,39 +244,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
 
-        <span class="c1"># Check TensorFlow version for better error messages</span>
-        <span class="n">tf_version</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[:</span><span class="mi">2</span><span class="p">]))</span>
-
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">error_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-
-            <span class="k">if</span> <span class="p">(</span>
-                <span class="s2">&quot;keras 3&quot;</span> <span class="ow">in</span> <span class="n">error_str</span>
-                <span class="ow">or</span> <span class="s2">&quot;file format not supported&quot;</span> <span class="ow">in</span> <span class="n">error_str</span>
-                <span class="ow">or</span> <span class="s2">&quot;savedmodel&quot;</span> <span class="ow">in</span> <span class="n">error_str</span>
-                <span class="ow">or</span> <span class="n">tf_version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>  <span class="c1"># TF 2.16+ uses Keras 3 by default</span>
-            <span class="p">):</span>
-                <span class="c1"># Provide helpful error message based on TF version</span>
-                <span class="k">if</span> <span class="n">tf_version</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">16</span><span class="p">):</span>
-                    <span class="n">suggestion</span> <span class="o">=</span> <span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;TensorFlow </span><span class="si">{</span><span class="n">tf</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2"> with Keras 3 detected. &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;Models were trained with Keras 2. &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;Options:</span><span class="se">\n</span><span class="s2">&quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;1. Install compatible version: pip install &#39;pranaam[tensorflow-compat]&#39;</span><span class="se">\n</span><span class="s2">&quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;2. Use TF_USE_LEGACY_KERAS=1 environment variable</span><span class="se">\n</span><span class="s2">&quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;3. Downgrade: pip install &#39;tensorflow&lt;2.16&#39;&quot;</span>
-                    <span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">suggestion</span> <span class="o">=</span> <span class="s2">&quot;Try: pip install &#39;pranaam[tensorflow-compat]&#39;&quot;</span>
-
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Model format compatibility issue with TensorFlow </span><span class="si">{</span><span class="n">tf</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">. &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">suggestion</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Model loading failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span></div>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Model loading failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span></div>
 
 </pre></div>
 

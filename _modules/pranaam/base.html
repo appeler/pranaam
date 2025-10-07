@@ -5,14 +5,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pranaam.base &mdash; pranaam 0.1.0 documentation</title>
+  <title>pranaam.base &mdash; pranaam 0.2.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/documentation_options.js?v=938c9ccc"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -73,8 +73,8 @@
            <div itemprop="articleBody">
              
   <h1>Source code for pranaam.base</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">importlib.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">files</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">importlib.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">files</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">REPO_BASE_URL</span><span class="p">,</span> <span class="n">download_file</span>
@@ -92,7 +92,7 @@
 <div class="viewcode-block" id="Base.load_model_data">
 <a class="viewcode-back" href="../../api.html#pranaam.base.Base.load_model_data">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">load_model_data</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">latest</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_model_data</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">latest</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load model data, downloading if necessary.</span>
 
 <span class="sd">        Args:</span>
@@ -102,22 +102,23 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Path to the model directory, or None if loading failed</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">model_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">model_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">MODELFN</span><span class="p">:</span>
             <span class="c1"># Use modern importlib.resources instead of deprecated pkg_resources</span>
             <span class="n">package_dir</span> <span class="o">=</span> <span class="n">files</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span>
-            <span class="n">model_fn</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">package_dir</span> <span class="o">/</span> <span class="bp">cls</span><span class="o">.</span><span class="n">MODELFN</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">model_fn</span><span class="p">):</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">model_fn</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">model_fn</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">latest</span><span class="p">:</span>
+            <span class="n">model_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">package_dir</span><span class="p">))</span> <span class="o">/</span> <span class="bp">cls</span><span class="o">.</span><span class="n">MODELFN</span>
+            <span class="n">model_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="n">target_file</span> <span class="o">=</span> <span class="n">model_dir</span> <span class="o">/</span> <span class="n">file_name</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">target_file</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">or</span> <span class="n">latest</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Downloading model data from the server (this is done only first time) (</span><span class="si">{</span><span class="n">model_fn</span><span class="si">!s}</span><span class="s2">)...&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Downloading model data from the server (this is done only first time) (</span><span class="si">{</span><span class="n">model_dir</span><span class="si">}</span><span class="s2">)...&quot;</span>
                 <span class="p">)</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">download_file</span><span class="p">(</span><span class="n">REPO_BASE_URL</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">model_fn</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">download_file</span><span class="p">(</span><span class="n">REPO_BASE_URL</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">model_dir</span><span class="p">),</span> <span class="n">file_name</span><span class="p">):</span>
                     <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;ERROR: Cannot download model data file&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using model data from </span><span class="si">{</span><span class="n">model_fn</span><span class="si">!s}</span><span class="s2">...&quot;</span><span class="p">)</span>
-            <span class="n">model_path</span> <span class="o">=</span> <span class="n">model_fn</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using model data from </span><span class="si">{</span><span class="n">model_dir</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+            <span class="n">model_path</span> <span class="o">=</span> <span class="n">model_dir</span>
 
         <span class="k">return</span> <span class="n">model_path</span></div>
 </div>
