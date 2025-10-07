@@ -72,6 +72,13 @@ class Naam(Base):
         if not name_list:
             raise ValueError("Input names list cannot be empty")
 
+        # Validate that no names are empty or contain only whitespace
+        for i, name in enumerate(name_list):
+            if not name or not name.strip():
+                raise ValueError(
+                    f"Name at index {i} is empty or contains only whitespace"
+                )
+
         # Load model if not loaded or language changed
         if not cls.weights_loaded or cls.cur_lang != lang:
             cls._load_model(lang, latest)
