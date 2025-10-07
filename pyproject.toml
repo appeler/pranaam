@@ -4,28 +4,33 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pranaam"
-version = "0.1.0"
+version = "0.2.0"
 description = "Predict religion and caste based on name"
 readme = "README.md"
-requires-python = ">=3.10,<3.12"
-license = "MIT"
+requires-python = ">=3.11,<3.12"
+license = {text = "MIT"}
 authors = [
   { name = "Rajashekar Chintalapati", email = "rajshekar.ch@gmail.com" },
   { name = "Aaditya Dar" },
   { name = "Gaurav Sood", email = "gsood07@gmail.com" }
 ]
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
-  "Programming Language :: Python :: 3.10",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
   "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
   "Topic :: Scientific/Engineering :: Information Analysis",
   "Topic :: Software Development :: Libraries :: Python Modules",
-  "Topic :: Utilities"
+  "Topic :: Text Processing :: Linguistic",
+  "Natural Language :: English",
+  "Natural Language :: Hindi"
 ]
-keywords = ["predict", "religion", "name", "hindi", "english"]
+keywords = ["predict", "religion", "name", "hindi", "english", "machine-learning", "deep-learning", "nlp", "name-classification", "tensorflow"]
 dependencies = [
-  "tensorflow==2.14.1",  # Specific working version
+  "tensorflow>=2.14.1,<2.16",  # TensorFlow with Keras 2 support
   "tqdm>=4.64.0",
   "gdown>=4.7.0", 
   "pandas>=1.5.0",
@@ -56,7 +61,6 @@ docs = [
   "sphinx>=5.0.0",
   "sphinx-rtd-theme>=1.0.0",
   "myst-parser>=0.18.0",
-  "tomli>=2.0.0;python_version<'3.11'"
 ]
 streamlit = [
   "streamlit>=1.20.0",
@@ -108,7 +112,7 @@ markers = [
 
 [tool.black]
 line-length = 88
-target-version = ['py310']
+target-version = ['py311']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -126,7 +130,7 @@ extend-exclude = '''
 '''
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -159,7 +163,7 @@ exclude_lines = [
 ]
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 line-length = 88
 extend-exclude = ["pranaam/notebooks/"]
 

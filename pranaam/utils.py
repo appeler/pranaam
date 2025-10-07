@@ -2,6 +2,8 @@
 
 import os
 import tarfile
+from pathlib import Path
+from typing import Final
 
 import requests
 from tqdm.auto import tqdm
@@ -10,7 +12,7 @@ from .logging import get_logger
 
 logger = get_logger()
 
-REPO_BASE_URL: str = (
+REPO_BASE_URL: Final[str] = (
     os.environ.get("PRANAAM_MODEL_URL")
     or "https://dataverse.harvard.edu/api/access/datafile/6286241"
 )
@@ -27,35 +29,38 @@ def download_file(url: str, target: str, file_name: str) -> bool:
     Returns:
         True if download and extraction successful, False otherwise
     """
-    file_path = f"{target}/{file_name}.tar.gz"
+    target_path = Path(target)
+    file_path = target_path / f"{file_name}.tar.gz"
     try:
         logger.info("Downloading models from dataverse...")
 
-        with requests.Session() as session:
+        with (
+            requests.Session() as session,
+            tqdm(
+                unit="iB",
+                unit_scale=True,
+                desc=file_name,
+                ascii=True,
+                colour="cyan",
+            ) as pbar,
+            file_path.open("wb") as file_handle,
+        ):
             response = session.get(
                 REPO_BASE_URL, stream=True, allow_redirects=True, timeout=30
             )
             response.raise_for_status()
             content_length = response.headers.get("Content-Length")
             total_size = int(content_length) if content_length else None
+            pbar.total = total_size
 
-            with tqdm(
-                total=total_size,
-                unit="iB",
-                unit_scale=True,
-                desc=file_name,
-                ascii=True,
-                colour="cyan",
-            ) as pbar:
-                with open(file_path, "wb") as file_handle:
-                    for chunk in response.iter_content(chunk_size=1024**2):
-                        if chunk:  # filter out keep-alive chunks
-                            size = file_handle.write(chunk)
-                            pbar.update(size)
+            for chunk in response.iter_content(chunk_size=1024**2):
+                if chunk:  # filter out keep-alive chunks
+                    size = file_handle.write(chunk)
+                    pbar.update(size)
         # Extract tar file with safety checks
-        _safe_extract_tar(file_path, target)
+        _safe_extract_tar(file_path, target_path)
         # Clean up downloaded tar file
-        os.remove(file_path)
+        file_path.unlink()
         logger.info("Finished downloading models")
         return True
     except requests.exceptions.RequestException as e:
@@ -69,7 +74,7 @@ def download_file(url: str, target: str, file_name: str) -> bool:
         return False
 
 
-def _safe_extract_tar(tar_path: str, extract_to: str) -> None:
+def _safe_extract_tar(tar_path: Path, extract_to: Path) -> None:
     """Safely extract tar file preventing path traversal attacks.
 
     Args:
@@ -77,20 +82,31 @@ def _safe_extract_tar(tar_path: str, extract_to: str) -> None:
         extract_to: Directory to extract to
 
     Raises:
-        Exception: If path traversal attempt detected
+        SecurityError: If path traversal attempt detected
         tarfile.TarError: If tar file is corrupted
     """
 
-    def is_within_directory(directory: str, target: str) -> bool:
-        abs_directory = os.path.abspath(directory)
-        abs_target = os.path.abspath(target)
-        prefix = os.path.commonprefix([abs_directory, abs_target])
-        return prefix == abs_directory
+    def is_within_directory(directory: Path, target: Path) -> bool:
+        abs_directory = directory.resolve()
+        abs_target = target.resolve()
+        try:
+            abs_target.relative_to(abs_directory)
+            return True
+        except ValueError:
+            return False
 
     with tarfile.open(tar_path, "r:gz") as tar_file:
         for member in tar_file.getmembers():
-            member_path = os.path.join(extract_to, member.name)
+            member_path = extract_to / member.name
             if not is_within_directory(extract_to, member_path):
-                raise Exception(f"Attempted path traversal in tar file: {member.name}")
+                raise SecurityError(
+                    f"Attempted path traversal in tar file: {member.name}"
+                )
 
         tar_file.extractall(extract_to)
+
+
+class SecurityError(Exception):
+    """Raised when a security violation is detected."""
+
+    pass

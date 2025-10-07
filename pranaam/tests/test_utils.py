@@ -3,6 +3,7 @@
 import os
 import tarfile
 import tempfile
+from pathlib import Path
 from unittest.mock import Mock, mock_open, patch
 
 import pytest
@@ -157,7 +158,7 @@ class TestSafeExtractTar:
             extract_dir = os.path.join(temp_dir, "extracted")
             os.makedirs(extract_dir)
 
-            _safe_extract_tar(tar_path, extract_dir)
+            _safe_extract_tar(Path(tar_path), Path(extract_dir))
 
             # Verify extraction
             extracted_file = os.path.join(extract_dir, "test.txt")
@@ -187,7 +188,7 @@ class TestSafeExtractTar:
 
             # Should raise exception
             with pytest.raises(Exception, match="Attempted path traversal"):
-                _safe_extract_tar(tar_path, extract_dir)
+                _safe_extract_tar(Path(tar_path), Path(extract_dir))
 
     def test_corrupted_tar_file(self) -> None:
         """Test handling of corrupted tar files."""
@@ -201,7 +202,7 @@ class TestSafeExtractTar:
             os.makedirs(extract_dir)
 
             with pytest.raises(tarfile.TarError):
-                _safe_extract_tar(tar_path, extract_dir)
+                _safe_extract_tar(Path(tar_path), Path(extract_dir))
 
     def test_nonexistent_tar_file(self) -> None:
         """Test handling of non-existent tar file."""
@@ -211,7 +212,7 @@ class TestSafeExtractTar:
             os.makedirs(extract_dir)
 
             with pytest.raises((FileNotFoundError, tarfile.TarError)):
-                _safe_extract_tar(tar_path, extract_dir)
+                _safe_extract_tar(Path(tar_path), Path(extract_dir))
 
 
 class TestConstants:

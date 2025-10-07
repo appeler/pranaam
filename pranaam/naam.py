@@ -1,5 +1,8 @@
 """Main prediction module for religion classification."""
 
+from pathlib import Path
+from typing import Final, Literal
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -32,16 +35,16 @@ class Naam(Base):
     MODELFN: str = "model"
     weights_loaded: bool = False
     model: tf.keras.Model | None = None
-    model_path: str | None = None
-    classes: list[str] = ["not-muslim", "muslim"]
+    model_path: Path | None = None
+    classes: Final[list[str]] = ["not-muslim", "muslim"]
     cur_lang: str = "eng"
-    model_name: str = "eng_and_hindi_models_v1"
+    model_name: Final[str] = "eng_and_hindi_models_v1"
 
     @classmethod
     def pred_rel(
         cls,
         names: str | list[str] | pd.Series,
-        lang: str = "eng",
+        lang: Literal["eng", "hin"] = "eng",
         latest: bool = False,
     ) -> pd.DataFrame:
         """Predict religion based on name(s).
@@ -111,7 +114,7 @@ class Naam(Base):
             raise RuntimeError(f"Prediction failed: {e}") from e
 
     @classmethod
-    def _load_model(cls, lang: str, latest: bool = False) -> None:
+    def _load_model(cls, lang: Literal["eng", "hin"], latest: bool = False) -> None:
         """Load the appropriate model for the specified language.
 
         Args:
@@ -127,12 +130,12 @@ class Naam(Base):
                 raise RuntimeError("Failed to load model data")
 
             model_subpath = "eng_model" if lang == "eng" else "hin_model"
-            model_full_path = f"{cls.model_path}/{cls.model_name}/{model_subpath}"
+            model_full_path = cls.model_path / cls.model_name / model_subpath
 
             logger.info(f"Loading {lang} model from {model_full_path}")
 
             # Try different loading methods based on TensorFlow version
-            cls.model = cls._load_model_with_compatibility(model_full_path, lang)
+            cls.model = cls._load_model_with_compatibility(str(model_full_path), lang)
             cls.weights_loaded = True
             cls.cur_lang = lang
 
@@ -142,7 +145,7 @@ class Naam(Base):
 
     @classmethod
     def _load_model_with_compatibility(
-        cls, model_path: str, lang: str
+        cls, model_path: str, lang: Literal["eng", "hin"]
     ) -> tf.keras.Model:
         """Load model with TensorFlow/Keras version compatibility handling.
 

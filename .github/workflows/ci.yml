@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11"]  # TensorFlow 2.14.1 not available for 3.12
+        python-version: ["3.11"]
 
     steps:
     - uses: actions/checkout@v4
@@ -73,7 +73,7 @@ jobs:
     - name: Verify TensorFlow compatibility
       run: |
         python -c "import tensorflow as tf; import keras; print(f'TensorFlow: {tf.__version__}, Keras: {keras.__version__}')"
-        python -c "assert '2.14' in __import__('tensorflow').__version__, 'Wrong TensorFlow version'"
+        python -c "assert '2.14' in __import__('tensorflow').__version__ or '2.15' in __import__('tensorflow').__version__, 'Wrong TensorFlow version'"
 
     - name: Run E2E tests (with model download)
       run: |
