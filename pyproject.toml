@@ -1,13 +1,13 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.21.1"]
+build-backend = "hatchling.build"
 
 [project]
 name = "pranaam"
 version = "0.2.0"
 description = "Predict religion and caste based on name"
 readme = "README.md"
-requires-python = ">=3.10,<3.12"
+requires-python = ">=3.10,<3.13"
 license = {text = "MIT"}
 authors = [
   { name = "Rajashekar Chintalapati", email = "rajshekar.ch@gmail.com" },
@@ -20,7 +20,9 @@ classifiers = [
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
   "Topic :: Scientific/Engineering :: Information Analysis",
   "Topic :: Software Development :: Libraries :: Python Modules",
@@ -40,27 +42,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
-  "check-manifest",
-  "black>=23.0.0",
-  "ruff>=0.1.0",
-  "mypy>=1.0.0",
-  "pre-commit>=3.0.0",
-  "pandas-stubs>=2.0.0",
-  "types-requests",
-  "types-tqdm"
-]
-test = [
-  "pytest>=7.0.0",
-  "pytest-cov>=4.0.0",
-  "coverage>=7.0.0",
-  "pytest-mock>=3.10.0",
-  "pytest-xdist>=3.0.0"
-]
 docs = [
-  "sphinx>=5.0.0",
-  "sphinx-rtd-theme>=1.0.0",
-  "myst-parser>=0.18.0",
+    "sphinx>=7.0",
+    "furo>=2024.1.29",
+    "sphinx-autodoc-typehints>=1.25",
+    "sphinx-copybutton>=0.5",
+    "myst-parser>=2.0",
 ]
 streamlit = [
   "streamlit>=1.20.0",
@@ -68,8 +55,25 @@ streamlit = [
   "nltk>=3.8.0",
   "joblib>=1.0.0"
 ]
-all = [
-  "pranaam[dev,test,docs,streamlit]"
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-xdist>=3.0",
+    "ruff>=0.7.0",
+    "mypy>=1.0",
+    "black>=24.0",
+    "isort>=5.0",
+    "pre-commit>=3.0",
+    "pandas-stubs>=2.0.0",
+    "types-requests",
+    "types-tqdm",
+]
+test = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-xdist>=3.0",
 ]
 
 [project.urls]
@@ -80,12 +84,18 @@ all = [
 [project.scripts]
 predict_religion = "pranaam.predict:main"
 
-[tool.setuptools]
-packages = ["pranaam"]
-include-package-data = true
+[tool.hatch.build]
+exclude = [
+    "/.github",
+    "/.venv",
+    "/docs",
+    "/tests",
+    "/.gitignore",
+    "/.pre-commit-config.yaml",
+]
 
-[tool.setuptools.package-data]
-pranaam = ["notebooks/*.ipynb"]
+[tool.hatch.build.targets.wheel]
+packages = ["pranaam"]
 
 [tool.pytest.ini_options]
 python_files = "test_*.py"
@@ -174,11 +184,15 @@ select = [
     "UP", # pyupgrade
 ]
 ignore = [
-    "E501",  # line too long, handled by black
+    "E501",  # line too long (handled by formatter)
     "B008",  # do not perform function calls in argument defaults
     "C901",  # too complex
 ]
-per-file-ignores = {"__init__.py" = ["F401"], "tests/*" = ["B011", "S101"]}
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # imported but unused
+"tests/*" = ["S101"]  # use of assert
+"*.ipynb" = ["E402", "E722", "UP031", "B905", "F821", "F811", "W293", "F841"]  # ignore notebook linting issues
 
 [tool.ruff.lint.isort]
 known-first-party = ["pranaam"]
