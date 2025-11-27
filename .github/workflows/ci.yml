@@ -39,7 +39,7 @@ jobs:
 
     - name: Type check with mypy
       run: |
-        mypy pranaam/ --exclude pranaam/tests/
+        mypy pranaam/ --exclude tests/
 
     - name: Run unit tests
       run: |

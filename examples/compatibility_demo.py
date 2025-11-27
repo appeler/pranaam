@@ -193,11 +193,11 @@ def main() -> None:
     print("=" * 50)
     if is_compatible:
         print("✅ Environment is compatible - E2E tests should work!")
-        print("   Run: pytest pranaam/tests/test_e2e.py -v")
+        print("   Run: pytest tests/test_e2e.py -v")
     else:
         print("⚠️  Environment needs fixing for real predictions")
         print("   Solution: pip install 'pranaam[tensorflow-compat]'")
-        print("   Then run: pytest pranaam/tests/test_e2e.py -v")
+        print("   Then run: pytest tests/test_e2e.py -v")
 
     print("\n📋 PACKAGE STATUS:")
     print("• ✅ All 75 unit tests pass (mocked functionality)")

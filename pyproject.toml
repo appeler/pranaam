@@ -106,7 +106,7 @@ packages = ["pranaam"]
 
 [tool.pytest.ini_options]
 python_files = "test_*.py"
-testpaths = ["pranaam/tests"]
+testpaths = ["tests"]
 addopts = [
     "-v",
     "--tb=short",
