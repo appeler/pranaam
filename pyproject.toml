@@ -42,6 +42,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-xdist>=3.0",
+]
 docs = [
     "sphinx>=7.0",
     "furo>=2024.1.29",

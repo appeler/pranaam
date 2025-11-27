@@ -117,6 +117,11 @@ typehints_use_signature_return = True
 autodoc_typehints_description_target = 'documented'
 
 # MyST settings
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.md': 'markdown',
+}
+
 myst_enable_extensions = [
     'colon_fence',
     'deflist',
