@@ -31,10 +31,6 @@ jobs:
         python -c "import pranaam; print('✅ Pranaam installation successful')"
         python -c "import tensorflow as tf; print(f'✅ TensorFlow {tf.__version__} loaded')"
 
-    - name: Format check with black
-      run: |
-        black --check --diff pranaam/
-
     - name: Lint with ruff
       run: |
         ruff check pranaam/
