@@ -59,6 +59,11 @@ jobs:
         with:
           fetch-depth: 0
       
+      - name: Sync CITATION.cff
+        uses: gojiplus/citation-sync@v1
+        with:
+          commit: true
+      
       - name: Extract version from tag
         id: version
         run: |
