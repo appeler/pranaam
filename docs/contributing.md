@@ -189,7 +189,6 @@ pranaam/
 ├── utils.py                 # Utility functions
 ├── logging.py               # Centralized logging configuration
 ├── pranaam.py              # CLI entry point and function exports
-├── notebooks/              # Training notebooks for model development
 └── tests/                  # Comprehensive test suite
     ├── conftest.py         # pytest fixtures
     ├── test_naam.py        # Core functionality tests
