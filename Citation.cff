@@ -3,9 +3,28 @@ message: "If you use this software, please cite it as below."
 authors:
 - family-names: "Chintalapati"
   given-names: "Rajashekar"
+  email: "rajshekar.ch@gmail.com"
+- family-names: "Dar"
+  given-names: "Aaditya"
 - family-names: "Sood"
   given-names: "Gaurav"
-title: "pranaam: predict religion based on name"
-version: 0.0.2
-date-released: 2022-05-08
+  email: "gsood07@gmail.com"
+title: "pranaam: Predict religion and caste based on name"
+version: 0.2.0
+date-released: 2024-12-03
 url: "https://github.com/appeler/pranaam"
+repository-code: "https://github.com/appeler/pranaam"
+repository-artifact: "https://pypi.org/project/pranaam/"
+abstract: "Predict religion and caste based on name using machine learning models for Hindi and English names"
+keywords:
+  - predict
+  - religion
+  - name
+  - hindi
+  - english
+  - machine-learning
+  - deep-learning
+  - nlp
+  - name-classification
+  - tensorflow
+license: MIT

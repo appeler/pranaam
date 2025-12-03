@@ -111,29 +111,29 @@ html_logo = None
 html_favicon = None
 
 # Type hints settings
-typehints_defaults = 'comma'
+typehints_defaults = "comma"
 typehints_use_signature = True
 typehints_use_signature_return = True
-autodoc_typehints_description_target = 'documented'
+autodoc_typehints_description_target = "documented"
 
 # MyST settings
 source_suffix = {
-    '.rst': 'restructuredtext',
-    '.md': 'markdown',
+    ".rst": "restructuredtext",
+    ".md": "markdown",
 }
 
 myst_enable_extensions = [
-    'colon_fence',
-    'deflist',
-    'dollarmath',
-    'fieldlist',
-    'html_admonition',
-    'html_image',
-    'replacements',
-    'smartquotes',
-    'strikethrough',
-    'substitution',
-    'tasklist',
+    "colon_fence",
+    "deflist",
+    "dollarmath",
+    "fieldlist",
+    "html_admonition",
+    "html_image",
+    "replacements",
+    "smartquotes",
+    "strikethrough",
+    "substitution",
+    "tasklist",
 ]
 
 # Copy button configuration

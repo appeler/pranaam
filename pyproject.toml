@@ -68,8 +68,6 @@ dev = [
     "pytest-xdist>=3.0",
     "ruff>=0.7.0",
     "mypy>=1.0",
-    "black>=24.0",
-    "isort>=5.0",
     "pre-commit>=3.0",
     "pandas-stubs>=2.0.0",
     "types-requests",
@@ -123,24 +121,6 @@ markers = [
 # addopts = "--cov=pranaam --cov-report=html --cov-report=term-missing"
 
 
-[tool.black]
-line-length = 88
-target-version = ['py311']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | build
-  | dist
-  | notebooks
-)/
-'''
 
 [tool.mypy]
 python_version = "3.11"
@@ -195,6 +175,12 @@ ignore = [
     "B008",  # do not perform function calls in argument defaults
     "C901",  # too complex
 ]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]  # imported but unused
