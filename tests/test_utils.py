@@ -267,6 +267,7 @@ class TestErrorLogging:
         mock_session.return_value.__enter__.return_value = mock_session_instance
 
         import tempfile
+
         with tempfile.TemporaryDirectory() as temp_dir:
             download_file("http://test.com", temp_dir, "test")
 
