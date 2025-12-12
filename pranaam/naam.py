@@ -159,6 +159,14 @@ class Naam(Base):
         Raises:
             RuntimeError: If model loading fails
         """
+        # Fix Windows encoding for model assets with Unicode content
+        import sys
+
+        if sys.platform == "win32":
+            import os
+
+            os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+
         try:
             # Use tf-keras for loading the migrated Keras 3 models
             import tf_keras as keras
