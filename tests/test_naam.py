@@ -176,7 +176,8 @@ class TestNaamModelLoading:
         Naam._load_model("eng")
 
         # Check that correct model path was used
-        expected_path = "/fake/path/eng_and_hindi_models_v2/eng_model.keras"
+        fake_path = Path("/fake/path")
+        expected_path = str(fake_path / "eng_and_hindi_models_v2" / "eng_model.keras")
         mock_load_model.assert_called_once_with(expected_path)
         assert Naam.model == mock_model
         assert Naam.weights_loaded is True
@@ -197,7 +198,8 @@ class TestNaamModelLoading:
 
         Naam._load_model("hin")
 
-        expected_path = "/fake/path/eng_and_hindi_models_v2/hin_model.keras"
+        fake_path = Path("/fake/path")
+        expected_path = str(fake_path / "eng_and_hindi_models_v2" / "hin_model.keras")
         mock_load_model.assert_called_once_with(expected_path)
         assert Naam.cur_lang == "hin"
 
