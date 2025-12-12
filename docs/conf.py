@@ -16,10 +16,7 @@ import sys
 sys.path.insert(0, os.path.abspath(".."))
 
 # Read project metadata from pyproject.toml
-try:
-    import tomllib  # type: ignore
-except ImportError:
-    import tomli as tomllib  # type: ignore
+import tomllib
 
 with open("../pyproject.toml", "rb") as f:
     pyproject_data = tomllib.load(f)

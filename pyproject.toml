@@ -4,10 +4,10 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pranaam"
-version = "0.2.0"
+version = "0.3.0"
 description = "Predict religion and caste based on name"
 readme = "README.md"
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.11,<3.13"
 license = {text = "MIT"}
 authors = [
   { name = "Rajashekar Chintalapati", email = "rajshekar.ch@gmail.com" },
@@ -20,7 +20,6 @@ classifiers = [
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
@@ -34,19 +33,12 @@ keywords = ["predict", "religion", "name", "hindi", "english", "machine-learning
 dependencies = [
   "tensorflow>=2.14.0,<2.16",  # Pin to versions that work with existing models
   "tqdm>=4.64.0",
-  "gdown>=4.7.0", 
   "pandas>=1.5.0",
   "numpy>=1.21.0,<2.0.0",
-  "setuptools>=65.5.1",
-  "wheel>=0.38.0",
+  "requests>=2.25.0",  # Used in utils.py
 ]
 
 [project.optional-dependencies]
-test = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
-    "pytest-xdist>=3.0",
-]
 docs = [
     "sphinx>=7.0",
     "furo>=2024.1.29",
@@ -56,9 +48,7 @@ docs = [
 ]
 streamlit = [
   "streamlit>=1.20.0",
-  "scikit-learn>=1.0.0,<2.0.0",
-  "nltk>=3.8.0",
-  "joblib>=1.0.0"
+  "scikit-learn>=1.0.0,<2.0.0"
 ]
 
 [dependency-groups]
@@ -187,3 +177,10 @@ line-ending = "auto"
 
 [tool.ruff.lint.isort]
 known-first-party = ["pranaam"]
+
+[tool.deptry]
+ignore_notebooks = true
+extend_exclude = ["examples"]
+
+[tool.deptry.per_rule_ignores]
+DEP002 = ["sphinx", "furo", "sphinx-autodoc-typehints", "sphinx-copybutton", "myst-parser", "scikit-learn"]
