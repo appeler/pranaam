@@ -185,6 +185,8 @@ ignore_notebooks = true
 [tool.deptry.per_rule_ignores]
 DEP002 = ["sphinx", "furo", "sphinx-autodoc-typehints", "sphinx-copybutton", "myst-parser", "scikit-learn"]
 
-[tool.uv.override-dependencies]
-# Exclude tensorflow-io-gcs-filesystem since we don't use Google Cloud Storage
-tensorflow-io-gcs-filesystem = []
+[tool.uv]
+constraint-dependencies = [
+    # Only allow tensorflow-io-gcs-filesystem on platforms with wheels (exclude Windows)
+    "tensorflow-io-gcs-filesystem; sys_platform != 'win32'",
+]
