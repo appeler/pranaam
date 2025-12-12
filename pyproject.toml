@@ -148,6 +148,10 @@ exclude_lines = [
 [tool.ruff]
 target-version = "py311"
 line-length = 88
+exclude = [
+    "model_training/",
+    "scripts/",
+]
 
 [tool.ruff.lint]
 select = [
