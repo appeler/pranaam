@@ -180,7 +180,6 @@ known-first-party = ["pranaam"]
 
 [tool.deptry]
 ignore_notebooks = true
-extend_exclude = ["examples"]
 
 [tool.deptry.per_rule_ignores]
 DEP002 = ["sphinx", "furo", "sphinx-autodoc-typehints", "sphinx-copybutton", "myst-parser", "scikit-learn"]
