@@ -31,8 +31,8 @@ classifiers = [
 ]
 keywords = ["predict", "religion", "name", "hindi", "english", "machine-learning", "deep-learning", "nlp", "name-classification", "tensorflow"]
 dependencies = [
-  "tensorflow>=2.16.0",  # TF 2.16+ with Keras 3
-  "tf-keras>=2.16.0",  # Keras 2 compatibility layer
+  "tensorflow>=2.20.0",  # TF 2.20+ without gcs-filesystem dependency
+  "tf-keras>=2.20.0",  # Keras 2 compatibility layer
   "tqdm>=4.64.0",
   "pandas>=1.5.0",
   "numpy>=1.21.0",
@@ -185,8 +185,3 @@ ignore_notebooks = true
 [tool.deptry.per_rule_ignores]
 DEP002 = ["sphinx", "furo", "sphinx-autodoc-typehints", "sphinx-copybutton", "myst-parser", "scikit-learn"]
 
-[tool.uv]
-constraint-dependencies = [
-    # Only allow tensorflow-io-gcs-filesystem on platforms with wheels (exclude Windows)
-    "tensorflow-io-gcs-filesystem; sys_platform != 'win32'",
-]
