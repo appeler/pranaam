@@ -159,7 +159,7 @@ class TestNaamPredictions:
 class TestNaamModelLoading:
     """Test model loading functionality."""
 
-    @patch("pranaam.naam.tf.keras.models.load_model")
+    @patch("tf_keras.models.load_model")
     @patch.object(Naam, "load_model_data")
     def test_model_loading_english(
         self, mock_load_data: Mock, mock_load_model: Mock
@@ -176,13 +176,13 @@ class TestNaamModelLoading:
         Naam._load_model("eng")
 
         # Check that correct model path was used
-        expected_path = "/fake/path/eng_and_hindi_models_v1/eng_model"
+        expected_path = "/fake/path/eng_and_hindi_models_v2/eng_model.keras"
         mock_load_model.assert_called_once_with(expected_path)
         assert Naam.model == mock_model
         assert Naam.weights_loaded is True
         assert Naam.cur_lang == "eng"
 
-    @patch("pranaam.naam.tf.keras.models.load_model")
+    @patch("tf_keras.models.load_model")
     @patch.object(Naam, "load_model_data")
     def test_model_loading_hindi(
         self, mock_load_data: Mock, mock_load_model: Mock
@@ -197,7 +197,7 @@ class TestNaamModelLoading:
 
         Naam._load_model("hin")
 
-        expected_path = "/fake/path/eng_and_hindi_models_v1/hin_model"
+        expected_path = "/fake/path/eng_and_hindi_models_v2/hin_model.keras"
         mock_load_model.assert_called_once_with(expected_path)
         assert Naam.cur_lang == "hin"
 
@@ -209,7 +209,7 @@ class TestNaamModelLoading:
         with pytest.raises(RuntimeError, match="Failed to load model data"):
             Naam._load_model("eng")
 
-    @patch("pranaam.naam.tf.keras.models.load_model")
+    @patch("tf_keras.models.load_model")
     @patch.object(Naam, "load_model_data")
     def test_model_loading_failure_model_error(
         self, mock_load_data: Mock, mock_load_model: Mock

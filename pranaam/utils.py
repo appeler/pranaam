@@ -14,7 +14,7 @@ logger = get_logger()
 
 REPO_BASE_URL: Final[str] = (
     os.environ.get("PRANAAM_MODEL_URL")
-    or "https://dataverse.harvard.edu/api/access/datafile/6286241"
+    or "https://dataverse.harvard.edu/api/access/datafile/13228210"
 )
 
 
@@ -57,6 +57,13 @@ def download_file(url: str, target: str, file_name: str) -> bool:
                 if chunk:  # filter out keep-alive chunks
                     size = file_handle.write(chunk)
                     pbar.update(size)
+        # Check if file was downloaded successfully
+        if not file_path.exists():
+            logger.error(f"Downloaded file not found at {file_path}")
+            return False
+
+        logger.info(f"Downloaded file size: {file_path.stat().st_size} bytes")
+
         # Extract tar file with safety checks
         _safe_extract_tar(file_path, target_path)
         # Clean up downloaded tar file

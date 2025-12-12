@@ -38,7 +38,7 @@ class Naam(Base):
     model_path: Path | None = None
     classes: Final[list[str]] = ["not-muslim", "muslim"]
     cur_lang: str = "eng"
-    model_name: Final[str] = "eng_and_hindi_models_v1"
+    model_name: Final[str] = "eng_and_hindi_models_v2"
 
     @classmethod
     def pred_rel(
@@ -129,12 +129,12 @@ class Naam(Base):
             if cls.model_path is None:
                 raise RuntimeError("Failed to load model data")
 
-            model_subpath = "eng_model" if lang == "eng" else "hin_model"
-            model_full_path = cls.model_path / cls.model_name / model_subpath
+            model_filename = f"{lang}_model.keras"
+            model_full_path = cls.model_path / cls.model_name / model_filename
 
             logger.info(f"Loading {lang} model from {model_full_path}")
 
-            # Try different loading methods based on TensorFlow version
+            # Load Keras 3 compatible model using tf-keras
             cls.model = cls._load_model_with_compatibility(str(model_full_path), lang)
             cls.weights_loaded = True
             cls.cur_lang = lang
@@ -147,10 +147,10 @@ class Naam(Base):
     def _load_model_with_compatibility(
         cls, model_path: str, lang: Literal["eng", "hin"]
     ) -> tf.keras.Model:
-        """Load model with TensorFlow/Keras version compatibility handling.
+        """Load Keras 3 compatible model using tf-keras for compatibility.
 
         Args:
-            model_path: Path to model directory
+            model_path: Path to .keras model file
             lang: Language code for error messages
 
         Returns:
@@ -159,9 +159,22 @@ class Naam(Base):
         Raises:
             RuntimeError: If model loading fails
         """
-        import tensorflow as tf
-
         try:
-            return tf.keras.models.load_model(model_path)
+            # Use tf-keras for loading the migrated Keras 3 models
+            import tf_keras as keras
+
+            logger.info(f"Loading {lang} model with tf-keras compatibility layer")
+            return keras.models.load_model(model_path)
+        except ImportError:
+            logger.info(
+                f"tf-keras not available, trying standard Keras for {lang} model"
+            )
+            try:
+                return tf.keras.models.load_model(model_path)
+            except Exception as e:
+                raise RuntimeError(
+                    f"Standard Keras loading failed for {lang} model: {e}"
+                ) from e
         except Exception as e:
-            raise RuntimeError(f"Model loading failed: {e}") from e
+            logger.error(f"tf-keras loading failed for {lang} model: {e}")
+            raise RuntimeError(f"Model loading failed for {lang} model: {e}") from e

@@ -4,10 +4,10 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pranaam"
-version = "0.3.0"
+version = "0.4.0"
 description = "Predict religion and caste based on name"
 readme = "README.md"
-requires-python = ">=3.11,<3.13"
+requires-python = ">=3.11,<3.14"
 license = {text = "MIT"}
 authors = [
   { name = "Rajashekar Chintalapati", email = "rajshekar.ch@gmail.com" },
@@ -22,6 +22,7 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
   "Topic :: Scientific/Engineering :: Information Analysis",
   "Topic :: Software Development :: Libraries :: Python Modules",
@@ -31,10 +32,11 @@ classifiers = [
 ]
 keywords = ["predict", "religion", "name", "hindi", "english", "machine-learning", "deep-learning", "nlp", "name-classification", "tensorflow"]
 dependencies = [
-  "tensorflow>=2.14.0,<2.16",  # Pin to versions that work with existing models
+  "tensorflow>=2.16.0",  # TF 2.16+ with Keras 3
+  "tf-keras>=2.16.0",  # Keras 2 compatibility layer
   "tqdm>=4.64.0",
   "pandas>=1.5.0",
-  "numpy>=1.21.0,<2.0.0",
+  "numpy>=1.21.0",
   "requests>=2.25.0",  # Used in utils.py
 ]
 
@@ -129,7 +131,7 @@ strict_equality = true
 show_error_codes = true
 
 [[tool.mypy.overrides]]
-module = ["tensorflow.*", "gdown.*"]
+module = ["tensorflow.*", "tf_keras.*", "gdown.*"]
 ignore_missing_imports = true
 
 [tool.coverage.run]
