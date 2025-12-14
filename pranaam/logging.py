@@ -2,6 +2,8 @@
 
 import logging
 
+from rich.logging import RichHandler
+
 
 def get_logger(name: str | None = None) -> logging.Logger:
     """Get a configured logger instance.
@@ -17,10 +19,10 @@ def get_logger(name: str | None = None) -> logging.Logger:
 
     # Only configure if no handlers exist (avoid duplicate configuration)
     if not logger.handlers:
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        handler = RichHandler(
+            show_time=True, show_path=False, rich_tracebacks=True, markup=True
         )
+        formatter = logging.Formatter("%(name)s - %(message)s")
         handler.setFormatter(formatter)
         logger.addHandler(handler)
         logger.setLevel(logging.INFO)

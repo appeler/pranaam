@@ -3,7 +3,10 @@
 import argparse
 import sys
 
+from .logging import get_logger
 from .naam import Naam
+
+logger = get_logger()
 
 # Export main prediction function
 pred_rel = Naam.pred_rel
@@ -45,7 +48,7 @@ def main(argv: list[str] | None = None) -> int:
         # Re-raise SystemExit for help and argument errors
         raise
     except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
+        logger.error(f"Error: {e}")
         return 1
 
 

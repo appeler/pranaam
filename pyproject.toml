@@ -37,6 +37,7 @@ dependencies = [
   "pandas>=1.5.0",
   "numpy>=1.21.0",
   "requests>=2.25.0",  # Used in utils.py
+  "rich>=13.0.0",  # Rich console output and logging
 ]
 
 [project.optional-dependencies]
