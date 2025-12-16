@@ -258,13 +258,17 @@ class TestErrorLogging:
 
     @patch("pranaam.utils.logger")
     @patch("pranaam.utils.requests.Session")
-    def test_network_error_logging(self, mock_session: Mock, mock_logger: Mock) -> None:
+    @patch("pranaam.utils.tqdm")
+    def test_network_error_logging(
+        self, mock_tqdm: Mock, mock_session: Mock, mock_logger: Mock
+    ) -> None:
         """Test that network errors are logged properly."""
         mock_session_instance = Mock()
         mock_session_instance.get.side_effect = requests.exceptions.ConnectionError(
             "Network error"
         )
         mock_session.return_value.__enter__.return_value = mock_session_instance
+        mock_tqdm.return_value.__enter__.return_value = Mock()
 
         import tempfile
 

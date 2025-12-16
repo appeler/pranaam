@@ -48,7 +48,9 @@ def main(argv: list[str] | None = None) -> int:
         # Re-raise SystemExit for help and argument errors
         raise
     except Exception as e:
-        logger.error(f"Error: {e}")
+        error_message = f"Error: {e}"
+        logger.error(error_message)
+        print(error_message, file=sys.stderr)
         return 1
 
 

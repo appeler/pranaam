@@ -4,6 +4,7 @@ import logging
 from unittest.mock import Mock, patch
 
 import pytest
+from rich.logging import RichHandler
 
 from pranaam.logging import get_logger
 
@@ -59,9 +60,9 @@ class TestGetLogger:
         # Should have at least one handler
         assert len(logger.handlers) >= 1
 
-        # Get the first handler (should be our StreamHandler)
+        # Get the first handler (should be our RichHandler)
         handler = logger.handlers[0]
-        assert isinstance(handler, logging.StreamHandler)
+        assert isinstance(handler, RichHandler)
 
         # Check formatter
         formatter = handler.formatter
@@ -70,10 +71,9 @@ class TestGetLogger:
         # Test formatter format string
         format_str = formatter._fmt
         assert format_str is not None
+        # The actual format is simplified: "%(name)s - %(message)s"
         expected_components = [
-            "%(asctime)s",
             "%(name)s",
-            "%(levelname)s",
             "%(message)s",
         ]
         for component in expected_components:
@@ -184,7 +184,7 @@ class TestLoggerEdgeCases:
         logger = get_logger(special_name)
         assert logger.name == special_name
 
-    @patch("logging.StreamHandler")
+    @patch("pranaam.logging.RichHandler")
     def test_handler_creation_error(self, mock_handler: Mock) -> None:
         """Test handling of handler creation errors."""
         mock_handler.side_effect = Exception("Handler creation failed")
