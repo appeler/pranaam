@@ -41,7 +41,7 @@ def download_file(url: str, target: str, file_name: str) -> bool:
                 unit_scale=True,
                 desc=file_name,
                 ascii=True,
-                color="cyan",
+                colour="cyan",
             ) as pbar,
             file_path.open("wb") as file_handle,
         ):
