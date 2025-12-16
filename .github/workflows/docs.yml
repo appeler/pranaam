@@ -37,8 +37,8 @@ jobs:
       - name: Build documentation
         run: |
           cd docs
-          make clean
-          make html
+          uv run make clean
+          uv run make html
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
