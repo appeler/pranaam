@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling>=1.21.1"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.9.17,<0.10.0"]
+build-backend = "uv_build"
 
 [project]
 name = "pranaam"
@@ -81,18 +81,9 @@ test = [
 [project.scripts]
 predict_religion = "pranaam.predict:main"
 
-[tool.hatch.build]
-exclude = [
-    "/.github",
-    "/.venv",
-    "/docs",
-    "/tests",
-    "/.gitignore",
-    "/.pre-commit-config.yaml",
-]
-
-[tool.hatch.build.targets.wheel]
-packages = ["pranaam"]
+[tool.uv.build-backend]
+module-name = "pranaam"
+module-root = ""
 
 [tool.pytest.ini_options]
 python_files = "test_*.py"
