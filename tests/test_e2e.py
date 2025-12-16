@@ -72,9 +72,9 @@ class TestRealModelDownloadAndPrediction:
         muslim_khans = khan_results[khan_results["pred_label"] == "muslim"]
 
         # Should predict most Khans as Muslim (this is what the model should do)
-        assert (
-            len(muslim_khans) >= 3
-        ), f"Expected at least 3 Khans predicted as Muslim, got {len(muslim_khans)}"
+        assert len(muslim_khans) >= 3, (
+            f"Expected at least 3 Khans predicted as Muslim, got {len(muslim_khans)}"
+        )
 
     @pytest.mark.integration
     def test_real_hindi_predictions(self) -> None:
@@ -217,9 +217,9 @@ class TestRealModelDownloadAndPrediction:
         print(f"  Names/second: {len(names) / processing_time:.1f}")
 
         # Performance should be reasonable (adjust based on actual performance)
-        assert (
-            processing_time < 10.0
-        ), f"Batch processing too slow: {processing_time:.2f}s"
+        assert processing_time < 10.0, (
+            f"Batch processing too slow: {processing_time:.2f}s"
+        )
 
     @pytest.mark.integration
     def test_error_handling_real_scenarios(self) -> None:
