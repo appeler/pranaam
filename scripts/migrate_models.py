@@ -35,7 +35,7 @@ class ModelMigrator:
         # Model paths
         self.models = {
             "eng": self.model_base_path / "eng_and_hindi_models_v1" / "eng_model",
-            "hin": self.model_base_path / "eng_and_hindi_models_v1" / "hin_model"
+            "hin": self.model_base_path / "eng_and_hindi_models_v1" / "hin_model",
         }
 
     def export_from_keras2(self) -> None:
@@ -46,6 +46,7 @@ class ModelMigrator:
         # Use tf-keras for Keras 2 compatibility
         try:
             import tf_keras as keras
+
             print("✅ Using tf-keras for Keras 2 compatibility")
             print(f"tf-keras version: {keras.__version__}")
         except ImportError as e:
@@ -68,8 +69,12 @@ class ModelMigrator:
 
                 # Print model info
                 print(f"   Model type: {type(model).__name__}")
-                print(f"   Input shape: {model.input_shape if hasattr(model, 'input_shape') else 'Unknown'}")
-                print(f"   Output shape: {model.output_shape if hasattr(model, 'output_shape') else 'Unknown'}")
+                print(
+                    f"   Input shape: {model.input_shape if hasattr(model, 'input_shape') else 'Unknown'}"
+                )
+                print(
+                    f"   Output shape: {model.output_shape if hasattr(model, 'output_shape') else 'Unknown'}"
+                )
 
                 # Create language-specific output directory
                 lang_output = self.migration_output / f"{lang}_model"
@@ -85,24 +90,32 @@ class ModelMigrator:
                     print(f"⚠️  Keras format save failed: {e}")
                     # Fallback to TF weights format
                     weights_path = lang_output / "model_weights"
-                    model.save_weights(str(weights_path), save_format='tf')
+                    model.save_weights(str(weights_path), save_format="tf")
                     print(f"✅ Weights saved to {weights_path} (tf format)")
 
                 # Export model configuration
                 config = model.get_config()
                 config_path = lang_output / "model_config.json"
-                with open(config_path, 'w') as f:
+                with open(config_path, "w") as f:
                     json.dump(config, f, indent=2)
                 print(f"✅ Config saved to {config_path}")
 
                 # Export additional metadata
                 metadata = {
                     "model_type": type(model).__name__,
-                    "input_shape": model.input_shape if hasattr(model, 'input_shape') else None,
-                    "output_shape": model.output_shape if hasattr(model, 'output_shape') else None,
-                    "layer_count": len(model.layers) if hasattr(model, 'layers') else 0,
+                    "input_shape": (
+                        model.input_shape if hasattr(model, "input_shape") else None
+                    ),
+                    "output_shape": (
+                        model.output_shape if hasattr(model, "output_shape") else None
+                    ),
+                    "layer_count": len(model.layers) if hasattr(model, "layers") else 0,
                     "tensorflow_version": tf.__version__,
-                    "keras_version": tf.keras.__version__ if hasattr(tf.keras, '__version__') else None
+                    "keras_version": (
+                        tf.keras.__version__
+                        if hasattr(tf.keras, "__version__")
+                        else None
+                    ),
                 }
 
                 # Try to get input/output names
@@ -113,7 +126,7 @@ class ModelMigrator:
                     pass
 
                 metadata_path = lang_output / "model_metadata.json"
-                with open(metadata_path, 'w') as f:
+                with open(metadata_path, "w") as f:
                     json.dump(metadata, f, indent=2)
                 print(f"✅ Metadata saved to {metadata_path}")
 
@@ -128,12 +141,9 @@ class ModelMigrator:
                     print(f"✅ Test prediction successful: {result.shape}")
 
                     # Save test prediction for validation
-                    test_data = {
-                        "input": test_input,
-                        "output": result.tolist()
-                    }
+                    test_data = {"input": test_input, "output": result.tolist()}
                     test_path = lang_output / "test_prediction.json"
-                    with open(test_path, 'w') as f:
+                    with open(test_path, "w") as f:
                         json.dump(test_data, f, indent=2)
                     print(f"✅ Test prediction saved to {test_path}")
 
@@ -155,7 +165,8 @@ class ModelMigrator:
         # Verify we're in Keras 3 environment
         try:
             import tensorflow.keras.utils as utils
-            if not hasattr(utils, 'legacy'):
+
+            if not hasattr(utils, "legacy"):
                 print("⚠️  Detected Keras 2 environment - this step needs Keras 3!")
                 print("Please run with TensorFlow 2.16+ or upgrade TensorFlow")
                 sys.exit(1)
@@ -172,7 +183,9 @@ class ModelMigrator:
             lang_input = self.migration_output / f"{lang}_model"
             if not lang_input.exists():
                 print(f"❌ Migration data not found at {lang_input}")
-                print("Run 'python migrate_models.py export' first with TensorFlow 2.15")
+                print(
+                    "Run 'python migrate_models.py export' first with TensorFlow 2.15"
+                )
                 continue
 
             try:
@@ -209,6 +222,7 @@ class ModelMigrator:
 
                     # Compare predictions (allowing for small numerical differences)
                     import numpy as np
+
                     if np.allclose(result, original_output, rtol=1e-5):
                         print("✅ Model validation successful - predictions match!")
                     else:
@@ -229,6 +243,7 @@ class ModelMigrator:
             except Exception as e:
                 print(f"❌ Failed to migrate {lang} model: {e}")
                 import traceback
+
                 traceback.print_exc()
                 continue
 
@@ -254,4 +269,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
