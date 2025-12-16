@@ -36,9 +36,8 @@ jobs:
       
       - name: Build documentation
         run: |
-          cd docs
-          uv run make clean
-          uv run make html
+          uv run sphinx-build -M clean docs docs/_build
+          uv run sphinx-build -M html docs docs/_build
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
