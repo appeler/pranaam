@@ -95,10 +95,11 @@ html_title = f"{project} {release}"
 html_logo = None
 html_favicon = None
 
-typehints_defaults = "comma"
-typehints_use_signature = True
-typehints_use_signature_return = True
 autodoc_typehints = "signature"
+autodoc_typehints_description_target = "all"
+typehints_fully_qualified = False
+typehints_use_signature = True
+typehints_use_rtype = False
 
 source_suffix = {
     ".rst": "restructuredtext",
