@@ -54,19 +54,16 @@ def download_file(url: str, target: str, file_name: str) -> bool:
             pbar.total = total_size
 
             for chunk in response.iter_content(chunk_size=1024**2):
-                if chunk:  # filter out keep-alive chunks
+                if chunk:
                     size = file_handle.write(chunk)
                     pbar.update(size)
-        # Check if file was downloaded successfully
         if not file_path.exists():
             logger.error(f"Downloaded file not found at {file_path}")
             return False
 
         logger.info(f"Downloaded file size: {file_path.stat().st_size} bytes")
 
-        # Extract tar file with safety checks
         _safe_extract_tar(file_path, target_path)
-        # Clean up downloaded tar file
         file_path.unlink()
         logger.info("Finished downloading models")
         return True

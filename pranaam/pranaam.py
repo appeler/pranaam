@@ -8,7 +8,6 @@ from .naam import Naam
 
 logger = get_logger()
 
-# Export main prediction function
 pred_rel = Naam.pred_rel
 
 
@@ -48,7 +47,6 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     except SystemExit:
-        # Re-raise SystemExit for help and argument errors
         raise
     except Exception as e:
         error_message = f"Error: {e}"

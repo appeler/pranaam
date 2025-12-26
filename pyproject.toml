@@ -31,13 +31,13 @@ classifiers = [
 ]
 keywords = ["predict", "religion", "name", "hindi", "english", "machine-learning", "deep-learning", "nlp", "name-classification", "tensorflow"]
 dependencies = [
-  "tensorflow>=2.20.0",  # TF 2.20+ without gcs-filesystem dependency
-  "tf-keras>=2.20.0",  # Keras 2 compatibility layer
+  "tensorflow>=2.20.0",
+  "tf-keras>=2.20.0",
   "tqdm>=4.64.0",
   "pandas>=1.5.0",
   "numpy>=1.21.0",
-  "requests>=2.25.0",  # Used in utils.py
-  "rich>=13.0.0",  # Rich console output and logging
+  "requests>=2.25.0",
+  "rich>=13.0.0",
 ]
 
 [project.optional-dependencies]
@@ -102,8 +102,6 @@ markers = [
     "unit: marks tests as unit tests",
     "e2e: marks tests as end-to-end tests with real models"
 ]
-# Coverage options (enabled in CI)
-# addopts = "--cov=pranaam --cov-report=html --cov-report=term-missing"
 
 
 
@@ -145,6 +143,8 @@ line-length = 88
 exclude = [
     "model_training/",
     "scripts/",
+    "docs/",
+    "**/*.ipynb",
 ]
 
 [tool.ruff.lint]

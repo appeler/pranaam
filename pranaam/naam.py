@@ -64,29 +64,26 @@ class Naam(Base):
         if lang not in ["eng", "hin"]:
             raise ValueError(f"Unsupported language: {lang}. Use 'eng' or 'hin'")
 
-        # Convert single string or pandas Series to list for consistent processing
-        if isinstance(names, str):
-            name_list = [names]
-        elif isinstance(names, pd.Series):
-            name_list = names.tolist()
-        else:
-            name_list = list(names)
+        match names:
+            case str():
+                name_list = [names]
+            case pd.Series():
+                name_list = names.tolist()
+            case _:
+                name_list = list(names)
 
         if not name_list:
             raise ValueError("Input names list cannot be empty")
 
-        # Validate that no names are empty or contain only whitespace
         for i, name in enumerate(name_list):
             if not name or not name.strip():
                 raise ValueError(
                     f"Name at index {i} is empty or contains only whitespace"
                 )
 
-        # Load model if not loaded or language changed
         if not cls.weights_loaded or cls.cur_lang != lang:
             cls._load_model(lang, latest)
 
-        # Make predictions
         try:
             if cls.model is None:
                 raise RuntimeError("Model not loaded properly")
@@ -95,7 +92,6 @@ class Naam(Base):
             predictions = tf.argmax(results, axis=1)
             probabilities = tf.nn.softmax(results)
 
-            # Extract results
             labels = [cls.classes[pred] for pred in predictions.numpy()]
             muslim_probs = [
                 float(np.around(prob[1] * 100)) for prob in probabilities.numpy()

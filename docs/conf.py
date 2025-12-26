@@ -142,7 +142,7 @@ copybutton_line_continuation_character = "\\"
 copybutton_here_doc_delimiter = "EOF"
 
 # nbsphinx configuration
-nbsphinx_execute = 'never'  # Don't execute notebooks during build (for now)
+nbsphinx_execute = "never"  # Don't execute notebooks during build (for now)
 nbsphinx_allow_errors = True  # Allow build with notebook errors
 nbsphinx_execute_arguments = [
     '--InlineBackend.figure_formats={"svg", "pdf"}',

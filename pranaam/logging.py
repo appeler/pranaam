@@ -17,7 +17,6 @@ def get_logger(name: str | None = None) -> logging.Logger:
     logger_name = name or "pranaam"
     logger = logging.getLogger(logger_name)
 
-    # Only configure if no handlers exist (avoid duplicate configuration)
     if not logger.handlers:
         handler = RichHandler(
             show_time=True, show_path=False, rich_tracebacks=True, markup=True
