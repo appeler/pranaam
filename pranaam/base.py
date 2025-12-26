@@ -21,7 +21,7 @@ class Base:
             latest: Whether to force download of latest version
 
         Returns:
-            Path to the model directory, or None if loading failed
+            Path | None: Path to the model directory, or None if loading failed
         """
         model_path: Path | None = None
         if cls.MODELFN:

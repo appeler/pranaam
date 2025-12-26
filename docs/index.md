@@ -13,6 +13,17 @@ examples
 contributing
 :::
 
+:::{note}
+Interactive Jupyter notebook examples are available in the `docs/examples/` directory:
+
+- **Basic Usage** (`basic_usage.ipynb`): Learn fundamentals with single and batch predictions
+- **Pandas Integration** (`pandas_integration.ipynb`): DataFrame processing workflows  
+- **CSV Processing** (`csv_processing.ipynb`): File processing for real-world datasets
+- **Performance Benchmarks** (`performance_benchmarks.ipynb`): Optimization strategies
+
+These notebooks are fully executable and demonstrate best practices for production use.
+:::
+
 ## Overview
 
 Pranaam uses machine learning models trained on 4M unique records from Bihar Land Records data to predict religion (currently Muslim/not-Muslim) from names. The package supports:
@@ -32,7 +43,7 @@ names = ["Shah Rukh Khan", "Amitabh Bachchan"]
 result = pred_rel(names)
 print(result)
 
-# Hindi names  
+# Hindi names
 hindi_names = ["शाहरुख खान", "अमिताभ बच्चन"]
 result = pred_rel(hindi_names, lang="hin")
 print(result)

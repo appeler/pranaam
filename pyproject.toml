@@ -47,6 +47,9 @@ docs = [
     "sphinx-autodoc-typehints>=1.25",
     "sphinx-copybutton>=0.5",
     "myst-parser>=2.0",
+    "nbsphinx>=0.9.0",
+    "jupyter>=1.0.0",
+    "ipykernel>=6.0.0",
 ]
 streamlit = [
   "streamlit>=1.20.0",
@@ -67,6 +70,7 @@ dev = [
     "build>=1.3.0",
     "twine>=6.2.0",
     "deptry>=0.12.0",
+    "pydoclint>=0.5.0",
 ]
 test = [
     "pytest>=7.0",
@@ -182,3 +186,13 @@ ignore_notebooks = true
 [tool.deptry.per_rule_ignores]
 DEP002 = ["sphinx", "furo", "sphinx-autodoc-typehints", "sphinx-copybutton", "myst-parser", "scikit-learn"]
 
+[tool.pydoclint]
+style = "google"
+arg-type-hints-in-docstring = false
+arg-type-hints-in-signature = true
+check-return-types = true
+check-yield-types = true
+skip-checking-raises = false
+allow-init-docstring = true
+require-return-section-when-returning-nothing = false
+exclude = '\.git|\.tox|tests/data|model_training/|scripts/'

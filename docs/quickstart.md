@@ -99,7 +99,7 @@ predict_religion --input "शाहरुख खान" --lang hin
 The function returns a pandas DataFrame with these columns:
 
 * **name**: The input name
-* **pred_label**: Predicted religion ('muslim' or 'not-muslim')  
+* **pred_label**: Predicted religion ('muslim' or 'not-muslim')
 * **pred_prob_muslim**: Probability score (0-100) that the person is Muslim
 
 ## Accuracy and Limitations

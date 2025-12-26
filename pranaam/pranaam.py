@@ -19,7 +19,10 @@ def main(argv: list[str] | None = None) -> int:
         argv: Command line arguments, defaults to sys.argv[1:]
 
     Returns:
-        Exit code (0 for success, non-zero for error)
+        int: Exit code (0 for success, non-zero for error)
+
+    Raises:
+        SystemExit: For help and argument parsing errors
     """
     if argv is None:
         argv = sys.argv[1:]

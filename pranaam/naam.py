@@ -20,7 +20,7 @@ def is_english(text: str) -> bool:
         text: Input text to check
 
     Returns:
-        True if text is ASCII-only (English), False otherwise
+        bool: True if text is ASCII-only (English), False otherwise
     """
     try:
         text.encode(encoding="utf-8").decode("ascii")
@@ -55,7 +55,7 @@ class Naam(Base):
             latest: Whether to download latest model version
 
         Returns:
-            DataFrame with columns: name, pred_label, pred_prob_muslim
+            pd.DataFrame: DataFrame with columns: name, pred_label, pred_prob_muslim
 
         Raises:
             ValueError: If invalid language specified
@@ -151,10 +151,10 @@ class Naam(Base):
 
         Args:
             model_path: Path to .keras model file
-            lang: Language code for error messages
+            lang: Language code ('eng' or 'hin')
 
         Returns:
-            Loaded TensorFlow model
+            tf.keras.Model: Loaded and configured model
 
         Raises:
             RuntimeError: If model loading fails

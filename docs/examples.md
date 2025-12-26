@@ -2,6 +2,21 @@
 
 This page contains practical examples of using pranaam in various scenarios.
 
+## 🚀 Interactive Jupyter Notebooks
+
+For hands-on, executable examples, check out our interactive Jupyter notebooks:
+
+- **[Basic Usage](examples/basic_usage.ipynb)**: Learn the fundamentals with single and batch predictions
+- **[Pandas Integration](examples/pandas_integration.ipynb)**: DataFrame processing and data analysis workflows  
+- **[CSV Processing](examples/csv_processing.ipynb)**: File processing techniques for real-world datasets
+- **[Performance Benchmarks](examples/performance_benchmarks.ipynb)**: Optimization strategies and performance analysis
+
+These notebooks are fully executable and demonstrate best practices for using pranaam in production environments.
+
+## 📝 Code Examples
+
+Below are quick reference examples for common use cases:
+
 ## Basic Examples
 
 ### Single Name Prediction
@@ -26,7 +41,7 @@ import pranaam
 # List of names
 bollywood_actors = [
     "Shah Rukh Khan",
-    "Amitabh Bachchan", 
+    "Amitabh Bachchan",
     "Salman Khan",
     "Aamir Khan",
     "Akshay Kumar"
@@ -67,13 +82,13 @@ from typing import List
 def process_large_dataset(names: List[str], batch_size: int = 1000) -> pd.DataFrame:
     """Process large datasets in batches to manage memory."""
     all_results = []
-    
+
     for i in range(0, len(names), batch_size):
         batch = names[i:i+batch_size]
         batch_results = pranaam.pred_rel(batch, lang="eng")
         all_results.append(batch_results)
         print(f"Processed batch {i//batch_size + 1}/{(len(names)-1)//batch_size + 1}")
-    
+
     return pd.concat(all_results, ignore_index=True)
 
 # Usage
@@ -148,12 +163,12 @@ mixed_data = pd.DataFrame({
 
 # Process by script type
 english_results = pranaam.pred_rel(
-    mixed_data[mixed_data['script'] == 'English']['name'], 
+    mixed_data[mixed_data['script'] == 'English']['name'],
     lang="eng"
 )
 
 hindi_results = pranaam.pred_rel(
-    mixed_data[mixed_data['script'] == 'Hindi']['name'], 
+    mixed_data[mixed_data['script'] == 'Hindi']['name'],
     lang="hin"
 )
 
@@ -178,7 +193,7 @@ def categorize_confidence(prob):
     if prob >= 80:
         return "High"
     elif prob >= 60:
-        return "Medium" 
+        return "Medium"
     else:
         return "Low"
 
@@ -252,7 +267,7 @@ def predict_religion():
     data = request.json
     names = data.get('names', [])
     lang = data.get('lang', 'eng')
-    
+
     try:
         results = pranaam.pred_rel(names, lang=lang)
         return jsonify(results.to_dict('records'))
@@ -285,17 +300,17 @@ import pandas as pd
 def analyze_author_demographics(author_names):
     """Analyze religious demographics of academic authors."""
     results = pranaam.pred_rel(author_names)
-    
+
     # Calculate statistics
     total_authors = len(results)
     muslim_authors = len(results[results['pred_label'] == 'muslim'])
-    
+
     demographics = {
         'total_authors': total_authors,
         'muslim_percentage': (muslim_authors / total_authors) * 100,
         'non_muslim_percentage': ((total_authors - muslim_authors) / total_authors) * 100
     }
-    
+
     return demographics, results
 
 # Example usage
@@ -314,16 +329,16 @@ def analyze_customer_base(customer_df):
     """Analyze customer demographics for business insights."""
     # Predict religion from customer names
     predictions = pranaam.pred_rel(customer_df['customer_name'])
-    
+
     # Merge with customer data
     analysis_df = pd.concat([customer_df, predictions[['pred_label', 'pred_prob_muslim']]], axis=1)
-    
+
     # Business insights
     demographic_summary = analysis_df.groupby('pred_label').agg({
         'purchase_amount': ['mean', 'sum', 'count'],
         'pred_prob_muslim': 'mean'
     }).round(2)
-    
+
     return analysis_df, demographic_summary
 
 # Example usage

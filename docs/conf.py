@@ -48,6 +48,7 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinx_copybutton",
     "myst_parser",
+    # "nbsphinx",  # Temporarily disabled due to compatibility issue
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -111,6 +112,7 @@ html_favicon = None
 typehints_defaults = "comma"
 typehints_use_signature = True
 typehints_use_signature_return = True
+autodoc_typehints = "signature"
 autodoc_typehints_description_target = "documented"
 
 # MyST settings
@@ -138,3 +140,11 @@ copybutton_prompt_text = r">>> |\.\.\. |\$ "
 copybutton_prompt_is_regexp = True
 copybutton_line_continuation_character = "\\"
 copybutton_here_doc_delimiter = "EOF"
+
+# nbsphinx configuration
+nbsphinx_execute = 'never'  # Don't execute notebooks during build (for now)
+nbsphinx_allow_errors = True  # Allow build with notebook errors
+nbsphinx_execute_arguments = [
+    '--InlineBackend.figure_formats={"svg", "pdf"}',
+    '--InlineBackend.rc={"figure.dpi": 96}',
+]

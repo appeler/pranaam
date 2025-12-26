@@ -12,7 +12,7 @@ def get_logger(name: str | None = None) -> logging.Logger:
         name: Logger name, defaults to 'pranaam'
 
     Returns:
-        Configured logger instance
+        logging.Logger: Configured logger instance
     """
     logger_name = name or "pranaam"
     logger = logging.getLogger(logger_name)

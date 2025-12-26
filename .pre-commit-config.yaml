@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.7
+    rev: v0.14.10
     hooks:
       - id: ruff
         args: [--fix]
@@ -32,5 +32,11 @@ repos:
     rev: 1.8.0
     hooks:
       - id: bandit
-        args: [-r, ., -ll]
+        args: [-ll]
         exclude: ^tests/
+
+  - repo: https://github.com/jsh9/pydoclint
+    rev: 0.5.11
+    hooks:
+      - id: pydoclint
+        args: ["--config=pyproject.toml"]

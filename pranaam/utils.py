@@ -27,7 +27,7 @@ def download_file(url: str, target: str, file_name: str) -> bool:
         file_name: Name of the file to download
 
     Returns:
-        True if download and extraction successful, False otherwise
+        bool: True if download and extraction successful, False otherwise
     """
     target_path = Path(target)
     file_path = target_path / f"{file_name}.tar.gz"
@@ -90,7 +90,6 @@ def _safe_extract_tar(tar_path: Path, extract_to: Path) -> None:
 
     Raises:
         SecurityError: If path traversal attempt detected
-        tarfile.TarError: If tar file is corrupted
     """
 
     def is_within_directory(directory: Path, target: Path) -> bool:
