@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "pranaam"
-version = "0.4.0"
+version = "0.5.0"
 description = "Predict religion and caste based on name"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
@@ -189,7 +189,7 @@ extend_exclude = [
 ]
 
 [tool.deptry.per_rule_ignores]
-DEP002 = ["sphinx", "furo", "sphinx-autodoc-typehints", "sphinx-copybutton", "myst-parser", "scikit-learn"]
+DEP002 = ["sphinx", "furo", "sphinx-copybutton", "myst-parser", "scikit-learn", "nbsphinx", "jupyter", "ipykernel", "nbconvert"]
 
 [tool.pydoclint]
 style = "google"
