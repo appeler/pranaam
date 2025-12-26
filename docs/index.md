@@ -10,7 +10,6 @@ installation
 quickstart
 api
 examples
-contributing
 :::
 
 :::{note}
