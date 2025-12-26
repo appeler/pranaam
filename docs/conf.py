@@ -38,7 +38,6 @@ version = project_info["version"]
 
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx_autodoc_typehints",
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
@@ -95,11 +94,7 @@ html_title = f"{project} {release}"
 html_logo = None
 html_favicon = None
 
-autodoc_typehints = "signature"
-autodoc_typehints_description_target = "all"
-typehints_fully_qualified = False
-typehints_use_signature = True
-typehints_use_rtype = False
+autodoc_typehints = "description"
 
 source_suffix = {
     ".rst": "restructuredtext",

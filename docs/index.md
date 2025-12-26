@@ -8,7 +8,7 @@
 
 installation
 quickstart
-api
+api.rst
 examples
 :::
 
