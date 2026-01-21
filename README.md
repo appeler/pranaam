@@ -14,8 +14,8 @@ check the
 [notebooks](https://github.com/appeler/pranaam/tree/main/).
 
 The first function we are releasing with the package is
-[pred_rel]{.title-ref}, which predicts religion based on the name
-(currently only [muslim]{.title-ref} or [not]{.title-ref}). (For
+pred_rel, which predicts religion based on the name
+(currently only muslim or not). (For
 context, nearly 95% of India\'s population are Hindu or Muslim, with
 Sikhs, Buddhists, Christians, and other groups making up the rest.) The
 OOS accuracy assessed on unseen names is nearly 98% for both
