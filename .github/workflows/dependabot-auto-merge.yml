@@ -21,9 +21,10 @@ on:
     - cron: "37 */3 * * *"
   workflow_dispatch:
 
-permissions:
-  contents: write
-  pull-requests: write
+# Granted per job rather than here: a workflow-level write grant applies to
+# every job, which zizmor's excessive-permissions audit rejects once there is
+# more than one.
+permissions: {}
 
 env:
   # Eligibility is derived from Dependabot metadata, which is only available in
@@ -41,6 +42,9 @@ jobs:
     name: Classify and arm
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: write        # arm auto-merge
+      pull-requests: write   # label, comment
     if: >-
       github.event_name == 'pull_request' &&
       github.event.pull_request.user.login == 'dependabot[bot]'
@@ -132,6 +136,9 @@ jobs:
     name: Re-arm stranded PRs
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: write        # arm auto-merge, or squash-merge outright
+      pull-requests: write   # read labels, merge
     if: github.event_name != 'pull_request'
     steps:
       - name: Collect open Dependabot PRs
