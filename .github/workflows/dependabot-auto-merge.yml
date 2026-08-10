@@ -36,6 +36,12 @@ env:
   # loud. Silence is the failure mode this workflow exists to fix, so a sweep
   # that quietly does nothing must still leave a mark.
   STALE_AFTER_HOURS: 12
+  # Neither job checks out the repo, so gh has no git remote to infer from.
+  # Steps that pass a PR URL resolve the repo from the argument; `gh label
+  # create` takes no URL, so it fell back to git and exited 1 -- on every
+  # eligible PR the fleet ever saw. Set once here rather than per step: the
+  # next gh call added to either job is then correct by default.
+  GH_REPO: ${{ github.repository }}
 
 jobs:
   classify:
@@ -144,12 +150,26 @@ jobs:
       - name: Collect open Dependabot PRs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
         run: |
           gh pr list --author "app/dependabot" --state open --limit 100 \
             --json number,url,title,labels,autoMergeRequest,mergeStateStatus,statusCheckRollup,createdAt \
             > prs.json
           python3 -c "import json;print('collected',len(json.load(open('prs.json'))),'open Dependabot PRs')"
+
+          # Required contexts, so a check that never reported can be named. A
+          # green rollup is not the same as a satisfied ruleset: on
+          # appeler/pranaam#10 all seven reported checks passed while the
+          # required `build` context never ran at all -- its workflow had been
+          # cancelled by a concurrency collision -- and the PR sat BLOCKED for
+          # weeks looking entirely green. Counting reported checks cannot see
+          # that; comparing against the requirement can.
+          gh api "repos/${GH_REPO}/rulesets" --jq '.[].id' 2>/dev/null \
+            | while read -r id; do
+                gh api "repos/${GH_REPO}/rulesets/${id}" --jq \
+                  '.rules[]? | select(.type=="required_status_checks")
+                   | .parameters.required_status_checks[].context' 2>/dev/null
+              done | sort -u > required.txt || true
+          echo "required contexts: $(tr '\n' ' ' < required.txt)"
 
       # Decide per PR, print one line for every one of them, and act. Check
       # state is read from statusCheckRollup rather than from mergeStateStatus
@@ -185,6 +205,17 @@ jobs:
                   return "running"
               return "green" if all(s in TERMINAL_OK for s in states) else "failing"
 
+          def never_reported(pr):
+              """Required contexts with no check run at all on this PR."""
+              seen = {c.get("name") or c.get("context") for c in
+                      (pr.get("statusCheckRollup") or [])}
+              return sorted(required - seen)
+
+          try:
+              required = {ln.strip() for ln in open("required.txt") if ln.strip()}
+          except OSError:
+              required = set()
+
           for pr in json.load(open("prs.json")):
               n = pr["number"]
               names = {l["name"] for l in pr.get("labels") or []}
@@ -194,7 +225,13 @@ jobs:
               elif pr.get("autoMergeRequest"):
                   verdict, act = "already armed", "none"
               elif pr["mergeStateStatus"] in {"DIRTY", "BLOCKED", "DRAFT"}:
-                  verdict, act = f"not mergeable ({pr['mergeStateStatus']})", "none"
+                  # Name the missing requirement rather than only its symptom:
+                  # "BLOCKED" sends a reader looking for a failing check that
+                  # does not exist.
+                  absent = never_reported(pr)
+                  reason = (f"required never ran: {','.join(absent)}" if absent
+                            else pr["mergeStateStatus"])
+                  verdict, act = f"not mergeable ({reason})", "none"
               else:
                   state = check_state(pr)
                   verdict, act = {
@@ -219,7 +256,6 @@ jobs:
       - name: Arm or land
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
         run: |
           acted=0
           while IFS=$'\t' read -r n act _rest; do
