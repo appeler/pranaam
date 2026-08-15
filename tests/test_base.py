@@ -132,8 +132,9 @@ class TestBase:
 
         result = TestClass.load_model_data("test_model")
 
-        # Should still return path even if download fails
-        assert result == Path("/fake/package/model")
+        # A failed download must fail here, not hand back a directory with no
+        # model in it and let the error surface as a missing .keras file.
+        assert result is None
 
     @patch("pranaam.base.files")
     @patch("pathlib.Path.exists")
