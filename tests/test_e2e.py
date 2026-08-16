@@ -18,15 +18,11 @@ class TestRealModelDownloadAndPrediction:
     @pytest.fixture(autouse=True)
     def setup_clean_environment(self) -> Generator[None, None, None]:
         """Ensure clean model state for each test."""
-        # Reset class state
-        Naam.model = None
-        Naam.weights_loaded = False
-        Naam.cur_lang = None  # type: ignore
+        with Naam._model_lock:
+            Naam._models.clear()
         yield
-        # Cleanup after test
-        Naam.model = None
-        Naam.weights_loaded = False
-        Naam.cur_lang = None  # type: ignore
+        with Naam._model_lock:
+            Naam._models.clear()
 
     @pytest.mark.integration
     def test_real_english_predictions(self) -> None:
@@ -117,13 +113,11 @@ class TestRealModelDownloadAndPrediction:
         """Test that models are properly cached after first download."""
         # First prediction - should trigger download
         result1 = pranaam.pred_rel("Shah Rukh Khan", lang="eng")
-        assert Naam.weights_loaded is True
-        assert Naam.cur_lang == "eng"
+        english_model = Naam._models["eng"]
 
         # Second prediction - should use cached model
         result2 = pranaam.pred_rel("Amitabh Bachchan", lang="eng")
-        assert Naam.weights_loaded is True
-        assert Naam.cur_lang == "eng"
+        assert Naam._models["eng"] is english_model
 
         # Results should be consistent
         assert result1.columns.tolist() == result2.columns.tolist()
@@ -135,15 +129,15 @@ class TestRealModelDownloadAndPrediction:
         """Test switching between English and Hindi models."""
         # Start with English
         eng_result = pranaam.pred_rel("Shah Rukh Khan", lang="eng")
-        assert Naam.cur_lang == "eng"
+        english_model = Naam._models["eng"]
 
-        # Switch to Hindi - should reload model
+        # Load Hindi without replacing English
         hin_result = pranaam.pred_rel("शाहरुख खान", lang="hin")
-        assert Naam.cur_lang == "hin"
+        assert set(Naam._models) == {"eng", "hin"}
 
-        # Switch back to English - should reload model again
+        # Switch back to English and reuse the cached English model
         eng_result2 = pranaam.pred_rel("Salman Khan", lang="eng")
-        assert Naam.cur_lang == "eng"
+        assert Naam._models["eng"] is english_model
 
         # All results should have same structure
         for result in [eng_result, hin_result, eng_result2]:

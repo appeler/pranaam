@@ -57,11 +57,23 @@ pip install 'pranaam[tensorflow-compat]'
 
 ## Model Downloads
 
-Models are automatically downloaded from Harvard Dataverse (306MB) and cached locally on first use. Ensure you have:
+Models are downloaded on first use and stored in the operating system's user cache
+directory. Downloads are installed only after both model files match their pinned
+SHA-256 checksums. Concurrent processes share a cache lock, and a failed refresh
+does not replace a verified cached model.
+
+The default Harvard Dataverse endpoint may challenge automated clients. To use a
+trusted mirror that serves the same model archive, set:
+
+```bash
+export PRANAAM_MODEL_URL="https://example.org/eng_and_hindi_models_v2.tar.gz"
+```
+
+Ensure you have:
 
 * Stable internet connection
 * At least 500MB free disk space
-* Unrestricted access to dataverse.harvard.edu
+* Access to the configured model host
 
 ## Verification
 
@@ -89,7 +101,10 @@ Solution: Install with `pip install 'pranaam[tensorflow-compat]'`
 
 Error: Network timeouts or download failures
 
-Solution: Check internet connection, models are large (306MB)
+Solution: Check the connection to the configured model host. If Harvard Dataverse
+returns an automated-client challenge, set `PRANAAM_MODEL_URL` to a trusted mirror.
+The mirror must contain the original model files because checksum mismatches are
+rejected.
 
 **Import Errors**
 

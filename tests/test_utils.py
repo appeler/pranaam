@@ -1,349 +1,276 @@
-"""Tests for utils module."""
+"""Tests for secure model downloading and extraction."""
 
+from __future__ import annotations
+
+import hashlib
+import io
 import os
 import tarfile
-import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, Mock, mock_open, patch
+from typing import TYPE_CHECKING
+from unittest.mock import Mock, patch
 
 import pytest
 import requests
 
-from pranaam.utils import REPO_BASE_URL, _safe_extract_tar, download_file
+from pranaam.utils import (
+    SecurityError,
+    _install_verified_model,
+    _safe_extract_tar,
+    download_file,
+    get_model_url,
+)
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+MODEL_URL = "https://example.test/model"
+
+
+def _archive_bytes(files: dict[str, bytes]) -> bytes:
+    stream = io.BytesIO()
+    with tarfile.open(fileobj=stream, mode="w:gz") as archive:
+        for name, content in files.items():
+            info = tarfile.TarInfo(name)
+            info.size = len(content)
+            archive.addfile(info, io.BytesIO(content))
+    return stream.getvalue()
+
+
+def _session_for(
+    payload: bytes, *, status_code: int = 200, content_length: int | None = None
+) -> Mock:
+    response = Mock()
+    response.status_code = status_code
+    response.headers = {
+        "Content-Length": str(
+            len(payload) if content_length is None else content_length
+        )
+    }
+    response.iter_content.return_value = [payload]
+    response.raise_for_status.return_value = None
+    session = Mock()
+    session.get.return_value = response
+    context = Mock()
+    context.__enter__ = Mock(return_value=session)
+    context.__exit__ = Mock(return_value=False)
+    return context
+
+
+def _checksums(english: bytes = b"english", hindi: bytes = b"hindi") -> dict[str, str]:
+    return {
+        "eng_model.keras": hashlib.sha256(english).hexdigest(),
+        "hin_model.keras": hashlib.sha256(hindi).hexdigest(),
+    }
 
 
 class TestDownloadFile:
-    """Test download_file function."""
+    """Test verified, atomic model installation."""
 
     @patch("pranaam.utils.requests.Session")
-    @patch("pranaam.utils._safe_extract_tar")
-    @patch("pranaam.utils.Path")
-    @patch("pranaam.utils.tqdm")
-    def test_successful_download(
-        self,
-        mock_tqdm: Mock,
-        mock_path: Mock,
-        mock_extract: Mock,
-        mock_session: Mock,
+    def test_download_uses_argument_and_verifies_models(
+        self, mock_session: Mock, tmp_path: Path
     ) -> None:
-        """Test successful file download and extraction."""
-        # Setup mocks
-        mock_response = Mock()
-        mock_response.headers = {"Content-Length": "1000"}
-        mock_response.iter_content.return_value = [b"chunk1", b"chunk2"]
-        mock_response.status_code = 200
-        mock_response.raise_for_status.return_value = None
+        """The requested URL is used and verified files are installed."""
+        payload = _archive_bytes(
+            {
+                "bundle/eng_model.keras": b"english",
+                "bundle/hin_model.keras": b"hindi",
+            }
+        )
+        mock_session.return_value = _session_for(payload)
 
-        mock_session_instance = Mock()
-        mock_session_instance.get.return_value = mock_response
-        mock_session.return_value.__enter__.return_value = mock_session_instance
+        with patch("pranaam.utils.MODEL_SHA256", _checksums()):
+            assert download_file(MODEL_URL, str(tmp_path), "bundle")
 
-        # Mock tqdm context manager
-        mock_tqdm.return_value.__enter__.return_value.update = Mock()
+        request = mock_session.return_value.__enter__.return_value.get
+        request.assert_called_once_with(
+            MODEL_URL,
+            stream=True,
+            allow_redirects=True,
+            timeout=120,
+        )
+        assert (tmp_path / "bundle" / "eng_model.keras").read_bytes() == b"english"
+        assert not (tmp_path / ".bundle.previous").exists()
+        assert not list(tmp_path.glob(".bundle-*"))
 
-        # Mock Path operations
-        mock_file_path = MagicMock()
-        mock_target_path = MagicMock()
-        mock_path.side_effect = [mock_target_path, mock_file_path]
-        mock_target_path.__truediv__.return_value = mock_file_path
-        mock_file_path.open.return_value.__enter__.return_value = Mock()
-        mock_file_path.open.return_value.__exit__.return_value = None
-        mock_file_path.unlink.return_value = None
+    @patch("pranaam.utils.requests.Session")
+    def test_verified_refresh_replaces_old_cache(
+        self, mock_session: Mock, tmp_path: Path
+    ) -> None:
+        """A verified refresh replaces the previous bundle completely."""
+        installed = tmp_path / "bundle"
+        installed.mkdir()
+        (installed / "old.txt").write_text("old")
+        payload = _archive_bytes(
+            {
+                "bundle/eng_model.keras": b"english",
+                "bundle/hin_model.keras": b"hindi",
+            }
+        )
+        mock_session.return_value = _session_for(payload)
 
-        # Mock the extract function to not do anything
-        mock_extract.return_value = None
+        with patch("pranaam.utils.MODEL_SHA256", _checksums()):
+            assert download_file(MODEL_URL, str(tmp_path), "bundle")
 
-        # Call function
-        result = download_file("http://test.com", "/tmp/target", "test_file")
+        assert not (installed / "old.txt").exists()
+        assert (installed / "hin_model.keras").read_bytes() == b"hindi"
+        assert not (tmp_path / ".bundle.previous").exists()
 
-        # Verify
-        assert result is True
-        mock_session_instance.get.assert_called_once_with(
-            REPO_BASE_URL, stream=True, allow_redirects=True, timeout=120
+    @patch("pranaam.utils.requests.Session")
+    def test_checksum_mismatch_preserves_old_cache(
+        self, mock_session: Mock, tmp_path: Path
+    ) -> None:
+        """Unverified model bytes never replace a known-good cache."""
+        installed = tmp_path / "bundle"
+        installed.mkdir()
+        (installed / "known-good").write_bytes(b"old")
+        payload = _archive_bytes(
+            {
+                "bundle/eng_model.keras": b"wrong",
+                "bundle/hin_model.keras": b"wrong",
+            }
+        )
+        mock_session.return_value = _session_for(payload)
+
+        assert not download_file(MODEL_URL, str(tmp_path), "bundle")
+        assert (installed / "known-good").read_bytes() == b"old"
+        assert not list(tmp_path.glob(".bundle-*"))
+
+    @patch("pranaam.utils.requests.Session")
+    def test_truncated_response_preserves_old_cache(
+        self, mock_session: Mock, tmp_path: Path
+    ) -> None:
+        """A short response cannot replace an installed bundle."""
+        installed = tmp_path / "bundle"
+        installed.mkdir()
+        (installed / "known-good").write_bytes(b"old")
+        payload = _archive_bytes(
+            {
+                "bundle/eng_model.keras": b"english",
+                "bundle/hin_model.keras": b"hindi",
+            }
+        )
+        mock_session.return_value = _session_for(
+            payload, content_length=len(payload) + 100
         )
 
-    @patch("pranaam.utils.requests.Session")
-    def test_network_error(self, mock_session: Mock) -> None:
-        """Test handling of network errors."""
-        mock_session_instance = Mock()
-        mock_session_instance.get.side_effect = requests.exceptions.ConnectionError(
-            "Network error"
-        )
-        mock_session.return_value.__enter__.return_value = mock_session_instance
+        with patch("pranaam.utils.MODEL_SHA256", _checksums()):
+            assert not download_file(MODEL_URL, str(tmp_path), "bundle")
 
-        result = download_file("http://test.com", "/tmp/target", "test_file")
-
-        assert result is False
+        assert (installed / "known-good").read_bytes() == b"old"
 
     @patch("pranaam.utils.requests.Session")
-    def test_http_error(self, mock_session: Mock) -> None:
-        """Test handling of HTTP errors."""
-        mock_response = Mock()
-        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
-            "404 Not Found"
-        )
-
-        mock_session_instance = Mock()
-        mock_session_instance.get.return_value = mock_response
-        mock_session.return_value.__enter__.return_value = mock_session_instance
-
-        result = download_file("http://test.com", "/tmp/target", "test_file")
-
-        assert result is False
-
-    @patch("pranaam.utils.requests.Session")
-    @patch("pranaam.utils._safe_extract_tar")
-    @patch("builtins.open", new_callable=mock_open)
-    def test_extraction_error(
-        self, mock_file: Mock, mock_extract: Mock, mock_session: Mock
+    def test_waf_challenge_is_not_a_download(
+        self, mock_session: Mock, tmp_path: Path
     ) -> None:
-        """Test handling of extraction errors."""
-        # Setup successful download but failed extraction
-        mock_response = Mock()
-        mock_response.headers = {"Content-Length": "1000"}
-        mock_response.iter_content.return_value = [b"chunk"]
-        mock_response.status_code = 200
-        mock_response.raise_for_status.return_value = None
+        """An HTTP 202 challenge is a failure even though it is a 2xx response."""
+        context = _session_for(b"", status_code=202)
+        response = context.__enter__.return_value.get.return_value
+        response.headers["x-amzn-waf-action"] = "challenge"
+        mock_session.return_value = context
 
-        mock_session_instance = Mock()
-        mock_session_instance.get.return_value = mock_response
-        mock_session.return_value.__enter__.return_value = mock_session_instance
-
-        mock_extract.side_effect = tarfile.TarError("Corrupted tar file")
-
-        result = download_file("http://test.com", "/tmp/target", "test_file")
-
-        assert result is False
+        assert not download_file(MODEL_URL, str(tmp_path), "bundle")
+        assert not (tmp_path / "bundle").exists()
 
     @patch("pranaam.utils.requests.Session")
-    @patch("pranaam.utils._safe_extract_tar")
-    @patch("builtins.open", new_callable=mock_open)
-    def test_waf_challenge_is_not_a_successful_download(
-        self, mock_file: Mock, mock_extract: Mock, mock_session: Mock
+    def test_network_error_restores_interrupted_backup(
+        self, mock_session: Mock, tmp_path: Path
     ) -> None:
-        """A 202 bot challenge with an empty body is a failure, not a download.
+        """A cache left mid-swap is restored before attempting a new download."""
+        backup = tmp_path / ".bundle.previous"
+        backup.mkdir()
+        (backup / "known-good").write_bytes(b"old")
+        session = Mock()
+        session.get.side_effect = requests.ConnectionError("offline")
+        context = Mock()
+        context.__enter__ = Mock(return_value=session)
+        context.__exit__ = Mock(return_value=False)
+        mock_session.return_value = context
 
-        This is what Harvard Dataverse actually returns to a GitHub runner:
-        `HTTP 202`, `x-amzn-waf-action: challenge`, `Content-Length: 0`.
-        `raise_for_status()` does not fire on 2xx, so before this check the
-        zero-byte body was written out and treated as the model.
-        """
-        mock_response = Mock()
-        mock_response.status_code = 202
-        mock_response.headers = {
-            "Content-Length": "0",
-            "x-amzn-waf-action": "challenge",
-        }
-        mock_response.iter_content.return_value = []
-        mock_response.raise_for_status.return_value = None
+        assert not download_file(MODEL_URL, str(tmp_path), "bundle")
+        assert (tmp_path / "bundle" / "known-good").read_bytes() == b"old"
+        assert not backup.exists()
 
-        mock_session_instance = Mock()
-        mock_session_instance.get.return_value = mock_response
-        mock_session.return_value.__enter__.return_value = mock_session_instance
+    def test_failed_directory_swap_restores_old_cache(self, tmp_path: Path) -> None:
+        """An installation error rolls the previous directory back into place."""
+        installed = tmp_path / "bundle"
+        installed.mkdir()
+        (installed / "known-good").write_bytes(b"old")
+        extracted = tmp_path / "staging" / "bundle"
+        extracted.mkdir(parents=True)
+        (extracted / "new").write_bytes(b"new")
+        real_replace = os.replace
 
-        assert download_file("http://test.com", "/tmp/target", "test_file") is False
-        mock_extract.assert_not_called()
+        def fail_new_install(
+            source: os.PathLike[str], destination: os.PathLike[str]
+        ) -> None:
+            if source == extracted and destination == installed:
+                raise OSError("simulated swap failure")
+            real_replace(source, destination)
 
-    @patch("pranaam.utils.requests.Session")
-    @patch("pranaam.utils._safe_extract_tar")
-    @patch("pranaam.utils.Path")
-    @patch("pranaam.utils.tqdm")
-    def test_no_content_length(
-        self, mock_tqdm: Mock, mock_path: Mock, mock_extract: Mock, mock_session: Mock
+        with (
+            patch("pranaam.utils.os.replace", side_effect=fail_new_install),
+            pytest.raises(OSError, match="simulated swap failure"),
+        ):
+            _install_verified_model(extracted, tmp_path, "bundle")
+
+        assert (installed / "known-good").read_bytes() == b"old"
+        assert not (tmp_path / ".bundle.previous").exists()
+
+    def test_model_url_is_read_when_requested(
+        self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Test handling when Content-Length header is missing."""
-        mock_response = Mock()
-        mock_response.headers = {}  # No Content-Length
-        mock_response.iter_content.return_value = [b"chunk"]
-        mock_response.status_code = 200
-        mock_response.raise_for_status.return_value = None
+        """A runtime environment override selects a trusted mirror."""
+        monkeypatch.setenv("PRANAAM_MODEL_URL", MODEL_URL)
 
-        mock_session_instance = Mock()
-        mock_session_instance.get.return_value = mock_response
-        mock_session.return_value.__enter__.return_value = mock_session_instance
+        assert get_model_url() == MODEL_URL
 
-        # Mock tqdm context manager
-        mock_tqdm.return_value.__enter__.return_value.update = Mock()
+    def test_empty_model_url_override_uses_default(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """An unset repository secret does not produce an invalid empty URL."""
+        monkeypatch.setenv("PRANAAM_MODEL_URL", "")
 
-        # Mock Path operations
-        mock_file_path = MagicMock()
-        mock_target_path = MagicMock()
-        mock_path.side_effect = [mock_target_path, mock_file_path]
-        mock_target_path.__truediv__.return_value = mock_file_path
-        mock_file_path.open.return_value.__enter__.return_value = Mock()
-        mock_file_path.open.return_value.__exit__.return_value = None
-        mock_file_path.unlink.return_value = None
-
-        # Mock the extract function to not do anything
-        mock_extract.return_value = None
-
-        result = download_file("http://test.com", "/tmp/target", "test_file")
-
-        assert result is True
+        assert get_model_url().startswith("https://dataverse.harvard.edu/")
 
 
 class TestSafeExtractTar:
-    """Test _safe_extract_tar function."""
+    """Test archive extraction boundaries."""
 
-    def test_safe_extraction(self) -> None:
-        """Test safe extraction of tar file."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Create a test tar file
-            tar_path = os.path.join(temp_dir, "test.tar.gz")
-            test_file_path = os.path.join(temp_dir, "test.txt")
+    def test_safe_extraction(self, tmp_path: Path) -> None:
+        """Ordinary data files extract successfully."""
+        archive_path = tmp_path / "safe.tar.gz"
+        archive_path.write_bytes(_archive_bytes({"model/file.txt": b"content"}))
+        target = tmp_path / "target"
 
-            # Create test content
-            with open(test_file_path, "w") as f:
-                f.write("test content")
+        _safe_extract_tar(archive_path, target)
 
-            # Create tar file
-            with tarfile.open(tar_path, "w:gz") as tar:
-                tar.add(test_file_path, arcname="test.txt")
+        assert (target / "model" / "file.txt").read_bytes() == b"content"
 
-            # Remove original file
-            os.remove(test_file_path)
+    def test_path_traversal_is_rejected(self, tmp_path: Path) -> None:
+        """Parent-directory paths cannot escape the destination."""
+        archive_path = tmp_path / "traversal.tar.gz"
+        archive_path.write_bytes(_archive_bytes({"../../../outside.txt": b"bad"}))
 
-            # Extract using our function
-            extract_dir = os.path.join(temp_dir, "extracted")
-            os.makedirs(extract_dir)
+        with pytest.raises(SecurityError, match="path traversal"):
+            _safe_extract_tar(archive_path, tmp_path / "target")
 
-            _safe_extract_tar(Path(tar_path), Path(extract_dir))
+    def test_outside_symlink_is_rejected(self, tmp_path: Path) -> None:
+        """The data filter rejects links outside the destination."""
+        archive_path = tmp_path / "link.tar.gz"
+        with tarfile.open(archive_path, "w:gz") as archive:
+            info = tarfile.TarInfo("link")
+            info.type = tarfile.SYMTYPE
+            info.linkname = "../../outside"
+            archive.addfile(info)
 
-            # Verify extraction
-            extracted_file = os.path.join(extract_dir, "test.txt")
-            assert os.path.exists(extracted_file)
+        with pytest.raises(tarfile.FilterError):
+            _safe_extract_tar(archive_path, tmp_path / "target")
 
-            with open(extracted_file) as f:
-                assert f.read() == "test content"
+    def test_corrupted_archive_is_rejected(self, tmp_path: Path) -> None:
+        """Invalid archive bytes raise a tar error."""
+        archive_path = tmp_path / "corrupt.tar.gz"
+        archive_path.write_bytes(b"not a tar archive")
 
-    def test_path_traversal_prevention(self) -> None:
-        """Test prevention of path traversal attacks."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            tar_path = os.path.join(temp_dir, "malicious.tar.gz")
-
-            # Create a tar file with path traversal attempt
-            with tarfile.open(tar_path, "w:gz") as tar:
-                # Create a TarInfo object with malicious path
-                info = tarfile.TarInfo(name="../../../malicious.txt")
-                content = b"malicious content"
-                info.size = len(content)
-                # Create a temporary file with the actual content
-                import io
-
-                tar.addfile(info, fileobj=io.BytesIO(content))
-
-            extract_dir = os.path.join(temp_dir, "extracted")
-            os.makedirs(extract_dir)
-
-            # Should raise exception
-            with pytest.raises(Exception, match="Attempted path traversal"):
-                _safe_extract_tar(Path(tar_path), Path(extract_dir))
-
-    def test_corrupted_tar_file(self) -> None:
-        """Test handling of corrupted tar files."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Create a corrupted file (not a valid tar)
-            tar_path = os.path.join(temp_dir, "corrupted.tar.gz")
-            with open(tar_path, "wb") as f:
-                f.write(b"not a tar file")
-
-            extract_dir = os.path.join(temp_dir, "extracted")
-            os.makedirs(extract_dir)
-
-            with pytest.raises(tarfile.TarError):
-                _safe_extract_tar(Path(tar_path), Path(extract_dir))
-
-    def test_nonexistent_tar_file(self) -> None:
-        """Test handling of non-existent tar file."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            tar_path = os.path.join(temp_dir, "nonexistent.tar.gz")
-            extract_dir = os.path.join(temp_dir, "extracted")
-            os.makedirs(extract_dir)
-
-            with pytest.raises((FileNotFoundError, tarfile.TarError)):
-                _safe_extract_tar(Path(tar_path), Path(extract_dir))
-
-
-class TestConstants:
-    """Test module constants."""
-
-    def test_repo_base_url_default(self) -> None:
-        """Test default repository base URL."""
-        # Should have default Harvard Dataverse URL
-        assert "dataverse.harvard.edu" in REPO_BASE_URL
-
-    @patch.dict(os.environ, {"PRANAAM_MODEL_URL": "http://custom.url/model"})
-    def test_repo_base_url_custom(self) -> None:
-        """Test custom repository URL from environment."""
-        # Need to reimport to pick up environment variable
-        import importlib
-
-        import pranaam.utils
-
-        importlib.reload(pranaam.utils)
-
-        assert pranaam.utils.REPO_BASE_URL == "http://custom.url/model"
-
-
-class TestErrorLogging:
-    """Test error logging in utils functions."""
-
-    @patch("pranaam.utils.logger")
-    @patch("pranaam.utils.requests.Session")
-    @patch("pranaam.utils.tqdm")
-    def test_network_error_logging(
-        self, mock_tqdm: Mock, mock_session: Mock, mock_logger: Mock
-    ) -> None:
-        """Test that network errors are logged properly."""
-        mock_session_instance = Mock()
-        mock_session_instance.get.side_effect = requests.exceptions.ConnectionError(
-            "Network error"
-        )
-        mock_session.return_value.__enter__.return_value = mock_session_instance
-        mock_tqdm.return_value.__enter__.return_value = Mock()
-
-        import tempfile
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            download_file("http://test.com", temp_dir, "test")
-
-        mock_logger.error.assert_called()
-        args, kwargs = mock_logger.error.call_args
-        assert "Network error downloading models" in args[0]
-
-    @patch("pranaam.utils.logger")
-    @patch("pranaam.utils.requests.Session")
-    @patch("pranaam.utils._safe_extract_tar")
-    @patch("builtins.open", new_callable=mock_open)
-    @patch("pranaam.utils.tqdm")
-    def test_extraction_error_logging(
-        self,
-        mock_tqdm: Mock,
-        mock_file: Mock,
-        mock_extract: Mock,
-        mock_session: Mock,
-        mock_logger: Mock,
-    ) -> None:
-        """Test that extraction errors are logged properly."""
-        # Setup successful download
-        mock_response = Mock()
-        mock_response.headers = {"Content-Length": "1000"}
-        mock_response.iter_content.return_value = [b"chunk"]
-        mock_response.status_code = 200
-        mock_response.raise_for_status.return_value = None
-
-        mock_session_instance = Mock()
-        mock_session_instance.get.return_value = mock_response
-        mock_session.return_value.__enter__.return_value = mock_session_instance
-
-        # Mock tqdm context manager
-        mock_tqdm.return_value.__enter__.return_value.update = Mock()
-
-        # Setup extraction failure
-        mock_extract.side_effect = tarfile.TarError("Extraction failed")
-
-        download_file("http://test.com", "/tmp", "test")
-
-        mock_logger.error.assert_called()
-        args, kwargs = mock_logger.error.call_args
-        assert "File extraction error" in args[0]
+        with pytest.raises(tarfile.TarError):
+            _safe_extract_tar(archive_path, tmp_path / "target")
