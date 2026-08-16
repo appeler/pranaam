@@ -1,199 +1,103 @@
-"""Utilities for downloading and installing model bundles."""
+"""Verified access to the immutable model release on Hugging Face."""
+
+from __future__ import annotations
 
 import hashlib
 import os
-import shutil
-import tarfile
-import tempfile
-from http import HTTPStatus
 from pathlib import Path
 from typing import Final
 
-import requests
-from tqdm.auto import tqdm
+from huggingface_hub import hf_hub_download
+from huggingface_hub.errors import HfHubHTTPError, LocalEntryNotFoundError
 
-from .logging import get_logger
-
-logger = get_logger()
-
-DEFAULT_MODEL_URL: Final[str] = (
-    "https://dataverse.harvard.edu/api/access/datafile/13228210"
-)
+MODEL_REPO_ID: Final[str] = "gojiberries/pranaam"
+MODEL_REVISION: Final[str] = "6b92b6a5a5d8abe69f0cd10429dd48e079c00e5f"
 MODEL_SHA256: Final[dict[str, str]] = {
-    "eng_model.keras": (
-        "2cdf998ede5d71715e3cfa084adc81de3b546597fc0257f929bd0e26b2e19202"
+    "eng/model.safetensors": (
+        "c3b84bd87966f826d44ff594bdfb9dbd4c7ce7e59ae251651a7634c1931f41f7"
     ),
-    "hin_model.keras": (
-        "e1b14656749bc63198b81275c978cea4959821e00233ebf82a773f1118e575c9"
+    "eng/vocabulary.txt": (
+        "a12fa985bb21c4202332821f05d8d1497f202954e71c3999c9a3532eccc68332"
+    ),
+    "hin/model.safetensors": (
+        "3d31954c85115e37dd9cebcc7654d6fb2d11f69e52ac7a67922544b974d1421b"
+    ),
+    "hin/vocabulary.txt": (
+        "9dceef46783307a364f9e440c3f14bd4b2ed99688cc43ac3e0a73f9a3ebbcd37"
     ),
 }
-CHUNK_SIZE: Final[int] = 1024**2
 
 
-def get_model_url() -> str:
-    """Return the configured model-bundle URL."""
-    return os.environ.get("PRANAAM_MODEL_URL") or DEFAULT_MODEL_URL
+class ModelDownloadError(RuntimeError):
+    """Raised when a required model artifact cannot be obtained."""
 
 
-def download_file(url: str, target: str, file_name: str) -> bool:
-    """Download, verify, and atomically install a model bundle.
+class ModelIntegrityError(RuntimeError):
+    """Raised when model bytes do not match the pinned release manifest."""
 
-    Args:
-        url: URL of the model archive
-        target: Target directory for the installed bundle
-        file_name: Expected top-level directory in the archive
 
-    Returns:
-        ``True`` when a verified bundle was installed, otherwise ``False``.
+def file_sha256(path: Path) -> str:
+    """Return the SHA-256 digest of a file without loading it into memory."""
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024**2), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _verify_model_file(path: Path, filename: str) -> None:
+    if not path.is_file():
+        raise ModelIntegrityError(f"Model artifact is missing: {filename}")
+    expected = MODEL_SHA256[filename]
+    actual = file_sha256(path)
+    if actual != expected:
+        raise ModelIntegrityError(
+            f"Checksum mismatch for {filename}: expected {expected}, got {actual}"
+        )
+
+
+def download_model_file(
+    filename: str,
+    *,
+    force_download: bool = False,
+    local_files_only: bool = False,
+) -> Path:
+    """Resolve and verify one file from the pinned Hugging Face revision.
+
+    Set ``PRANAAM_MODEL_DIR`` to a directory with the published repository
+    layout to run from an explicitly managed local mirror.
     """
-    target_path = Path(target)
-    try:
-        target_path.mkdir(parents=True, exist_ok=True)
-        _recover_interrupted_install(target_path, file_name)
-        with tempfile.TemporaryDirectory(
-            prefix=f".{file_name}-", dir=target_path
-        ) as temporary_directory:
-            temporary_path = Path(temporary_directory)
-            archive_path = temporary_path / "model.tar.gz"
-            extracted_path = temporary_path / "extracted"
-            extracted_path.mkdir()
+    if filename not in MODEL_SHA256:
+        raise ValueError(f"Unknown model artifact: {filename}")
 
-            _download_archive(url, archive_path, file_name)
-            _safe_extract_tar(archive_path, extracted_path)
-            extracted_model = extracted_path / file_name
-            verify_model_files(extracted_model)
-            _install_verified_model(extracted_model, target_path, file_name)
+    local_model_dir = os.environ.get("PRANAAM_MODEL_DIR")
+    if local_model_dir:
+        path = Path(local_model_dir) / filename
+        _verify_model_file(path, filename)
+        return path
 
-        logger.info("Installed verified model bundle at %s", target_path / file_name)
-        return True
-    except requests.exceptions.RequestException as error:
-        logger.error("Network error downloading models: %s", error)
-    except (SecurityError, tarfile.TarError, OSError, ValueError) as error:
-        logger.error("Model bundle validation failed: %s", error)
-    except Exception as error:
-        logger.error("Unexpected error downloading models: %s", error)
-    return False
-
-
-def _download_archive(url: str, archive_path: Path, file_name: str) -> None:
-    """Stream a complete HTTP 200 response into a temporary archive."""
-    with (
-        requests.Session() as session,
-        tqdm(
-            unit="iB",
-            unit_scale=True,
-            desc=file_name,
-            ascii=True,
-            colour="cyan",
-        ) as progress,
-        archive_path.open("wb") as archive,
-    ):
-        response = session.get(url, stream=True, allow_redirects=True, timeout=120)
-        response.raise_for_status()
-        if response.status_code != HTTPStatus.OK:
-            raise requests.HTTPError(
-                f"{url} returned {response.status_code}, not 200. "
-                f"{_challenge_hint(response)}",
-                response=response,
+    def fetch(force: bool) -> Path:
+        try:
+            return Path(
+                hf_hub_download(
+                    repo_id=MODEL_REPO_ID,
+                    filename=filename,
+                    revision=MODEL_REVISION,
+                    force_download=force,
+                    local_files_only=local_files_only,
+                )
             )
+        except (HfHubHTTPError, LocalEntryNotFoundError, OSError, ValueError) as exc:
+            raise ModelDownloadError(
+                f"Could not download {filename} from {MODEL_REPO_ID}@{MODEL_REVISION}"
+            ) from exc
 
-        content_length = response.headers.get("Content-Length")
-        expected_size = int(content_length) if content_length else None
-        progress.total = expected_size
-        downloaded_size = 0
-
-        for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
-            if chunk:
-                written = archive.write(chunk)
-                downloaded_size += written
-                progress.update(written)
-
-    if downloaded_size == 0:
-        raise SecurityError("Downloaded model archive is empty")
-    if expected_size is not None and downloaded_size != expected_size:
-        raise SecurityError(
-            f"Downloaded {downloaded_size} bytes; expected {expected_size}"
-        )
-
-
-def _challenge_hint(response: requests.Response) -> str:
-    """Explain a bot-challenge response that otherwise looks successful."""
-    if response.headers.get("x-amzn-waf-action"):
-        return (
-            "The host challenged this client. Set PRANAAM_MODEL_URL to a "
-            "trusted mirror."
-        )
-    return "Set PRANAAM_MODEL_URL to a trusted mirror if this host is unavailable."
-
-
-def verify_model_files(model_path: Path) -> None:
-    """Verify every required model against its pinned SHA-256 digest."""
-    if not model_path.is_dir():
-        raise SecurityError(f"Downloaded archive is missing {model_path.name}")
-
-    for name, expected_digest in MODEL_SHA256.items():
-        path = model_path / name
-        if not path.is_file():
-            raise SecurityError(f"Downloaded archive is missing {name}")
-
-        digest = hashlib.sha256()
-        with path.open("rb") as model_file:
-            for chunk in iter(lambda: model_file.read(CHUNK_SIZE), b""):
-                digest.update(chunk)
-        if digest.hexdigest() != expected_digest:
-            raise SecurityError(f"Checksum mismatch for {name}")
-
-
-def _recover_interrupted_install(target: Path, file_name: str) -> None:
-    """Restore the previous bundle if a process stopped during the directory swap."""
-    installed = target / file_name
-    backup = target / f".{file_name}.previous"
-    if installed.exists():
-        _remove_path(backup)
-    elif backup.exists():
-        os.replace(backup, installed)
-
-
-def _install_verified_model(extracted: Path, target: Path, file_name: str) -> None:
-    """Swap a verified bundle into place and roll back a failed replacement."""
-    installed = target / file_name
-    backup = target / f".{file_name}.previous"
-    _remove_path(backup)
-
-    if installed.exists():
-        os.replace(installed, backup)
+    path = fetch(force_download)
     try:
-        os.replace(extracted, installed)
-    except Exception:
-        if backup.exists() and not installed.exists():
-            os.replace(backup, installed)
-        raise
-    else:
-        _remove_path(backup)
-
-
-def _remove_path(path: Path) -> None:
-    """Remove a file, link, or directory when it exists."""
-    if path.is_symlink() or path.is_file():
-        path.unlink()
-    elif path.is_dir():
-        shutil.rmtree(path)
-
-
-def _safe_extract_tar(tar_path: Path, extract_to: Path) -> None:
-    """Extract a tar archive without allowing writes outside the destination."""
-    extract_root = extract_to.resolve()
-    with tarfile.open(tar_path, "r:gz") as tar_file:
-        for member in tar_file.getmembers():
-            member_path = (extract_to / member.name).resolve()
-            try:
-                member_path.relative_to(extract_root)
-            except ValueError as error:
-                raise SecurityError(
-                    f"Attempted path traversal in tar file: {member.name}"
-                ) from error
-        tar_file.extractall(extract_to, filter="data")
-
-
-class SecurityError(Exception):
-    """Raised when model-bundle validation detects unsafe or unexpected data."""
+        _verify_model_file(path, filename)
+    except ModelIntegrityError:
+        if force_download or local_files_only:
+            raise
+        path = fetch(True)
+        _verify_model_file(path, filename)
+    return path

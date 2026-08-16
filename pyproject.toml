@@ -1,14 +1,14 @@
 [build-system]
-requires = ["uv_build>=0.9.17,<0.13.0"]
-build-backend = "uv_build"
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
 
 [project]
 name = "pranaam"
-version = "0.5.0"
-description = "Predict religion and caste based on name"
+description = "Predict religion from names"
 readme = "README.md"
-requires-python = ">=3.11,<3.13"
-license = {text = "MIT"}
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
   { name = "Rajashekar Chintalapati", email = "rajshekar.ch@gmail.com" },
   { name = "Aaditya Dar" },
@@ -18,7 +18,6 @@ classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -29,55 +28,48 @@ classifiers = [
   "Natural Language :: English",
   "Natural Language :: Hindi"
 ]
-keywords = ["predict", "religion", "name", "hindi", "english", "machine-learning", "deep-learning", "nlp", "name-classification", "tensorflow"]
+keywords = ["predict", "religion", "name", "hindi", "english", "machine-learning", "deep-learning", "nlp", "name-classification", "pytorch", "hugging-face"]
 dependencies = [
-  "tensorflow>=2.20.0",
-  "tf-keras>=2.20.0",
-  "tqdm>=4.64.0",
-  "pandas>=1.5.0",
-  "numpy>=1.21.0",
-  "requests>=2.25.0",
+  "huggingface-hub>=1.0",
+  "numpy>=1.26",
+  "pandas>=2.2",
   "rich>=13.0.0",
-  "filelock>=3.20.0,<4.0.0",
-  "platformdirs>=4.0.0,<5.0.0",
+  "safetensors>=0.5",
+  "torch>=2.7",
 ]
+dynamic = ["version"]
 
 [project.optional-dependencies]
-docs = [
-    "sphinx>=7.0",
-    "furo>=2024.1.29",
-    "sphinx-copybutton>=0.5",
-    "myst-parser>=2.0",
-    "nbsphinx>=0.9",
-    "jupyter>=1.0",
-    "ipykernel>=6.0",
-    "nbconvert>=7.0,<7.18",
-]
 streamlit = [
-  "streamlit>=1.20.0",
-  "scikit-learn>=1.0.0,<2.0.0"
+    "streamlit>=1.20",
 ]
 
 [dependency-groups]
 dev = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
-    "pytest-xdist>=3.0",
-    "ruff>=0.7.0",
-    "mypy>=1.0",
-    "pre-commit>=3.0",
-    "pandas-stubs>=2.0.0",
-    "types-requests",
-    "types-tqdm",
-    "build>=1.3.0",
-    "twine>=6.2.0",
-    "deptry>=0.12.0",
-    "pydoclint>=0.5.0",
+    "ruff>=0.14",
+    "pyright>=1.1.390",
+    "pydoclint>=0.5",
+    "pre-commit>=4",
+    "deptry>=0.24",
+    "pandas-stubs>=2.0",
+    { include-group = "test" },
 ]
 test = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
+    "pytest>=8",
+    "pytest-cov>=6",
     "pytest-xdist>=3.0",
+    "streamlit>=1.20",
+]
+docs = [
+    "sphinx>=8",
+    "py-canon @ git+https://github.com/gojiplus/py-canon@v1",
+    "furo",
+    "myst-parser",
+    "sphinx-copybutton",
+    "nbsphinx>=0.9",
+    "jupyter>=1.0",
+    "ipykernel>=6.0",
+    "nbconvert>=7.0",
 ]
 
 [project.urls]
@@ -86,11 +78,7 @@ test = [
 "Bug Tracker" = "https://github.com/appeler/pranaam/issues"
 
 [project.scripts]
-predict_religion = "pranaam.predict:main"
-
-[tool.uv.build-backend]
-module-name = "pranaam"
-module-root = ""
+predict_religion = "pranaam.pranaam:main"
 
 [tool.pytest.ini_options]
 python_files = "test_*.py"
@@ -99,7 +87,9 @@ addopts = [
     "-v",
     "--tb=short",
     "--strict-markers",
-    "--disable-warnings"
+    "--disable-warnings",
+    "--cov=pranaam",
+    "--cov-report=term-missing",
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
@@ -110,31 +100,12 @@ markers = [
 
 
 
-[tool.mypy]
-python_version = "3.11"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
-strict_equality = true
-show_error_codes = true
-
-[[tool.mypy.overrides]]
-module = ["tensorflow.*", "tf_keras.*", "gdown.*"]
-ignore_missing_imports = true
-
 [tool.coverage.run]
 source = ["pranaam"]
 omit = ["*/tests/*", "*/test_*.py"]
 
 [tool.coverage.report]
+fail_under = 80
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
@@ -143,8 +114,8 @@ exclude_lines = [
 ]
 
 [tool.ruff]
-target-version = "py311"
 line-length = 88
+target-version = "py311"
 exclude = [
     "model_training/",
     "scripts/",
@@ -153,20 +124,29 @@ exclude = [
 ]
 
 [tool.ruff.lint]
+external = ["DOC"]
 select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # pyflakes
-    "I",  # isort
-    "B",  # flake8-bugbear
-    "C4", # flake8-comprehensions
-    "UP", # pyupgrade
+    "E", "W", "F", "I", "B", "C4", "UP", "N", "D", "S", "SIM", "T20", "PT", "RUF",
+    "PTH", "RET", "PIE", "FURB", "PERF", "DTZ", "LOG", "G", "TC", "FLY",
+    "RSE", "SLOT", "FA", "A", "EXE", "ICN", "PGH", "PLE", "ARG", "SLF",
 ]
-ignore = [
-    "E501",  # line too long (handled by formatter)
-    "B008",  # do not perform function calls in argument defaults
-    "C901",  # too complex
-]
+# D203/D213: the google convention the fleet standard picks. W191/D206/D300:
+# ruff's own docs list these as always incompatible with `ruff format`, which
+# the standard also runs.
+ignore = ["D203", "D213", "W191", "D206", "D300"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "D", "ARG", "SLF"]
+"docs/**" = ["D"]
+"pranaam/pranaam.py" = ["T201"]
+"streamlit/run_app.py" = ["S603", "T201"]
+"*.ipynb" = ["E402", "E722", "UP031", "B905", "F821", "F811", "W293", "F841"]  # ignore notebook linting issues
+
+[tool.ruff.lint.isort]
+known-first-party = ["pranaam"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -174,32 +154,46 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 
-[tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401"]  # imported but unused
-"tests/*" = ["S101"]  # use of assert
-"*.ipynb" = ["E402", "E722", "UP031", "B905", "F821", "F811", "W293", "F841"]  # ignore notebook linting issues
-
-[tool.ruff.lint.isort]
-known-first-party = ["pranaam"]
-
 [tool.deptry]
 ignore_notebooks = true
 extend_exclude = [
     "docs/examples/*.ipynb",
     "model_training/*.ipynb",
+    "scripts/",
     "streamlit/requirements.txt",
 ]
 
 [tool.deptry.per_rule_ignores]
-DEP002 = ["sphinx", "furo", "sphinx-copybutton", "myst-parser", "scikit-learn", "nbsphinx", "jupyter", "ipykernel", "nbconvert"]
+DEP002 = ["sphinx", "furo", "sphinx-copybutton", "myst-parser", "nbsphinx", "jupyter", "ipykernel", "nbconvert", "streamlit"]
+DEP003 = ["pranaam"]
+DEP004 = ["py_canon"]
 
 [tool.pydoclint]
 style = "google"
 arg-type-hints-in-docstring = false
+check-return-types = false
+check-class-attributes = false
+allow-init-docstring = true
+exclude = '\.venv|tests|docs'
 arg-type-hints-in-signature = true
-check-return-types = true
 check-yield-types = true
 skip-checking-raises = false
-allow-init-docstring = true
 require-return-section-when-returning-nothing = false
-exclude = '\.git|\.tox|tests/data|model_training/|scripts/'
+
+
+[tool.pyright]
+include = ["pranaam"]
+typeCheckingMode = "standard"
+
+[tool.preen]
+src_layout = false
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pranaam"]
+
+[tool.uv-dynamic-versioning]
+vcs = "git"
+style = "pep440"

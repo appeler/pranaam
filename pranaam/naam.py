@@ -1,41 +1,42 @@
-"""Main prediction module for religion classification."""
+"""Main prediction interface for religion classification."""
 
+from __future__ import annotations
+
+from dataclasses import dataclass
 from threading import RLock
 from typing import ClassVar, Literal
 
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 
 from .base import Base
 from .logging import get_logger
+from .model import ModelConfig, NameClassifier, NameTokenizer, load_classifier
 
 logger = get_logger()
 
 
 def is_english(text: str) -> bool:
-    """Check if text contains only ASCII characters (English).
+    """Return whether text contains only ASCII characters."""
+    return text.isascii()
 
-    Args:
-        text: Input text to check
 
-    Returns:
-        bool: True if text is ASCII-only (English), False otherwise
-    """
-    try:
-        text.encode(encoding="utf-8").decode("ascii")
-        return True
-    except UnicodeDecodeError:
-        return False
+@dataclass(frozen=True)
+class _LanguageModel:
+    classifier: NameClassifier
+    tokenizer: NameTokenizer
+
+    def predict(self, names: list[str]) -> np.ndarray:
+        token_ids = self.tokenizer.encode(names)
+        return self.classifier.predict_proba(token_ids).cpu().numpy()
 
 
 class Naam(Base):
-    """Main class for religion prediction from names."""
+    """Predict a binary religion label from English or Hindi names."""
 
-    MODELFN: ClassVar[str] = "model"
     classes: ClassVar[tuple[str, str]] = ("not-muslim", "muslim")
-    model_name: ClassVar[str] = "eng_and_hindi_models_v2"
-    _models: ClassVar[dict[str, tf.keras.Model]] = {}
+    _config: ClassVar[ModelConfig] = ModelConfig()
+    _models: ClassVar[dict[str, _LanguageModel]] = {}
     _model_lock: ClassVar[RLock] = RLock()
 
     @classmethod
@@ -45,44 +46,46 @@ class Naam(Base):
         lang: Literal["eng", "hin"] = "eng",
         latest: bool = False,
     ) -> pd.DataFrame:
-        """Predict religion based on name(s).
+        """Predict religion labels and Muslim-class probabilities.
 
         Args:
-            names: Single name string, list of names, or pandas Series of names
-            lang: Language of input ('eng' for English, 'hin' for Hindi)
-            latest: Whether to download latest model version
+            names: One name, a list of names, or a pandas Series of names.
+            lang: ``eng`` for the English model or ``hin`` for the Hindi model.
+            latest: Refresh the pinned model artifacts in the local Hub cache.
 
         Returns:
-            pd.DataFrame: DataFrame with columns: name, pred_label, pred_prob_muslim
+            A data frame with the input, predicted label, and rounded Muslim
+            probability percentage.
 
         Raises:
-            ValueError: If invalid language specified
-            RuntimeError: If model loading fails or TensorFlow not available
+            TypeError: If an input value is not a string.
+            ValueError: If the language or input collection is invalid.
+            RuntimeError: If model loading or inference fails.
         """
-        if lang not in ["eng", "hin"]:
+        if lang not in ("eng", "hin"):
             raise ValueError(f"Unsupported language: {lang}. Use 'eng' or 'hin'")
 
-        match names:
-            case str():
-                name_list = [names]
-            case pd.Series():
-                name_list = names.tolist()
-            case _:
-                name_list = list(names)
+        if isinstance(names, str):
+            name_list = [names]
+        elif isinstance(names, pd.Series):
+            name_list = names.tolist()
+        else:
+            name_list = list(names)
 
         if not name_list:
             raise ValueError("Input names list cannot be empty")
-
-        for i, name in enumerate(name_list):
-            if not name or not name.strip():
+        for index, name in enumerate(name_list):
+            if not isinstance(name, str):
+                raise TypeError(f"Name at index {index} must be a string")
+            if not name.strip():
                 raise ValueError(
-                    f"Name at index {i} is empty or contains only whitespace"
+                    f"Name at index {index} is empty or contains only whitespace"
                 )
 
         try:
-            model = cls._model_for(lang, latest)
-            probabilities = np.asarray(model.predict(name_list, verbose=0), dtype=float)
-
+            probabilities = np.asarray(
+                cls._model_for(lang, latest).predict(name_list), dtype=float
+            )
             expected_shape = (len(name_list), len(cls.classes))
             if probabilities.shape != expected_shape:
                 raise ValueError(
@@ -103,7 +106,6 @@ class Naam(Base):
             muslim_probs = [
                 float(np.around(probability[1] * 100)) for probability in probabilities
             ]
-
             return pd.DataFrame(
                 {
                     "name": name_list,
@@ -111,24 +113,15 @@ class Naam(Base):
                     "pred_prob_muslim": muslim_probs,
                 }
             )
-
-        except Exception as e:
-            logger.error(f"Prediction failed: {e}")
-            raise RuntimeError(f"Prediction failed: {e}") from e
+        except Exception as exc:
+            logger.error("Prediction failed: %s", exc)
+            raise RuntimeError(f"Prediction failed: {exc}") from exc
 
     @classmethod
     def _model_for(
         cls, lang: Literal["eng", "hin"], latest: bool = False
-    ) -> tf.keras.Model:
-        """Return a cached model for one language.
-
-        Args:
-            lang: Language code ('eng' or 'hin')
-            latest: Whether to replace the cached model with the latest version
-
-        Returns:
-            The model dedicated to ``lang``.
-        """
+    ) -> _LanguageModel:
+        """Return the cached, language-specific model bundle."""
         with cls._model_lock:
             if latest or lang not in cls._models:
                 cls._models[lang] = cls._load_model(lang, latest)
@@ -137,73 +130,20 @@ class Naam(Base):
     @classmethod
     def _load_model(
         cls, lang: Literal["eng", "hin"], latest: bool = False
-    ) -> tf.keras.Model:
-        """Load the appropriate model for the specified language.
-
-        Args:
-            lang: Language code ('eng' or 'hin')
-            latest: Whether to download latest model version
-
-        Raises:
-            RuntimeError: If model loading fails
-        """
+    ) -> _LanguageModel:
+        """Load and validate one language's tokenizer and classifier."""
         try:
-            model_path = cls.load_model_data(cls.model_name, latest)
-            if model_path is None:
-                raise RuntimeError("Failed to load model data")
-
-            model_filename = f"{lang}_model.keras"
-            model_full_path = model_path / cls.model_name / model_filename
-
-            logger.info(f"Loading {lang} model from {model_full_path}")
-
-            # Load Keras 3 compatible model using tf-keras
-            return cls._load_model_with_compatibility(str(model_full_path), lang)
-
-        except Exception as e:
-            logger.error(f"Failed to load {lang} model: {e}")
-            raise RuntimeError(f"Failed to load {lang} model: {e}") from e
-
-    @classmethod
-    def _load_model_with_compatibility(
-        cls, model_path: str, lang: Literal["eng", "hin"]
-    ) -> tf.keras.Model:
-        """Load Keras 3 compatible model using tf-keras for compatibility.
-
-        Args:
-            model_path: Path to .keras model file
-            lang: Language code ('eng' or 'hin')
-
-        Returns:
-            tf.keras.Model: Loaded and configured model
-
-        Raises:
-            RuntimeError: If model loading fails
-        """
-        # Fix Windows encoding for model assets with Unicode content
-        import sys
-
-        if sys.platform == "win32":
-            import os
-
-            os.environ.setdefault("PYTHONIOENCODING", "utf-8")
-
-        try:
-            # Use tf-keras for loading the migrated Keras 3 models
-            import tf_keras as keras
-
-            logger.info(f"Loading {lang} model with tf-keras compatibility layer")
-            return keras.models.load_model(model_path)
-        except ImportError:
-            logger.info(
-                f"tf-keras not available, trying standard Keras for {lang} model"
+            weights_path = cls.load_model_data(
+                f"{lang}/model.safetensors", latest=latest
             )
-            try:
-                return tf.keras.models.load_model(model_path)
-            except Exception as e:
-                raise RuntimeError(
-                    f"Standard Keras loading failed for {lang} model: {e}"
-                ) from e
-        except Exception as e:
-            logger.error(f"tf-keras loading failed for {lang} model: {e}")
-            raise RuntimeError(f"Model loading failed for {lang} model: {e}") from e
+            vocabulary_path = cls.load_model_data(
+                f"{lang}/vocabulary.txt", latest=latest
+            )
+            logger.info("Loading %s model from %s", lang, weights_path)
+            return _LanguageModel(
+                classifier=load_classifier(weights_path, cls._config),
+                tokenizer=NameTokenizer.from_file(vocabulary_path, cls._config),
+            )
+        except Exception as exc:
+            logger.error("Failed to load %s model: %s", lang, exc)
+            raise RuntimeError(f"Failed to load {lang} model: {exc}") from exc

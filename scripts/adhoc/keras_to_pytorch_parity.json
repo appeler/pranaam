@@ -1,0 +1,24 @@
+{
+  "config_sha256": "d1272b2e2e09cac19dbe0bf2540c1282a0179c5ae2ac96c3f3beb3e650cbf9fb",
+  "models": [
+    {
+      "language": "eng",
+      "max_absolute_error": 1.7881393432617188e-07,
+      "model_sha256": "c3b84bd87966f826d44ff594bdfb9dbd4c7ce7e59ae251651a7634c1931f41f7",
+      "samples": 1030,
+      "source_model_sha256": "2cdf998ede5d71715e3cfa084adc81de3b546597fc0257f929bd0e26b2e19202",
+      "vocabulary_sha256": "a12fa985bb21c4202332821f05d8d1497f202954e71c3999c9a3532eccc68332"
+    },
+    {
+      "language": "hin",
+      "max_absolute_error": 1.7881393432617188e-07,
+      "model_sha256": "3d31954c85115e37dd9cebcc7654d6fb2d11f69e52ac7a67922544b974d1421b",
+      "samples": 1030,
+      "source_model_sha256": "e1b14656749bc63198b81275c978cea4959821e00233ebf82a773f1118e575c9",
+      "vocabulary_sha256": "9dceef46783307a364f9e440c3f14bd4b2ed99688cc43ac3e0a73f9a3ebbcd37"
+    }
+  ],
+  "source": "eng_and_hindi_models_v2.tar.gz",
+  "source_archive_sha256": "9d5587073764f0ade01f64350aff89270015a509dd1802dc6ef5985e5598174d",
+  "tolerance": 1e-06
+}

@@ -151,21 +151,23 @@ class TestCLIIntegration:
     def test_cli_with_none_argv(self) -> None:
         """Test CLI function when argv is None."""
         # Should use sys.argv[1:] by default
-        with patch("sys.argv", ["script_name", "--input", "Test Name"]):
-            with patch("pranaam.pranaam.pred_rel") as mock_pred_rel:
-                mock_result = pd.DataFrame(
-                    {
-                        "name": ["Test Name"],
-                        "pred_label": ["muslim"],
-                        "pred_prob_muslim": [75.0],
-                    }
-                )
-                mock_pred_rel.return_value = mock_result
+        with (
+            patch("sys.argv", ["script_name", "--input", "Test Name"]),
+            patch("pranaam.pranaam.pred_rel") as mock_pred_rel,
+        ):
+            mock_result = pd.DataFrame(
+                {
+                    "name": ["Test Name"],
+                    "pred_label": ["muslim"],
+                    "pred_prob_muslim": [75.0],
+                }
+            )
+            mock_pred_rel.return_value = mock_result
 
-                result = main(None)  # argv=None should use sys.argv[1:]
+            result = main(None)
 
-                assert result == 0
-                mock_pred_rel.assert_called_once()
+            assert result == 0
+            mock_pred_rel.assert_called_once()
 
     @patch("pranaam.pranaam.pred_rel")
     def test_output_formatting(self, mock_pred_rel: Mock) -> None:

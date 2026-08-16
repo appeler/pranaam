@@ -22,23 +22,27 @@ dev-install: ## Install package with development dependencies
 	pre-commit install
 
 test: ## Run tests
-	pytest
+	uv run pytest
 
 test-cov: ## Run tests with coverage
-	pytest --cov=pranaam --cov-report=html --cov-report=term
+	uv run pytest --cov=pranaam --cov-report=html --cov-report=term
 
 lint: ## Run linter
-	ruff check .
+	uv run ruff check .
+	uv run ruff format --check .
 
 format: ## Format code
-	ruff format .
-	ruff check --fix .
+	uv run ruff format .
+	uv run ruff check --fix .
 
 type-check: ## Run type checker
-	mypy pranaam/
+	uv run pyright
+
+pydoclint: ## Check docstring signatures
+	uv run pydoclint --config=pyproject.toml pranaam
 
 docs: ## Build documentation
-	cd docs && make clean && make html
+	uv run sphinx-build -W --keep-going -b html docs docs/_build/html
 
 docs-serve: ## Serve documentation locally
 	cd docs/_build/html && python -m http.server 8000
@@ -49,4 +53,4 @@ build: ## Build package
 upload: ## Upload to PyPI
 	uv publish
 
-ci: lint type-check test ## Run CI checks
+ci: lint type-check pydoclint test ## Run CI checks

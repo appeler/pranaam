@@ -1,0 +1,12 @@
+# Managed by copier — records template version for `copier update`. Do not edit.
+_commit: v1
+_src_path: gh:gojiplus/py-canon
+author_email: rajshekar.ch@gmail.com
+author_name: Rajashekar Chintalapati
+coverage_floor: 80
+default_branch: main
+description: Predict religion from names
+needs_cli: true
+org: appeler
+package_name: pranaam
+project_name: pranaam

@@ -134,3 +134,4 @@ dmypy.json
 .DS_Store
 /pranaam/model/eng_and_hindi_models_v2
 /pranaam/model
+eng_and_hindi_models_v*.tar.gz

@@ -5,13 +5,17 @@
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://appeler.github.io/pranaam/)
 [![image](https://static.pepy.tech/badge/pranaam)](https://pepy.tech/project/pranaam)
 
-Pranaam uses the Bihar Land Records data, plot-level land records (N=
-41.87 million plots or 12.13 individuals/accounts across 35,626
-villages), to build machine learning models that predict religion and
-caste from the name. Our final dataset has around 4M unique records. To
+Pranaam uses the Bihar Land Records data, including 41.87 million plot records
+for 12.13 million individuals or accounts across 35,626 villages, to build
+machine learning models from names. The package currently exposes binary
+religion classification. The final training dataset has around 4 million unique records. To
 learn how to transform the data and the models underlying the package,
 check the
 [notebooks](https://github.com/appeler/pranaam/tree/main/).
+
+The production PyTorch weights, vocabularies, conversion hashes, and model card
+are published in the
+[gojiberries/pranaam Hugging Face repository](https://huggingface.co/gojiberries/pranaam).
 
 The first function we are releasing with the package is
 pred_rel, which predicts religion based on the name
@@ -19,9 +23,9 @@ pred_rel, which predicts religion based on the name
 context, nearly 95% of India\'s population are Hindu or Muslim, with
 Sikhs, Buddhists, Christians, and other groups making up the rest.) The
 OOS accuracy assessed on unseen names is nearly 98% for both
-[Hindi](https://github.com/appeler/pranaam_dev/blob/main/05_train_hindi.ipynb)
+[Hindi](https://github.com/appeler/pranaam/blob/main/model_training/05_train_hindi.ipynb)
 and
-[English](https://github.com/appeler/pranaam_dev/blob/main/04_train_english.ipynb)
+[English](https://github.com/appeler/pranaam/blob/main/model_training/04_train_english.ipynb)
 models.
 
 Our training data is in Hindi. To build models that classify names
@@ -47,14 +51,13 @@ We strongly recommend installing pranaam inside a Python virtual environment. (s
 pip install pranaam
 ```
 
-This installs TensorFlow 2.14.1, which is known to work correctly with the models.
-
 ### Requirements
 
-- Python 3.10 or 3.11 (TensorFlow 2.14.1 compatibility requirement)
-- TensorFlow 2.14.1 (automatically installed)
+- Python 3.11 or newer
+- PyTorch, safetensors, and Hugging Face Hub support are installed automatically
 
-> **Note**: This package requires TensorFlow 2.14.1 with Keras 2.14.0 for model compatibility. Python 3.12+ is not currently supported due to TensorFlow availability constraints.
+The first prediction downloads the requested language model from an immutable
+Hugging Face revision and verifies every file against a pinned SHA-256 digest.
 
 ## General API
 
@@ -73,8 +76,8 @@ By using names in English :
 output -:
 
     name  pred_label  pred_prob_muslim
-    0    Shah Rukh Khan      muslim              73.0
-    1  Amitabh Bachchan  not-muslim              27.0
+    0    Shah Rukh Khan      muslim              95.0
+    1  Amitabh Bachchan  not-muslim              10.0
 
 By using names in Hindi :
 
@@ -86,13 +89,13 @@ By using names in Hindi :
 output -:
 
     name  pred_label  pred_prob_muslim
-    0    शाहरुख खान      muslim              73.0
-    1  अमिताभ बच्चन  not-muslim              27.0
+    0    शाहरुख खान      muslim              97.0
+    1  अमिताभ बच्चन  not-muslim               5.0
 
 ## Functions
 
-We expose one function, which takes Hindi/English text (name) and
-predicts religion and caste.
+We expose one function, which takes Hindi/English text (name) and predicts a
+binary religion label.
 
 - **pranaam.pred_rel(input)**
   - What it does:

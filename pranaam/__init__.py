@@ -4,8 +4,14 @@ A Python package for predicting religion from names using machine learning
 models trained on Bihar Land Records data.
 """
 
-from .naam import Naam
-from .pranaam import pred_rel
+from importlib.metadata import PackageNotFoundError, version
 
-__version__ = "0.0.2"
-__all__ = ["pred_rel", "Naam"]
+from .naam import Naam
+
+pred_rel = Naam.pred_rel
+
+try:
+    __version__ = version("pranaam")
+except PackageNotFoundError:
+    __version__ = "0+unknown"
+__all__ = ["Naam", "pred_rel"]

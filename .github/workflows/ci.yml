@@ -2,87 +2,21 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main]
   pull_request:
-    branches: [ main, develop ]
+  schedule:
+    - cron: "17 6 * * 1"  # weekly: surface ecosystem drift on quiet repos
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
-    name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: ["3.11", "3.12"]
-
-    steps:
-    - uses: actions/checkout@v7
-
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v7.0.0
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v9.0.0
-
-    - name: Install dependencies
-      run: |
-        uv sync --group dev --group test
-
-    - name: Verify installation
-      run: |
-        uv run python -c "import pranaam; print('[OK] Pranaam installation successful')"
-        uv run python -c "import tensorflow as tf; print(f'[OK] TensorFlow {tf.__version__} loaded')"
-
-    - name: Check dependency issues
-      run: |
-        uv run deptry .
-
-    - name: Lint and format with ruff
-      run: |
-        uv run ruff check
-        uv run ruff format --check
-
-    - name: Type check with mypy
-      run: |
-        uv run mypy pranaam/
-
-    - name: Run unit tests
-      run: |
-        uv run pytest -m "not integration" --tb=short -v --maxfail=5
-
-  build:
-    name: Build and Validate Package
-    runs-on: ubuntu-latest
-    needs: test
-
-    steps:
-    - uses: actions/checkout@v7
-
-    - name: Set up Python
-      uses: actions/setup-python@v7.0.0
-      with:
-        python-version: "3.11"
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v9.0.0
-
-    - name: Build package
-      run: |
-        uv build
-
-    - name: Install validation tools
-      run: |
-        uv tool install twine
-
-    - name: Validate package
-      run: |
-        uv tool run twine check dist/* --strict
-
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v7
-      with:
-        name: dist
-        path: dist/
-        retention-days: 7
+  ci:
+    uses: gojiplus/py-canon/.github/workflows/reusable-ci.yml@v1
+    with:
+      wheel-import: pranaam
+      coverage-floor: 80
