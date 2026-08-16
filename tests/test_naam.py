@@ -117,8 +117,8 @@ class TestNaamPredictions:
         assert len(result) == 2
 
         # Check data types
-        assert result["name"].dtype == object
-        assert result["pred_label"].dtype == object
+        assert pd.api.types.is_string_dtype(result["name"].dtype)
+        assert pd.api.types.is_string_dtype(result["pred_label"].dtype)
         assert pd.api.types.is_numeric_dtype(result["pred_prob_muslim"])
 
     @patch.object(Naam, "_load_model")
