@@ -10,8 +10,8 @@ authors:
   given-names: "Gaurav"
   email: "gsood07@gmail.com"
 title: "pranaam: Predict religion from names"
-version: 0.2.0
-date-released: 2024-12-03
+version: 0.6.0
+date-released: 2026-08-16
 url: "https://github.com/appeler/pranaam"
 repository-code: "https://github.com/appeler/pranaam"
 repository-artifact: "https://pypi.org/project/pranaam/"
