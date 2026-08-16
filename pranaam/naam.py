@@ -15,6 +15,8 @@ from .model import ModelConfig, NameClassifier, NameTokenizer, load_classifier
 
 logger = get_logger()
 
+PREDICTION_BATCH_SIZE = 1024
+
 
 def is_english(text: str) -> bool:
     """Return whether text contains only ASCII characters."""
@@ -27,8 +29,13 @@ class _LanguageModel:
     tokenizer: NameTokenizer
 
     def predict(self, names: list[str]) -> np.ndarray:
-        token_ids = self.tokenizer.encode(names)
-        return self.classifier.predict_proba(token_ids).cpu().numpy()
+        probabilities = []
+        for start in range(0, len(names), PREDICTION_BATCH_SIZE):
+            token_ids = self.tokenizer.encode(
+                names[start : start + PREDICTION_BATCH_SIZE]
+            )
+            probabilities.append(self.classifier.predict_proba(token_ids).cpu().numpy())
+        return np.concatenate(probabilities, axis=0)
 
 
 class Naam(Base):
