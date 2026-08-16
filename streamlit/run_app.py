@@ -1,19 +1,13 @@
-#!/usr/bin/env python3
-"""
-Simple script to run the Streamlit app locally.
-Usage: python run_app.py
-"""
+"""Run the Pranaam Streamlit app locally."""
 
-import os
 import subprocess
 import sys
+from pathlib import Path
 
 
-def main():
+def main() -> None:
     """Run the Streamlit app."""
-    # Get the directory containing this script
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    app_path = os.path.join(script_dir, "streamlit_app.py")
+    app_path = Path(__file__).resolve().parent / "streamlit_app.py"
 
     print("🚀 Starting Pranaam Streamlit App...")
     print(f"📁 App location: {app_path}")
@@ -29,7 +23,7 @@ def main():
                 "-m",
                 "streamlit",
                 "run",
-                app_path,
+                str(app_path),
                 "--server.headless",
                 "false",
                 "--server.enableCORS",

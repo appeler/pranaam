@@ -1,4 +1,1 @@
-# This file is deprecated - use pyproject.toml instead
-# Install with: pip install -e .[streamlit]
-
-pranaam[streamlit]
+-e ..[streamlit]

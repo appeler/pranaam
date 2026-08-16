@@ -9,13 +9,13 @@ authors:
 - family-names: "Sood"
   given-names: "Gaurav"
   email: "gsood07@gmail.com"
-title: "pranaam: Predict religion and caste based on name"
+title: "pranaam: Predict religion from names"
 version: 0.2.0
 date-released: 2024-12-03
 url: "https://github.com/appeler/pranaam"
 repository-code: "https://github.com/appeler/pranaam"
 repository-artifact: "https://pypi.org/project/pranaam/"
-abstract: "Predict religion and caste based on name using machine learning models for Hindi and English names"
+abstract: "Predict religion from Hindi and English names using machine learning models"
 keywords:
   - predict
   - religion
@@ -26,5 +26,6 @@ keywords:
   - deep-learning
   - nlp
   - name-classification
-  - tensorflow
+  - pytorch
+  - hugging-face
 license: MIT

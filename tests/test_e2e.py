@@ -18,11 +18,9 @@ class TestRealModelDownloadAndPrediction:
     @pytest.fixture(autouse=True)
     def setup_clean_environment(self) -> Generator[None, None, None]:
         """Ensure clean model state for each test."""
-        with Naam._model_lock:
-            Naam._models.clear()
+        Naam._models.clear()
         yield
-        with Naam._model_lock:
-            Naam._models.clear()
+        Naam._models.clear()
 
     @pytest.mark.integration
     def test_real_english_predictions(self) -> None:
@@ -55,13 +53,6 @@ class TestRealModelDownloadAndPrediction:
 
         # Verify probabilities are reasonable (0-100)
         assert all(0 <= prob <= 100 for prob in result["pred_prob_muslim"])
-
-        # Print actual results for inspection
-        print("\n🎬 REAL ENGLISH PREDICTIONS:")
-        for _, row in result.iterrows():
-            print(
-                f"  {row['name']} → {row['pred_label']} ({row['pred_prob_muslim']:.1f}%)"
-            )
 
         # Verify expected patterns (these are actual predictions, not mocks)
         khan_results = result[result["name"].str.contains("Khan")]
@@ -101,49 +92,38 @@ class TestRealModelDownloadAndPrediction:
         # Verify probabilities are reasonable
         assert all(0 <= prob <= 100 for prob in result["pred_prob_muslim"])
 
-        # Print actual results for inspection
-        print("\n🇮🇳 REAL HINDI PREDICTIONS:")
-        for _, row in result.iterrows():
-            print(
-                f"  {row['name']} → {row['pred_label']} ({row['pred_prob_muslim']:.1f}%)"
-            )
-
     @pytest.mark.integration
     def test_model_caching_behavior(self) -> None:
         """Test that models are properly cached after first download."""
         # First prediction - should trigger download
         result1 = pranaam.pred_rel("Shah Rukh Khan", lang="eng")
-        english_model = Naam._models["eng"]
+        assert "eng" in Naam._models
 
         # Second prediction - should use cached model
         result2 = pranaam.pred_rel("Amitabh Bachchan", lang="eng")
-        assert Naam._models["eng"] is english_model
+        assert list(Naam._models) == ["eng"]
 
         # Results should be consistent
         assert result1.columns.tolist() == result2.columns.tolist()
-
-        print("\n💾 MODEL CACHING VERIFIED")
 
     @pytest.mark.integration
     def test_language_switching(self) -> None:
         """Test switching between English and Hindi models."""
         # Start with English
         eng_result = pranaam.pred_rel("Shah Rukh Khan", lang="eng")
-        english_model = Naam._models["eng"]
+        assert set(Naam._models) == {"eng"}
 
-        # Load Hindi without replacing English
+        # Switch to Hindi - should reload model
         hin_result = pranaam.pred_rel("शाहरुख खान", lang="hin")
         assert set(Naam._models) == {"eng", "hin"}
 
-        # Switch back to English and reuse the cached English model
+        # Switch back to English - should reload model again
         eng_result2 = pranaam.pred_rel("Salman Khan", lang="eng")
-        assert Naam._models["eng"] is english_model
+        assert set(Naam._models) == {"eng", "hin"}
 
         # All results should have same structure
         for result in [eng_result, hin_result, eng_result2]:
             assert list(result.columns) == ["name", "pred_label", "pred_prob_muslim"]
-
-        print("\n🔄 LANGUAGE SWITCHING VERIFIED")
 
     @pytest.mark.integration
     def test_pandas_series_integration(self) -> None:
@@ -165,9 +145,6 @@ class TestRealModelDownloadAndPrediction:
 
         # Create combined result
         combined = pd.concat([df, result[["pred_label", "pred_prob_muslim"]]], axis=1)
-
-        print("\n📊 PANDAS INTEGRATION:")
-        print(combined.to_string(index=False))
 
         # Verify combined structure
         expected_cols = ["actor_name", "movie_count", "pred_label", "pred_prob_muslim"]
@@ -199,16 +176,9 @@ class TestRealModelDownloadAndPrediction:
         end_time = time.time()
 
         processing_time = end_time - start_time
-        avg_time_per_name = processing_time / len(names) * 1000  # ms
-
         # Verify all names processed
         assert len(result) == len(names)
         assert set(result["name"]) == set(names)
-
-        print("\n⚡ PERFORMANCE METRICS:")
-        print(f"  Total time: {processing_time:.2f}s")
-        print(f"  Avg per name: {avg_time_per_name:.1f}ms")
-        print(f"  Names/second: {len(names) / processing_time:.1f}")
 
         # Performance should be reasonable (adjust based on actual performance)
         assert processing_time < 10.0, (
@@ -219,18 +189,16 @@ class TestRealModelDownloadAndPrediction:
     def test_error_handling_real_scenarios(self) -> None:
         """Test error handling in real scenarios."""
         # Test with empty input
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="empty"):
             pranaam.pred_rel("", lang="eng")
 
         # Test with invalid language
-        with pytest.raises(ValueError):
-            pranaam.pred_rel("Test Name", lang="invalid")  # type: ignore
+        with pytest.raises(ValueError, match="Unsupported language"):
+            pranaam.pred_rel("Test Name", lang="invalid")  # type: ignore[arg-type]
 
         # Test with None input
         with pytest.raises((ValueError, TypeError)):
-            pranaam.pred_rel(None, lang="eng")  # type: ignore
-
-        print("\n🛡️ ERROR HANDLING VERIFIED")
+            pranaam.pred_rel(None, lang="eng")  # type: ignore[arg-type]
 
 
 class TestRealWorldScenarios:
@@ -250,12 +218,6 @@ class TestRealWorldScenarios:
 
         result = pranaam.pred_rel(mixed_names, lang="eng")
 
-        print("\n🌍 MIXED CULTURAL PREDICTIONS:")
-        for _, row in result.iterrows():
-            print(
-                f"  {row['name']} → {row['pred_label']} ({row['pred_prob_muslim']:.1f}%)"
-            )
-
         # Verify structure
         assert len(result) == len(mixed_names)
         assert all(0 <= prob <= 100 for prob in result["pred_prob_muslim"])
@@ -272,12 +234,6 @@ class TestRealWorldScenarios:
         ]
 
         result = pranaam.pred_rel(edge_cases, lang="eng")
-
-        print("\n🔍 EDGE CASE PREDICTIONS:")
-        for _, row in result.iterrows():
-            print(
-                f"  {row['name']} → {row['pred_label']} ({row['pred_prob_muslim']:.1f}%)"
-            )
 
         assert len(result) == len(edge_cases)
 

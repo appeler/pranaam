@@ -1,68 +1,41 @@
-# Welcome to pranaam's documentation!
+# Pranaam documentation
 
-**pranaam** is a Python package for predicting religion from names using machine learning models trained on Bihar Land Records data. The package supports both Hindi and English names and provides high accuracy predictions.
+Pranaam estimates whether a name follows Muslim or non-Muslim patterns in its
+training data. The English and Hindi models were trained on Bihar land records.
+The result is a model estimate, not a verified statement about a person.
 
-:::{toctree}
+```{toctree}
 :maxdepth: 2
-:caption: Contents:
 
 installation
 quickstart
 api.rst
 examples
-:::
+```
 
-:::{note}
-Interactive Jupyter notebook examples are available in the `docs/examples/` directory:
-
-- **Basic Usage** (`basic_usage.ipynb`): Learn fundamentals with single and batch predictions
-- **Pandas Integration** (`pandas_integration.ipynb`): DataFrame processing workflows  
-- **CSV Processing** (`csv_processing.ipynb`): File processing for real-world datasets
-- **Performance Benchmarks** (`performance_benchmarks.ipynb`): Optimization strategies
-
-These notebooks are fully executable and demonstrate best practices for production use.
-:::
-
-## Overview
-
-Pranaam uses machine learning models trained on 4M unique records from Bihar Land Records data to predict religion (currently Muslim/not-Muslim) from names. The package supports:
-
-* **High Accuracy**: 98% accuracy on unseen names for both Hindi and English
-* **Multiple Languages**: Support for Hindi and English names
-* **Easy to Use**: Simple API with pandas DataFrame output
-* **Pre-trained Models**: Models are automatically downloaded and cached
-
-## Quick Example
+## Basic use
 
 ```python
 from pranaam import pred_rel
 
-# English names
-names = ["Shah Rukh Khan", "Amitabh Bachchan"]
-result = pred_rel(names)
-print(result)
-
-# Hindi names
-hindi_names = ["शाहरुख खान", "अमिताभ बच्चन"]
-result = pred_rel(hindi_names, lang="hin")
+result = pred_rel(["Shah Rukh Khan", "Amitabh Bachchan"], lang="eng")
 print(result)
 ```
 
-## Installation
+The result contains the original name, the predicted class, and the model's
+Muslim probability on a 0 to 100 scale. Pranaam downloads checksum-verified
+PyTorch model files from a pinned
+[Hugging Face release](https://huggingface.co/gojiberries/pranaam) on first use
+and stores them in the Hugging Face cache.
 
-Install pranaam using pip:
-
-```bash
-pip install pranaam
+```python
+hindi = pred_rel(["शाहरुख खान", "अमिताभ बच्चन"], lang="hin")
 ```
 
-For development:
+Use these estimates for aggregate research with suitable validation. Do not use
+them to make decisions about individuals.
 
-```bash
-pip install -e .[dev]
-```
-
-## Indices and tables
+## Indices
 
 * {ref}`genindex`
 * {ref}`modindex`
