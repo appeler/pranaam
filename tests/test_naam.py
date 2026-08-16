@@ -8,8 +8,9 @@ from unittest.mock import Mock, call, patch
 import numpy as np
 import pandas as pd
 import pytest
+import torch
 
-from pranaam.naam import Naam, is_english
+from pranaam.naam import Naam, _LanguageModel, is_english
 
 
 @pytest.mark.parametrize(
@@ -25,6 +26,42 @@ from pranaam.naam import Naam, is_english
 def test_is_english(text: str, expected: bool) -> None:
     """ASCII-only detection handles English, Hindi, mixed, and empty text."""
     assert is_english(text) is expected
+
+
+@patch("pranaam.naam.PREDICTION_BATCH_SIZE", 2)
+def test_language_model_batches_predictions() -> None:
+    """Inference keeps model inputs bounded and preserves their order."""
+    tokenizer = Mock()
+    tokenizer.encode.side_effect = [
+        torch.tensor([[0], [1]]),
+        torch.tensor([[2], [3]]),
+        torch.tensor([[4]]),
+    ]
+    classifier = Mock()
+    classifier.predict_proba.side_effect = [
+        torch.tensor([[0.9, 0.1], [0.8, 0.2]]),
+        torch.tensor([[0.7, 0.3], [0.6, 0.4]]),
+        torch.tensor([[0.5, 0.5]]),
+    ]
+    model = _LanguageModel(classifier=classifier, tokenizer=tokenizer)
+
+    probabilities = model.predict(["one", "two", "three", "four", "five"])
+
+    assert tokenizer.encode.call_args_list == [
+        call(["one", "two"]),
+        call(["three", "four"]),
+        call(["five"]),
+    ]
+    np.testing.assert_allclose(
+        probabilities,
+        [
+            [0.9, 0.1],
+            [0.8, 0.2],
+            [0.7, 0.3],
+            [0.6, 0.4],
+            [0.5, 0.5],
+        ],
+    )
 
 
 @patch.object(Naam, "_model_for")

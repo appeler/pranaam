@@ -13,6 +13,15 @@ from streamlit.testing.v1 import AppTest
 PROJECT_ROOT = Path(__file__).parents[1]
 
 
+def test_streamlit_requirements_target_repository_root() -> None:
+    """The deployment requirements resolve the editable project from repo root."""
+    requirement = (PROJECT_ROOT / "streamlit" / "requirements.txt").read_text().strip()
+    editable, target = requirement.split(maxsplit=1)
+
+    assert editable == "-e"
+    assert (PROJECT_ROOT / target.split("[", 1)[0]).resolve() == PROJECT_ROOT
+
+
 def test_manual_app_flow_preserves_mixed_input_and_exposes_download(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
