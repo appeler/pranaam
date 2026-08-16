@@ -31,6 +31,7 @@ class TestDownloadFile:
         mock_response = Mock()
         mock_response.headers = {"Content-Length": "1000"}
         mock_response.iter_content.return_value = [b"chunk1", b"chunk2"]
+        mock_response.status_code = 200
         mock_response.raise_for_status.return_value = None
 
         mock_session_instance = Mock()
@@ -101,6 +102,7 @@ class TestDownloadFile:
         mock_response = Mock()
         mock_response.headers = {"Content-Length": "1000"}
         mock_response.iter_content.return_value = [b"chunk"]
+        mock_response.status_code = 200
         mock_response.raise_for_status.return_value = None
 
         mock_session_instance = Mock()
@@ -115,6 +117,35 @@ class TestDownloadFile:
 
     @patch("pranaam.utils.requests.Session")
     @patch("pranaam.utils._safe_extract_tar")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_waf_challenge_is_not_a_successful_download(
+        self, mock_file: Mock, mock_extract: Mock, mock_session: Mock
+    ) -> None:
+        """A 202 bot challenge with an empty body is a failure, not a download.
+
+        This is what Harvard Dataverse actually returns to a GitHub runner:
+        `HTTP 202`, `x-amzn-waf-action: challenge`, `Content-Length: 0`.
+        `raise_for_status()` does not fire on 2xx, so before this check the
+        zero-byte body was written out and treated as the model.
+        """
+        mock_response = Mock()
+        mock_response.status_code = 202
+        mock_response.headers = {
+            "Content-Length": "0",
+            "x-amzn-waf-action": "challenge",
+        }
+        mock_response.iter_content.return_value = []
+        mock_response.raise_for_status.return_value = None
+
+        mock_session_instance = Mock()
+        mock_session_instance.get.return_value = mock_response
+        mock_session.return_value.__enter__.return_value = mock_session_instance
+
+        assert download_file("http://test.com", "/tmp/target", "test_file") is False
+        mock_extract.assert_not_called()
+
+    @patch("pranaam.utils.requests.Session")
+    @patch("pranaam.utils._safe_extract_tar")
     @patch("pranaam.utils.Path")
     @patch("pranaam.utils.tqdm")
     def test_no_content_length(
@@ -124,6 +155,7 @@ class TestDownloadFile:
         mock_response = Mock()
         mock_response.headers = {}  # No Content-Length
         mock_response.iter_content.return_value = [b"chunk"]
+        mock_response.status_code = 200
         mock_response.raise_for_status.return_value = None
 
         mock_session_instance = Mock()
@@ -297,6 +329,7 @@ class TestErrorLogging:
         mock_response = Mock()
         mock_response.headers = {"Content-Length": "1000"}
         mock_response.iter_content.return_value = [b"chunk"]
+        mock_response.status_code = 200
         mock_response.raise_for_status.return_value = None
 
         mock_session_instance = Mock()

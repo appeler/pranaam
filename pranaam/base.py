@@ -37,6 +37,11 @@ class Base:
                 )
                 if not download_file(REPO_BASE_URL, str(model_dir), file_name):
                     logger.error("ERROR: Cannot download model data file")
+                    # Returning model_dir here announced success for a directory
+                    # with no model in it. The real cause then surfaced ~100
+                    # lines later as a keras "No file or directory found", and
+                    # the docstring below has always promised None.
+                    return None
             else:
                 logger.debug(f"Using model data from {model_dir}...")
             model_path = model_dir

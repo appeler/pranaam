@@ -2,6 +2,7 @@
 
 import os
 import tarfile
+from http import HTTPStatus
 from pathlib import Path
 from typing import Final
 
@@ -16,6 +17,24 @@ REPO_BASE_URL: Final[str] = (
     os.environ.get("PRANAAM_MODEL_URL")
     or "https://dataverse.harvard.edu/api/access/datafile/13228210"
 )
+
+
+def _challenge_hint(response: requests.Response) -> str:
+    """Explain a bot-challenge response, which otherwise looks like a success.
+
+    Args:
+        response: The response to the model download request.
+
+    Returns:
+        A sentence naming the challenge, or a generic pointer.
+    """
+    if response.headers.get("x-amzn-waf-action"):
+        return (
+            "The host is challenging automated clients (x-amzn-waf-action), so "
+            "the model cannot be fetched from CI or a datacentre IP. Set "
+            "PRANAAM_MODEL_URL to a mirror."
+        )
+    return "Set PRANAAM_MODEL_URL to a mirror if the host is unreachable."
 
 
 def download_file(url: str, target: str, file_name: str) -> bool:
@@ -49,6 +68,17 @@ def download_file(url: str, target: str, file_name: str) -> bool:
                 REPO_BASE_URL, stream=True, allow_redirects=True, timeout=120
             )
             response.raise_for_status()
+            # raise_for_status() only fires on 4xx/5xx. Dataverse now sits
+            # behind an AWS WAF that answers automated clients with 202 and an
+            # empty body, which sails past it -- so the check has to be for the
+            # response we actually want, not merely the absence of an error.
+            if response.status_code != HTTPStatus.OK:
+                logger.error(
+                    f"Model download refused: {REPO_BASE_URL} returned "
+                    f"{response.status_code}, not 200. "
+                    f"{_challenge_hint(response)}"
+                )
+                return False
             content_length = response.headers.get("Content-Length")
             total_size = int(content_length) if content_length else None
             pbar.total = total_size
@@ -70,7 +100,18 @@ def download_file(url: str, target: str, file_name: str) -> bool:
     except requests.exceptions.RequestException as e:
         logger.error(f"Network error downloading models: {e}")
         return False
-    except (tarfile.TarError, OSError) as e:
+    except tarfile.TarError as e:
+        # A body that arrived but is not a tarball: an HTML error page, a
+        # truncated transfer, or a challenge that answered 200 with something
+        # other than the model. "File extraction error: empty file" sent the
+        # last person reading this log looking at tarfile, which is the one
+        # part that was working.
+        logger.error(
+            f"File extraction error: {e}. {REPO_BASE_URL} answered, but not "
+            f"with a readable tar archive."
+        )
+        return False
+    except OSError as e:
         logger.error(f"File extraction error: {e}")
         return False
     except Exception as e:
