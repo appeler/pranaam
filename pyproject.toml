@@ -66,10 +66,6 @@ docs = [
     "furo",
     "myst-parser",
     "sphinx-copybutton",
-    "nbsphinx>=0.9",
-    "jupyter>=1.0",
-    "ipykernel>=6.0",
-    "nbconvert>=7.0",
 ]
 
 [project.urls]
@@ -164,7 +160,7 @@ extend_exclude = [
 ]
 
 [tool.deptry.per_rule_ignores]
-DEP002 = ["sphinx", "furo", "sphinx-copybutton", "myst-parser", "nbsphinx", "jupyter", "ipykernel", "nbconvert", "streamlit"]
+DEP002 = ["sphinx", "furo", "sphinx-copybutton", "myst-parser", "streamlit"]
 DEP003 = ["pranaam"]
 DEP004 = ["py_canon"]
 
