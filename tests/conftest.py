@@ -83,17 +83,15 @@ def reset_naam_class() -> Generator[None, None, None]:
     """Reset Naam class state between tests."""
     from pranaam.naam import Naam
 
-    # Store original values
-    original_weights_loaded = Naam.weights_loaded
-    original_model = Naam.model
-    original_cur_lang = Naam.cur_lang
+    with Naam._model_lock:
+        original_models = Naam._models.copy()
+        Naam._models.clear()
 
     yield
 
-    # Reset to original values
-    Naam.weights_loaded = original_weights_loaded
-    Naam.model = original_model
-    Naam.cur_lang = original_cur_lang
+    with Naam._model_lock:
+        Naam._models.clear()
+        Naam._models.update(original_models)
 
 
 @pytest.fixture
