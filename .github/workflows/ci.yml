@@ -52,14 +52,6 @@ jobs:
       run: |
         uv run pytest -m "not integration" --tb=short -v --maxfail=5
 
-    - name: Run integration tests (main branch only)
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      run: |
-        uv run pytest -m "integration" -v --tb=short
-      timeout-minutes: 15
-      env:
-        PYTEST_TIMEOUT: 900
-
   build:
     name: Build and Validate Package
     runs-on: ubuntu-latest

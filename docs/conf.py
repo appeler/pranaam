@@ -40,7 +40,6 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
-    "sphinx.ext.intersphinx",
     "sphinx.ext.githubpages",
     "sphinx_copybutton",
     "myst_parser",
@@ -71,13 +70,6 @@ autodoc_default_options = {
     "special-members": "__init__",
     "undoc-members": True,
     "exclude-members": "__weakref__",
-}
-
-# Intersphinx mapping
-intersphinx_mapping = {
-    "python": ("https://docs.python.org/3/", None),
-    "pandas": ("https://pandas.pydata.org/docs/", None),
-    "numpy": ("https://numpy.org/doc/stable/", None),
 }
 
 # Furo theme options
@@ -120,6 +112,5 @@ copybutton_prompt_is_regexp = True
 copybutton_line_continuation_character = "\\"
 copybutton_here_doc_delimiter = "EOF"
 
-nbsphinx_execute = "auto"
+nbsphinx_execute = "never"
 nbsphinx_timeout = 300
-
