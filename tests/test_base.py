@@ -1,177 +1,172 @@
-"""Tests for base module."""
+"""Tests for model data management."""
 
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from threading import Event
+from unittest.mock import Mock, patch
 
 from pranaam.base import Base
+from pranaam.utils import SecurityError
 
 
 class TestBase:
-    """Test Base class functionality."""
+    """Test the model cache contract."""
 
-    def test_base_class_attributes(self) -> None:
-        """Test Base class has expected attributes."""
-        assert hasattr(Base, "MODELFN")
-        assert hasattr(Base, "load_model_data")
-        assert Base.MODELFN is None
+    def test_base_without_model_directory_returns_none(self) -> None:
+        """A base class without a model directory has nothing to load."""
+        assert Base.load_model_data("test_file") is None
 
-    def test_load_model_data_no_modelfn(self) -> None:
-        """Test load_model_data when MODELFN is None."""
-
-        # Create a test class without MODELFN set
-        class TestClass(Base):
-            MODELFN = None
-
-        result = TestClass.load_model_data("test_file")
-        assert result is None
-
-    @patch("pranaam.base.files")
     @patch("pranaam.base.download_file")
-    @patch("pathlib.Path.exists")
-    @patch("pathlib.Path.mkdir")
-    def test_load_model_data_success(
-        self,
-        mock_mkdir: MagicMock,
-        mock_exists: MagicMock,
-        mock_download: MagicMock,
-        mock_files: MagicMock,
+    @patch("pranaam.base.user_cache_path")
+    def test_missing_model_downloads_to_user_cache(
+        self, mock_cache: Mock, mock_download: Mock, tmp_path: Path
     ) -> None:
-        """Test successful model data loading."""
-        # Setup mocks - make files() return a string that can be used as a path
-        mock_files.return_value = "/fake/package"
+        """Models are installed in a writable user cache, not the package tree."""
+        mock_cache.return_value = tmp_path
 
-        # File doesn't exist (so download gets called)
-        mock_exists.return_value = False
-        mock_download.return_value = True
+        def install(url: str, target: str, file_name: str) -> bool:
+            (Path(target) / file_name).mkdir()
+            return True
 
-        # Create test class
-        class TestClass(Base):
-            MODELFN = "model"
-
-        result = TestClass.load_model_data("test_model", latest=False)
-
-        assert result == Path("/fake/package/model")
-        mock_mkdir.assert_called_once_with(exist_ok=True)
-        mock_download.assert_called_once()
-
-    @patch("pranaam.base.files")
-    @patch("pranaam.base.download_file")
-    @patch("pathlib.Path.exists")
-    @patch("pathlib.Path.mkdir")
-    def test_load_model_data_file_exists_no_latest(
-        self,
-        mock_mkdir: MagicMock,
-        mock_exists: MagicMock,
-        mock_download: MagicMock,
-        mock_files: MagicMock,
-    ) -> None:
-        """Test model loading when file exists and latest=False."""
-        # Setup mocks
-        mock_files.return_value = "/fake/package"
-
-        # File exists
-        mock_exists.return_value = True
-
-        class TestClass(Base):
-            MODELFN = "model"
-
-        result = TestClass.load_model_data("test_model", latest=False)
-
-        assert result == Path("/fake/package/model")
-        # Should not download since file exists and latest=False
-        mock_download.assert_not_called()
-
-    @patch("pranaam.base.files")
-    @patch("pranaam.base.download_file")
-    @patch("pathlib.Path.exists")
-    @patch("pathlib.Path.mkdir")
-    def test_load_model_data_force_latest(
-        self,
-        mock_mkdir: MagicMock,
-        mock_exists: MagicMock,
-        mock_download: MagicMock,
-        mock_files: MagicMock,
-    ) -> None:
-        """Test model loading with latest=True forces redownload."""
-        # Setup mocks
-        mock_files.return_value = "/fake/package"
-
-        mock_exists.return_value = True  # File exists
-        mock_download.return_value = True
-
-        class TestClass(Base):
-            MODELFN = "model"
-
-        result = TestClass.load_model_data("test_model", latest=True)
-
-        assert result == Path("/fake/package/model")
-        # Should download even though file exists because latest=True
-        mock_download.assert_called_once()
-
-    @patch("pranaam.base.files")
-    @patch("pranaam.base.download_file")
-    @patch("pathlib.Path.exists")
-    @patch("pathlib.Path.mkdir")
-    def test_load_model_data_download_failure(
-        self,
-        mock_mkdir: MagicMock,
-        mock_exists: MagicMock,
-        mock_download: MagicMock,
-        mock_files: MagicMock,
-    ) -> None:
-        """Test handling of download failure."""
-        # Setup mocks
-        mock_files.return_value = "/fake/package"
-
-        # File doesn't exist
-        mock_exists.return_value = False
-        mock_download.return_value = False  # Download fails
+        mock_download.side_effect = install
 
         class TestClass(Base):
             MODELFN = "model"
 
         result = TestClass.load_model_data("test_model")
 
-        # A failed download must fail here, not hand back a directory with no
-        # model in it and let the error surface as a missing .keras file.
-        assert result is None
+        assert result == tmp_path / "model"
+        mock_cache.assert_called_once_with("pranaam", ensure_exists=True)
+        mock_download.assert_called_once()
 
-    @patch("pranaam.base.files")
-    @patch("pathlib.Path.exists")
-    @patch("pathlib.Path.mkdir")
-    def test_load_model_data_creates_directory(
-        self, mock_mkdir: MagicMock, mock_exists: MagicMock, mock_files: MagicMock
+    @patch("pranaam.base.download_file")
+    @patch("pranaam.base.verify_model_files")
+    @patch("pranaam.base.user_cache_path")
+    def test_existing_model_is_reused(
+        self,
+        mock_cache: Mock,
+        mock_verify: Mock,
+        mock_download: Mock,
+        tmp_path: Path,
     ) -> None:
-        """Test that model directory is created if it doesn't exist."""
-        # Setup mocks
-        mock_files.return_value = "/fake/package"
-
-        mock_exists.return_value = False  # File doesn't exist
+        """An existing pinned model is reused by default."""
+        mock_cache.return_value = tmp_path
+        (tmp_path / "model" / "test_model").mkdir(parents=True)
 
         class TestClass(Base):
             MODELFN = "model"
 
-        with patch("pranaam.base.download_file", return_value=True):
-            result = TestClass.load_model_data("test_model")
+        assert TestClass.load_model_data("test_model") == tmp_path / "model"
+        mock_verify.assert_called_once_with(tmp_path / "model" / "test_model")
+        mock_download.assert_not_called()
 
-        mock_mkdir.assert_called_once_with(exist_ok=True)
-        assert result == Path("/fake/package/model")
+    @patch("pranaam.base.download_file", return_value=False)
+    @patch("pranaam.base.verify_model_files")
+    @patch("pranaam.base.user_cache_path")
+    def test_failed_refresh_preserves_verified_cache(
+        self,
+        mock_cache: Mock,
+        mock_verify: Mock,
+        mock_download: Mock,
+        tmp_path: Path,
+    ) -> None:
+        """A failed forced refresh keeps serving the existing bundle."""
+        mock_cache.return_value = tmp_path
+        cached_model = tmp_path / "model" / "test_model"
+        cached_model.mkdir(parents=True)
+
+        class TestClass(Base):
+            MODELFN = "model"
+
+        assert TestClass.load_model_data("test_model", latest=True) == (
+            tmp_path / "model"
+        )
+        assert cached_model.is_dir()
+        mock_verify.assert_called_once_with(cached_model)
+        mock_download.assert_called_once()
+
+    @patch("pranaam.base.download_file", return_value=False)
+    @patch(
+        "pranaam.base.verify_model_files",
+        side_effect=SecurityError("checksum mismatch"),
+    )
+    @patch("pranaam.base.user_cache_path")
+    def test_invalid_cache_is_not_used_when_refresh_fails(
+        self,
+        mock_cache: Mock,
+        mock_verify: Mock,
+        mock_download: Mock,
+        tmp_path: Path,
+    ) -> None:
+        """A corrupt cache is never returned as a fallback."""
+        mock_cache.return_value = tmp_path
+        cached_model = tmp_path / "model" / "test_model"
+        cached_model.mkdir(parents=True)
+
+        class TestClass(Base):
+            MODELFN = "model"
+
+        assert TestClass.load_model_data("test_model") is None
+        mock_verify.assert_called_once_with(cached_model)
+        mock_download.assert_called_once()
+
+    @patch("pranaam.base.download_file", return_value=False)
+    @patch("pranaam.base.user_cache_path")
+    def test_download_failure_without_cache_returns_none(
+        self, mock_cache: Mock, mock_download: Mock, tmp_path: Path
+    ) -> None:
+        """A failed first download cannot masquerade as a usable model path."""
+        mock_cache.return_value = tmp_path
+
+        class TestClass(Base):
+            MODELFN = "model"
+
+        assert TestClass.load_model_data("test_model") is None
+        mock_download.assert_called_once()
+
+    @patch("pranaam.base.download_file")
+    @patch("pranaam.base.verify_model_files")
+    @patch("pranaam.base.user_cache_path")
+    def test_concurrent_cache_misses_download_once(
+        self,
+        mock_cache: Mock,
+        mock_verify: Mock,
+        mock_download: Mock,
+        tmp_path: Path,
+    ) -> None:
+        """The cache lock serializes concurrent first-time downloads."""
+        mock_cache.return_value = tmp_path
+        downloading = Event()
+        release_download = Event()
+
+        def install(url: str, target: str, file_name: str) -> bool:
+            downloading.set()
+            assert release_download.wait(timeout=2)
+            (Path(target) / file_name).mkdir()
+            return True
+
+        mock_download.side_effect = install
+
+        class TestClass(Base):
+            MODELFN = "model"
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            first = executor.submit(TestClass.load_model_data, "test_model")
+            assert downloading.wait(timeout=2)
+            second = executor.submit(TestClass.load_model_data, "test_model")
+            release_download.set()
+            assert first.result(timeout=2) == tmp_path / "model"
+            assert second.result(timeout=2) == tmp_path / "model"
+
+        mock_download.assert_called_once()
+        mock_verify.assert_called_once_with(tmp_path / "model" / "test_model")
 
 
 class TestBaseInheritance:
-    """Test Base class inheritance patterns."""
+    """Test class-level model directory configuration."""
 
-    def test_subclass_can_override_modelfn(self) -> None:
-        """Test that subclasses can override MODELFN."""
-
-        class CustomBase(Base):
-            MODELFN = "custom_model"
-
-        assert CustomBase.MODELFN == "custom_model"
-        assert Base.MODELFN is None  # Original unchanged
-
-    def test_multiple_subclasses_independent(self) -> None:
-        """Test that multiple subclasses have independent MODELFN values."""
+    def test_subclasses_keep_independent_model_directories(self) -> None:
+        """Changing one subclass does not mutate the base or a sibling."""
 
         class BaseA(Base):
             MODELFN = "model_a"
@@ -179,99 +174,6 @@ class TestBaseInheritance:
         class BaseB(Base):
             MODELFN = "model_b"
 
+        assert Base.MODELFN is None
         assert BaseA.MODELFN == "model_a"
         assert BaseB.MODELFN == "model_b"
-        assert Base.MODELFN is None
-
-
-class TestBaseLogging:
-    """Test logging in Base class."""
-
-    @patch("pranaam.base.logger")
-    @patch("pranaam.base.files")
-    @patch("pranaam.base.download_file")
-    @patch("pathlib.Path.exists")
-    @patch("pathlib.Path.mkdir")
-    def test_debug_logging_download(
-        self,
-        mock_mkdir: MagicMock,
-        mock_exists: MagicMock,
-        mock_download: MagicMock,
-        mock_files: MagicMock,
-        mock_logger: MagicMock,
-    ) -> None:
-        """Test debug logging during download."""
-        # Setup mocks
-        mock_files.return_value = "/fake/package"
-
-        # File doesn't exist
-        mock_exists.return_value = False
-        mock_download.return_value = True
-
-        class TestClass(Base):
-            MODELFN = "model"
-
-        TestClass.load_model_data("test_model")
-
-        # Should log download message
-        mock_logger.debug.assert_called()
-        debug_calls = [call[0][0] for call in mock_logger.debug.call_args_list]
-        assert any("Downloading model data" in call for call in debug_calls)
-
-    @patch("pranaam.base.logger")
-    @patch("pranaam.base.files")
-    @patch("pathlib.Path.exists")
-    @patch("pathlib.Path.mkdir")
-    def test_debug_logging_existing_model(
-        self,
-        mock_mkdir: MagicMock,
-        mock_exists: MagicMock,
-        mock_files: MagicMock,
-        mock_logger: MagicMock,
-    ) -> None:
-        """Test debug logging when using existing model."""
-        # Setup mocks
-        mock_files.return_value = "/fake/package"
-
-        mock_exists.return_value = True  # File exists
-
-        class TestClass(Base):
-            MODELFN = "model"
-
-        TestClass.load_model_data("test_model")
-
-        # Should log using existing model message
-        mock_logger.debug.assert_called()
-        debug_calls = [call[0][0] for call in mock_logger.debug.call_args_list]
-        assert any("Using model data from" in call for call in debug_calls)
-
-    @patch("pranaam.base.logger")
-    @patch("pranaam.base.files")
-    @patch("pranaam.base.download_file")
-    @patch("pathlib.Path.exists")
-    @patch("pathlib.Path.mkdir")
-    def test_error_logging_download_failure(
-        self,
-        mock_mkdir: MagicMock,
-        mock_exists: MagicMock,
-        mock_download: MagicMock,
-        mock_files: MagicMock,
-        mock_logger: MagicMock,
-    ) -> None:
-        """Test error logging when download fails."""
-        # Setup mocks
-        mock_files.return_value = "/fake/package"
-
-        # File doesn't exist
-        mock_exists.return_value = False
-        mock_download.return_value = False  # Download fails
-
-        class TestClass(Base):
-            MODELFN = "model"
-
-        TestClass.load_model_data("test_model")
-
-        # Should log error message
-        mock_logger.error.assert_called_once_with(
-            "ERROR: Cannot download model data file"
-        )
