@@ -1,7 +1,9 @@
 """Comprehensive tests for naam module."""
 
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from unittest.mock import Mock, patch
+from threading import Event
+from unittest.mock import Mock, call, patch
 
 import numpy as np
 import pandas as pd
@@ -49,14 +51,12 @@ class TestNaamValidation:
 class TestNaamInputHandling:
     """Test input handling and conversion in Naam class."""
 
-    @patch.object(Naam, "_load_model")
-    @patch.object(Naam, "model")
-    def test_single_string_input(self, mock_model: Mock, mock_load_model: Mock) -> None:
+    @patch.object(Naam, "_model_for")
+    def test_single_string_input(self, mock_model_for: Mock) -> None:
         """Test handling of single string input."""
-        # Setup mock model
+        mock_model = Mock()
         mock_model.predict.return_value = np.array([[0.2, 0.8]])
-        Naam.weights_loaded = True
-        Naam.cur_lang = "eng"
+        mock_model_for.return_value = mock_model
 
         result = Naam.pred_rel("Test Name")
 
@@ -65,13 +65,12 @@ class TestNaamInputHandling:
         assert result.iloc[0]["name"] == "Test Name"
         mock_model.predict.assert_called_once_with(["Test Name"], verbose=0)
 
-    @patch.object(Naam, "_load_model")
-    @patch.object(Naam, "model")
-    def test_list_input(self, mock_model: Mock, mock_load_model: Mock) -> None:
+    @patch.object(Naam, "_model_for")
+    def test_list_input(self, mock_model_for: Mock) -> None:
         """Test handling of list input."""
+        mock_model = Mock()
         mock_model.predict.return_value = np.array([[0.2, 0.8], [0.7, 0.3]])
-        Naam.weights_loaded = True
-        Naam.cur_lang = "eng"
+        mock_model_for.return_value = mock_model
 
         names = ["Name One", "Name Two"]
         result = Naam.pred_rel(names)
@@ -80,13 +79,12 @@ class TestNaamInputHandling:
         assert len(result) == 2
         assert list(result["name"]) == names
 
-    @patch.object(Naam, "_load_model")
-    @patch.object(Naam, "model")
-    def test_pandas_series_input(self, mock_model: Mock, mock_load_model: Mock) -> None:
+    @patch.object(Naam, "_model_for")
+    def test_pandas_series_input(self, mock_model_for: Mock) -> None:
         """Test handling of pandas Series input."""
+        mock_model = Mock()
         mock_model.predict.return_value = np.array([[0.2, 0.8]])
-        Naam.weights_loaded = True
-        Naam.cur_lang = "eng"
+        mock_model_for.return_value = mock_model
 
         names = pd.Series(["Test Name"])
         result = Naam.pred_rel(names)
@@ -98,15 +96,13 @@ class TestNaamInputHandling:
 class TestNaamPredictions:
     """Test prediction functionality."""
 
-    @patch.object(Naam, "_load_model")
-    def test_prediction_output_structure(self, mock_load_model: Mock) -> None:
+    @patch.object(Naam, "_model_for")
+    def test_prediction_output_structure(self, mock_model_for: Mock) -> None:
         """Test that predictions return correct DataFrame structure."""
         # Mock the model
         mock_model = Mock()
         mock_model.predict.return_value = np.array([[0.3, 0.7], [0.8, 0.2]])
-        Naam.model = mock_model
-        Naam.weights_loaded = True
-        Naam.cur_lang = "eng"
+        mock_model_for.return_value = mock_model
 
         names = ["Name One", "Name Two"]
         result = Naam.pred_rel(names)
@@ -121,14 +117,12 @@ class TestNaamPredictions:
         assert pd.api.types.is_string_dtype(result["pred_label"].dtype)
         assert pd.api.types.is_numeric_dtype(result["pred_prob_muslim"])
 
-    @patch.object(Naam, "_load_model")
-    def test_prediction_labels(self, mock_load_model: Mock) -> None:
+    @patch.object(Naam, "_model_for")
+    def test_prediction_labels(self, mock_model_for: Mock) -> None:
         """Test that predictions use correct labels."""
         mock_model = Mock()
         mock_model.predict.return_value = np.array([[0.3, 0.7], [0.8, 0.2]])
-        Naam.model = mock_model
-        Naam.weights_loaded = True
-        Naam.cur_lang = "eng"
+        mock_model_for.return_value = mock_model
 
         result = Naam.pred_rel(["Name One", "Name Two"])
 
@@ -137,23 +131,26 @@ class TestNaamPredictions:
         assert result.iloc[0]["pred_label"] == "muslim"
         assert result.iloc[1]["pred_label"] == "not-muslim"
 
-    @patch.object(Naam, "_load_model")
-    def test_prediction_probabilities(self, mock_load_model: Mock) -> None:
-        """Test probability calculations."""
+    @patch.object(Naam, "_model_for")
+    def test_prediction_probabilities(self, mock_model_for: Mock) -> None:
+        """Test that model probabilities are not transformed a second time."""
         mock_model = Mock()
-        # Mock raw logits that will become [0.3, 0.7] after softmax
-        # Using logits that softmax to approximately [0.4, 0.6] (60% muslim)
-        mock_model.predict.return_value = np.array([[0.0, 0.405]])
-        Naam.model = mock_model
-        Naam.weights_loaded = True
-        Naam.cur_lang = "eng"
+        mock_model.predict.return_value = np.array([[0.0465, 0.9535]])
+        mock_model_for.return_value = mock_model
 
         result = Naam.pred_rel(["Test Name"])
 
-        # Probability should be rounded percentage of muslim class after softmax
-        # softmax([0.0, 0.405]) ≈ [0.4, 0.6] -> 60% muslim
-        expected_prob = 60.0
-        assert result.iloc[0]["pred_prob_muslim"] == expected_prob
+        assert result.iloc[0]["pred_prob_muslim"] == 95.0
+
+    @patch.object(Naam, "_model_for")
+    def test_invalid_model_probabilities_fail(self, mock_model_for: Mock) -> None:
+        """Reject logits instead of silently presenting them as probabilities."""
+        mock_model = Mock()
+        mock_model.predict.return_value = np.array([[0.0, 2.0]])
+        mock_model_for.return_value = mock_model
+
+        with pytest.raises(RuntimeError, match="must be between zero and one"):
+            Naam.pred_rel(["Test Name"])
 
 
 class TestNaamModelLoading:
@@ -169,19 +166,13 @@ class TestNaamModelLoading:
         mock_model = Mock()
         mock_load_model.return_value = mock_model
 
-        # Reset class state
-        Naam.weights_loaded = False
-        Naam.model = None
-
-        Naam._load_model("eng")
+        result = Naam._load_model("eng")
 
         # Check that correct model path was used
         fake_path = Path("/fake/path")
         expected_path = str(fake_path / "eng_and_hindi_models_v2" / "eng_model.keras")
         mock_load_model.assert_called_once_with(expected_path)
-        assert Naam.model == mock_model
-        assert Naam.weights_loaded is True
-        assert Naam.cur_lang == "eng"
+        assert result is mock_model
 
     @patch("tf_keras.models.load_model")
     @patch.object(Naam, "load_model_data")
@@ -193,15 +184,12 @@ class TestNaamModelLoading:
         mock_model = Mock()
         mock_load_model.return_value = mock_model
 
-        Naam.weights_loaded = False
-        Naam.model = None
-
-        Naam._load_model("hin")
+        result = Naam._load_model("hin")
 
         fake_path = Path("/fake/path")
         expected_path = str(fake_path / "eng_and_hindi_models_v2" / "hin_model.keras")
         mock_load_model.assert_called_once_with(expected_path)
-        assert Naam.cur_lang == "hin"
+        assert result is mock_model
 
     @patch.object(Naam, "load_model_data")
     def test_model_loading_failure_no_data(self, mock_load_data: Mock) -> None:
@@ -228,61 +216,119 @@ class TestNaamLanguageHandling:
     """Test language-specific functionality."""
 
     @patch.object(Naam, "_load_model")
-    @patch.object(Naam, "model")
-    def test_language_change_triggers_reload(
-        self, mock_model: Mock, mock_load_model: Mock
-    ) -> None:
-        """Test that changing language triggers model reload."""
-        mock_model.predict.return_value = np.array([[0.5, 0.5]])
+    def test_models_are_cached_by_language(self, mock_load_model: Mock) -> None:
+        """Load each language once and keep both models available."""
+        english_model = Mock()
+        hindi_model = Mock()
+        mock_load_model.side_effect = [english_model, hindi_model]
 
-        # Set initial state
-        Naam.weights_loaded = True
-        Naam.cur_lang = "eng"
+        assert Naam._model_for("eng") is english_model
+        assert Naam._model_for("eng") is english_model
+        assert Naam._model_for("hin") is hindi_model
+        assert Naam._model_for("hin") is hindi_model
 
-        # Call with different language
-        Naam.pred_rel(["Test"], lang="hin")
-
-        # Should trigger model reload
-        mock_load_model.assert_called_once_with("hin", False)
+        assert mock_load_model.call_args_list == [
+            call("eng", False),
+            call("hin", False),
+        ]
 
     @patch.object(Naam, "_load_model")
-    @patch.object(Naam, "model")
-    def test_same_language_no_reload(
-        self, mock_model: Mock, mock_load_model: Mock
+    def test_latest_replaces_only_requested_language(
+        self, mock_load_model: Mock
     ) -> None:
-        """Test that same language doesn't trigger reload."""
-        mock_model.predict.return_value = np.array([[0.5, 0.5]])
+        """Force-refresh one cached language without evicting the other."""
+        old_english_model = Mock()
+        hindi_model = Mock()
+        new_english_model = Mock()
+        Naam._models.update(eng=old_english_model, hin=hindi_model)
+        mock_load_model.return_value = new_english_model
 
-        # Set state
-        Naam.weights_loaded = True
-        Naam.cur_lang = "eng"
+        assert Naam._model_for("eng", latest=True) is new_english_model
+        assert Naam._model_for("hin") is hindi_model
+        mock_load_model.assert_called_once_with("eng", True)
 
-        # Call with same language
-        Naam.pred_rel(["Test"], lang="eng")
+    @patch.object(Naam, "_load_model")
+    def test_concurrent_requests_load_one_shared_model(
+        self, mock_load_model: Mock
+    ) -> None:
+        """Concurrent first requests for one language perform one model load."""
+        loading = Event()
+        release_load = Event()
+        english_model = Mock()
 
-        # Should not trigger model reload
-        mock_load_model.assert_not_called()
+        def load_model(lang: str, latest: bool) -> Mock:
+            loading.set()
+            assert release_load.wait(timeout=2)
+            return english_model
+
+        mock_load_model.side_effect = load_model
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            first = executor.submit(Naam._model_for, "eng")
+            assert loading.wait(timeout=2)
+            second = executor.submit(Naam._model_for, "eng")
+            release_load.set()
+            assert first.result(timeout=2) is english_model
+            assert second.result(timeout=2) is english_model
+
+        mock_load_model.assert_called_once_with("eng", False)
+
+    @patch.object(Naam, "_load_model")
+    def test_concurrent_languages_keep_their_own_models(
+        self, mock_load_model: Mock
+    ) -> None:
+        """A Hindi load cannot redirect an in-flight English prediction."""
+        english_predicting = Event()
+        hindi_loaded = Event()
+        english_model = Mock()
+        hindi_model = Mock()
+
+        def predict_english(names: list[str], verbose: int) -> np.ndarray:
+            english_predicting.set()
+            assert hindi_loaded.wait(timeout=2)
+            return np.array([[0.05, 0.95]])
+
+        english_model.predict.side_effect = predict_english
+        hindi_model.predict.return_value = np.array([[0.9, 0.1]])
+
+        def load_model(lang: str, latest: bool) -> Mock:
+            if lang == "hin":
+                hindi_loaded.set()
+                return hindi_model
+            return english_model
+
+        mock_load_model.side_effect = load_model
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            english_future = executor.submit(Naam.pred_rel, ["Shah"], "eng")
+            assert english_predicting.wait(timeout=2)
+            hindi_future = executor.submit(Naam.pred_rel, ["अमिताभ"], "hin")
+            english_result = english_future.result(timeout=2)
+            hindi_result = hindi_future.result(timeout=2)
+
+        assert english_result.iloc[0]["pred_label"] == "muslim"
+        assert english_result.iloc[0]["pred_prob_muslim"] == 95.0
+        assert hindi_result.iloc[0]["pred_label"] == "not-muslim"
+        assert hindi_result.iloc[0]["pred_prob_muslim"] == 10.0
 
 
 class TestNaamErrorHandling:
     """Test error handling in predictions."""
 
-    @patch.object(Naam, "_load_model")
-    def test_prediction_with_no_model(self, mock_load_model: Mock) -> None:
-        """Test prediction fails when model is None."""
-        Naam.model = None
-        Naam.weights_loaded = True
+    @patch.object(Naam, "_model_for")
+    def test_prediction_with_no_model(self, mock_model_for: Mock) -> None:
+        """Test prediction fails when model loading fails."""
+        mock_model_for.side_effect = RuntimeError("Model not loaded properly")
 
         with pytest.raises(RuntimeError, match="Model not loaded properly"):
             Naam.pred_rel(["Test"])
 
-    @patch.object(Naam, "_load_model")
-    def test_prediction_tensorflow_error(self, mock_load_model: Mock) -> None:
+    @patch.object(Naam, "_model_for")
+    def test_prediction_tensorflow_error(self, mock_model_for: Mock) -> None:
         """Test handling of TensorFlow prediction errors."""
         mock_model = Mock()
         mock_model.predict.side_effect = Exception("TensorFlow error")
-        Naam.model = mock_model
-        Naam.weights_loaded = True
+        mock_model_for.return_value = mock_model
 
         with pytest.raises(RuntimeError, match="Prediction failed"):
             Naam.pred_rel(["Test"])

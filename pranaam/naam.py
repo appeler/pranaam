@@ -1,7 +1,7 @@
 """Main prediction module for religion classification."""
 
-from pathlib import Path
-from typing import Final, Literal
+from threading import RLock
+from typing import ClassVar, Literal
 
 import numpy as np
 import pandas as pd
@@ -32,13 +32,11 @@ def is_english(text: str) -> bool:
 class Naam(Base):
     """Main class for religion prediction from names."""
 
-    MODELFN: str = "model"
-    weights_loaded: bool = False
-    model: tf.keras.Model | None = None
-    model_path: Path | None = None
-    classes: Final[list[str]] = ["not-muslim", "muslim"]
-    cur_lang: str = "eng"
-    model_name: Final[str] = "eng_and_hindi_models_v2"
+    MODELFN: ClassVar[str] = "model"
+    classes: ClassVar[tuple[str, str]] = ("not-muslim", "muslim")
+    model_name: ClassVar[str] = "eng_and_hindi_models_v2"
+    _models: ClassVar[dict[str, tf.keras.Model]] = {}
+    _model_lock: ClassVar[RLock] = RLock()
 
     @classmethod
     def pred_rel(
@@ -81,20 +79,29 @@ class Naam(Base):
                     f"Name at index {i} is empty or contains only whitespace"
                 )
 
-        if not cls.weights_loaded or cls.cur_lang != lang:
-            cls._load_model(lang, latest)
-
         try:
-            if cls.model is None:
-                raise RuntimeError("Model not loaded properly")
+            model = cls._model_for(lang, latest)
+            probabilities = np.asarray(model.predict(name_list, verbose=0), dtype=float)
 
-            results = cls.model.predict(name_list, verbose=0)
-            predictions = tf.argmax(results, axis=1)
-            probabilities = tf.nn.softmax(results)
+            expected_shape = (len(name_list), len(cls.classes))
+            if probabilities.shape != expected_shape:
+                raise ValueError(
+                    f"Model output must have shape {expected_shape}, got "
+                    f"{probabilities.shape}"
+                )
+            if not np.all(np.isfinite(probabilities)):
+                raise ValueError("Model output contains non-finite probabilities")
+            if np.any((probabilities < 0) | (probabilities > 1)):
+                raise ValueError(
+                    "Model output probabilities must be between zero and one"
+                )
+            if not np.allclose(probabilities.sum(axis=1), 1.0, atol=1e-5):
+                raise ValueError("Model output probabilities must sum to one")
 
-            labels = [cls.classes[pred] for pred in predictions.numpy()]
+            predictions = np.argmax(probabilities, axis=1)
+            labels = [cls.classes[prediction] for prediction in predictions]
             muslim_probs = [
-                float(np.around(prob[1] * 100)) for prob in probabilities.numpy()
+                float(np.around(probability[1] * 100)) for probability in probabilities
             ]
 
             return pd.DataFrame(
@@ -110,7 +117,27 @@ class Naam(Base):
             raise RuntimeError(f"Prediction failed: {e}") from e
 
     @classmethod
-    def _load_model(cls, lang: Literal["eng", "hin"], latest: bool = False) -> None:
+    def _model_for(
+        cls, lang: Literal["eng", "hin"], latest: bool = False
+    ) -> tf.keras.Model:
+        """Return a cached model for one language.
+
+        Args:
+            lang: Language code ('eng' or 'hin')
+            latest: Whether to replace the cached model with the latest version
+
+        Returns:
+            The model dedicated to ``lang``.
+        """
+        with cls._model_lock:
+            if latest or lang not in cls._models:
+                cls._models[lang] = cls._load_model(lang, latest)
+            return cls._models[lang]
+
+    @classmethod
+    def _load_model(
+        cls, lang: Literal["eng", "hin"], latest: bool = False
+    ) -> tf.keras.Model:
         """Load the appropriate model for the specified language.
 
         Args:
@@ -121,19 +148,17 @@ class Naam(Base):
             RuntimeError: If model loading fails
         """
         try:
-            cls.model_path = cls.load_model_data(cls.model_name, latest)
-            if cls.model_path is None:
+            model_path = cls.load_model_data(cls.model_name, latest)
+            if model_path is None:
                 raise RuntimeError("Failed to load model data")
 
             model_filename = f"{lang}_model.keras"
-            model_full_path = cls.model_path / cls.model_name / model_filename
+            model_full_path = model_path / cls.model_name / model_filename
 
             logger.info(f"Loading {lang} model from {model_full_path}")
 
             # Load Keras 3 compatible model using tf-keras
-            cls.model = cls._load_model_with_compatibility(str(model_full_path), lang)
-            cls.weights_loaded = True
-            cls.cur_lang = lang
+            return cls._load_model_with_compatibility(str(model_full_path), lang)
 
         except Exception as e:
             logger.error(f"Failed to load {lang} model: {e}")

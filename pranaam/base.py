@@ -1,5 +1,6 @@
 from importlib.resources import files
 from pathlib import Path
+from typing import ClassVar
 
 from .logging import get_logger
 from .utils import REPO_BASE_URL, download_file
@@ -10,7 +11,7 @@ logger = get_logger()
 class Base:
     """Base class for model data management and loading."""
 
-    MODELFN: str | None = None
+    MODELFN: ClassVar[str | None] = None
 
     @classmethod
     def load_model_data(cls, file_name: str, latest: bool = False) -> Path | None:
