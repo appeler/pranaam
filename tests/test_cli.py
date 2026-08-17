@@ -32,8 +32,8 @@ class TestCLIMain:
         mock_result = pd.DataFrame(
             {
                 "name": ["Test Name"],
-                "pred_label": ["muslim"],
-                "pred_prob_muslim": [75.0],
+                "name_pattern_estimate": ["muslim-associated"],
+                "muslim_score": [0.75],
             }
         )
         mock_pred_rel.return_value = mock_result
@@ -48,7 +48,7 @@ class TestCLIMain:
         output = mock_stdout.getvalue()
         assert "Test Name" in output
         assert "muslim" in output
-        assert "75.0" in output
+        assert "0.75" in output
 
     @patch("pranaam.pranaam.pred_rel")
     def test_hindi_language_option(self, mock_pred_rel: Mock) -> None:
@@ -56,8 +56,8 @@ class TestCLIMain:
         mock_result = pd.DataFrame(
             {
                 "name": ["टेस्ट नाम"],
-                "pred_label": ["not-muslim"],
-                "pred_prob_muslim": [25.0],
+                "name_pattern_estimate": ["not-muslim-associated"],
+                "muslim_score": [0.25],
             }
         )
         mock_pred_rel.return_value = mock_result
@@ -73,8 +73,8 @@ class TestCLIMain:
         mock_result = pd.DataFrame(
             {
                 "name": ["Test Name"],
-                "pred_label": ["muslim"],
-                "pred_prob_muslim": [80.0],
+                "name_pattern_estimate": ["muslim-associated"],
+                "muslim_score": [0.8],
             }
         )
         mock_pred_rel.return_value = mock_result
@@ -88,7 +88,11 @@ class TestCLIMain:
     def test_all_options_combined(self, mock_pred_rel: Mock) -> None:
         """Test all options used together."""
         mock_result = pd.DataFrame(
-            {"name": ["हिंदी नाम"], "pred_label": ["muslim"], "pred_prob_muslim": [65.0]}
+            {
+                "name": ["हिंदी नाम"],
+                "name_pattern_estimate": ["muslim-associated"],
+                "muslim_score": [0.65],
+            }
         )
         mock_pred_rel.return_value = mock_result
 
@@ -122,7 +126,7 @@ class TestCLIMain:
 
         # Create parser same way as in main function
         parser = argparse.ArgumentParser(
-            description="Predict religion based on name",
+            description="Estimate patterns associated with a name",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
@@ -158,8 +162,8 @@ class TestCLIIntegration:
             mock_result = pd.DataFrame(
                 {
                     "name": ["Test Name"],
-                    "pred_label": ["muslim"],
-                    "pred_prob_muslim": [75.0],
+                    "name_pattern_estimate": ["muslim-associated"],
+                    "muslim_score": [0.75],
                 }
             )
             mock_pred_rel.return_value = mock_result
@@ -175,8 +179,11 @@ class TestCLIIntegration:
         mock_result = pd.DataFrame(
             {
                 "name": ["Name One", "Name Two"],
-                "pred_label": ["muslim", "not-muslim"],
-                "pred_prob_muslim": [75.0, 25.0],
+                "name_pattern_estimate": [
+                    "muslim-associated",
+                    "not-muslim-associated",
+                ],
+                "muslim_score": [0.75, 0.25],
             }
         )
         mock_pred_rel.return_value = mock_result
@@ -188,8 +195,8 @@ class TestCLIIntegration:
 
         # Should contain column headers and data
         assert "name" in output
-        assert "pred_label" in output
-        assert "pred_prob_muslim" in output
+        assert "name_pattern_estimate" in output
+        assert "muslim_score" in output
         assert "Name One" in output
         assert "Name Two" in output
         assert "muslim" in output
@@ -232,8 +239,8 @@ class TestCLIArgumentValidation:
                 mock_result = pd.DataFrame(
                     {
                         "name": [test_input],
-                        "pred_label": ["muslim"],
-                        "pred_prob_muslim": [50.0],
+                        "name_pattern_estimate": ["muslim-associated"],
+                        "muslim_score": [0.5],
                     }
                 )
                 mock_pred_rel.return_value = mock_result
@@ -255,8 +262,8 @@ class TestCLIArgumentValidation:
                 mock_result = pd.DataFrame(
                     {
                         "name": ["Test"],
-                        "pred_label": ["muslim"],
-                        "pred_prob_muslim": [50.0],
+                        "name_pattern_estimate": ["muslim-associated"],
+                        "muslim_score": [0.5],
                     }
                 )
                 mock_pred_rel.return_value = mock_result

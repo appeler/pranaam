@@ -29,8 +29,17 @@ def test_manual_app_flow_preserves_mixed_input_and_exposes_download(
     prediction = pd.DataFrame(
         {
             "name": ["Shah Rukh Khan", "Amitabh Bachchan", "Shah Rukh Khan"],
-            "pred_label": ["muslim", "not-muslim", "muslim"],
-            "pred_prob_muslim": [95.0, 10.0, 95.0],
+            "name_pattern_estimate": [
+                "muslim-associated",
+                "not-muslim-associated",
+                "muslim-associated",
+            ],
+            "muslim_score": [0.95, 0.1, 0.95],
+            "abstained": [False, False, False],
+            "abstention_reason": [None, None, None],
+            "script_supported": [True, True, True],
+            "model_version": ["3.0", "3.0", "3.0"],
+            "model_revision": ["revision", "revision", "revision"],
         }
     )
     predict = Mock(return_value=prediction)
@@ -43,7 +52,11 @@ def test_manual_app_flow_preserves_mixed_input_and_exposes_download(
     assert not app.exception
     assert app.title[0].value == "🔮 Pranaam: name-pattern classification"
     assert "sensitive personal information" in app.warning[0].value
-    assert app.dataframe[0].value.equals(prediction)
+    pd.testing.assert_frame_equal(
+        app.dataframe[0].value,
+        prediction,
+        check_dtype=False,
+    )
     assert len(app.get("download_button")) == 1
     predict.assert_called_once_with(
         ["Shah Rukh Khan", "Amitabh Bachchan", "Shah Rukh Khan"], lang="eng"
@@ -85,8 +98,16 @@ def test_predict_dataframe_preserves_duplicates_and_missing_rows(
     prediction = pd.DataFrame(
         {
             "name": ["Asha", "Asha"],
-            "pred_label": ["not-muslim", "not-muslim"],
-            "pred_prob_muslim": [5.0, 5.0],
+            "name_pattern_estimate": [
+                "not-muslim-associated",
+                "not-muslim-associated",
+            ],
+            "muslim_score": [0.05, 0.05],
+            "abstained": [False, False],
+            "abstention_reason": [pd.NA, pd.NA],
+            "script_supported": [True, True],
+            "model_version": ["3.0", "3.0"],
+            "model_revision": ["revision", "revision"],
         }
     )
     predict = Mock(return_value=prediction)
@@ -97,7 +118,11 @@ def test_predict_dataframe_preserves_duplicates_and_missing_rows(
 
     assert len(result) == len(source)
     assert result["value"].tolist() == [1, 2, 3]
-    assert result["pred_label"].tolist() == ["not-muslim", pd.NA, "not-muslim"]
+    assert result["name_pattern_estimate"].tolist() == [
+        "not-muslim-associated",
+        pd.NA,
+        "not-muslim-associated",
+    ]
     predict.assert_called_once_with(["Asha", "Asha"], lang="eng")
 
 

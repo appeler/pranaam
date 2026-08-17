@@ -1,4 +1,4 @@
-"""Main prediction interface for religion classification."""
+"""Public interface for calibrated name-pattern estimation."""
 
 from __future__ import annotations
 
@@ -11,7 +11,14 @@ import pandas as pd
 
 from .base import Base
 from .logging import get_logger
-from .model import ModelConfig, NameClassifier, NameTokenizer, load_classifier
+from .model_v3 import (
+    ByteNameClassifier,
+    ByteTokenizer,
+    ModelArtifactMetadata,
+    load_byte_classifier,
+    supports_name_script,
+)
+from .utils import MODEL_REVISION
 
 logger = get_logger()
 
@@ -25,24 +32,31 @@ def is_english(text: str) -> bool:
 
 @dataclass(frozen=True)
 class _LanguageModel:
-    classifier: NameClassifier
-    tokenizer: NameTokenizer
+    classifier: ByteNameClassifier
+    tokenizer: ByteTokenizer
+    metadata: ModelArtifactMetadata
 
     def predict(self, names: list[str]) -> np.ndarray:
-        probabilities = []
+        logits = []
         for start in range(0, len(names), PREDICTION_BATCH_SIZE):
             token_ids = self.tokenizer.encode(
                 names[start : start + PREDICTION_BATCH_SIZE]
             )
-            probabilities.append(self.classifier.predict_proba(token_ids).cpu().numpy())
-        return np.concatenate(probabilities, axis=0)
+            logits.append(self.classifier.predict_logits(token_ids).cpu().numpy())
+        raw_logits = np.concatenate(logits, axis=0)
+        calibration = self.metadata.calibration
+        calibrated_logits = calibration.slope * raw_logits + calibration.intercept
+        scores = np.empty_like(calibrated_logits, dtype=float)
+        positive = calibrated_logits >= 0
+        scores[positive] = 1 / (1 + np.exp(-calibrated_logits[positive]))
+        exponent = np.exp(calibrated_logits[~positive])
+        scores[~positive] = exponent / (1 + exponent)
+        return scores
 
 
 class Naam(Base):
-    """Predict a binary religion label from English or Hindi names."""
+    """Estimate binary name patterns for English or Hindi names."""
 
-    classes: ClassVar[tuple[str, str]] = ("not-muslim", "muslim")
-    _config: ClassVar[ModelConfig] = ModelConfig()
     _models: ClassVar[dict[str, _LanguageModel]] = {}
     _model_lock: ClassVar[RLock] = RLock()
 
@@ -53,7 +67,7 @@ class Naam(Base):
         lang: Literal["eng", "hin"] = "eng",
         latest: bool = False,
     ) -> pd.DataFrame:
-        """Predict religion labels and Muslim-class probabilities.
+        """Return calibrated name-pattern estimates with abstention metadata.
 
         Args:
             names: One name, a list of names, or a pandas Series of names.
@@ -61,8 +75,8 @@ class Naam(Base):
             latest: Refresh the pinned model artifacts in the local Hub cache.
 
         Returns:
-            A data frame with the input, predicted label, and rounded Muslim
-            probability percentage.
+            A data frame with calibrated scores, abstention and script status,
+            and immutable model provenance.
 
         Raises:
             TypeError: If an input value is not a string.
@@ -90,34 +104,60 @@ class Naam(Base):
                 )
 
         try:
-            probabilities = np.asarray(
-                cls._model_for(lang, latest).predict(name_list), dtype=float
+            model = cls._model_for(lang, latest)
+            supported = np.array(
+                [
+                    supports_name_script(name, model.metadata.supported_scripts)
+                    for name in name_list
+                ],
+                dtype=bool,
             )
-            expected_shape = (len(name_list), len(cls.classes))
-            if probabilities.shape != expected_shape:
-                raise ValueError(
-                    f"Model output must have shape {expected_shape}, got "
-                    f"{probabilities.shape}"
+            scores = np.full(len(name_list), np.nan, dtype=float)
+            if np.any(supported):
+                supported_names = [
+                    name
+                    for name, is_supported in zip(name_list, supported, strict=True)
+                    if is_supported
+                ]
+                supported_scores = np.asarray(
+                    model.predict(supported_names), dtype=float
                 )
-            if not np.all(np.isfinite(probabilities)):
-                raise ValueError("Model output contains non-finite probabilities")
-            if np.any((probabilities < 0) | (probabilities > 1)):
-                raise ValueError(
-                    "Model output probabilities must be between zero and one"
-                )
-            if not np.allclose(probabilities.sum(axis=1), 1.0, atol=1e-5):
-                raise ValueError("Model output probabilities must sum to one")
+                expected_shape = (len(supported_names),)
+                if supported_scores.shape != expected_shape:
+                    raise ValueError(
+                        f"Model output must have shape {expected_shape}, got "
+                        f"{supported_scores.shape}"
+                    )
+                if not np.all(np.isfinite(supported_scores)):
+                    raise ValueError("Model output contains non-finite scores")
+                if np.any((supported_scores < 0) | (supported_scores > 1)):
+                    raise ValueError("Model scores must be between zero and one")
+                scores[supported] = supported_scores
 
-            predictions = np.argmax(probabilities, axis=1)
-            labels = [cls.classes[prediction] for prediction in predictions]
-            muslim_probs = [
-                float(np.around(probability[1] * 100)) for probability in probabilities
-            ]
+            threshold = model.metadata.confidence_threshold
+            uncertain = supported & (scores > 1 - threshold) & (scores < threshold)
+            abstained = ~supported | uncertain
+            estimates = np.full(len(name_list), "uncertain", dtype=object)
+            estimates[supported & (scores <= 1 - threshold)] = "not-muslim-associated"
+            estimates[supported & (scores >= threshold)] = "muslim-associated"
+            reasons: list[str | None] = []
+            for is_supported, is_uncertain in zip(supported, uncertain, strict=True):
+                if not is_supported:
+                    reasons.append("unsupported-script")
+                elif is_uncertain:
+                    reasons.append("uncertain-score")
+                else:
+                    reasons.append(None)
             return pd.DataFrame(
                 {
                     "name": name_list,
-                    "pred_label": labels,
-                    "pred_prob_muslim": muslim_probs,
+                    "name_pattern_estimate": estimates,
+                    "muslim_score": pd.array(scores.tolist(), dtype="Float64"),
+                    "abstained": abstained,
+                    "abstention_reason": pd.array(reasons, dtype="string"),
+                    "script_supported": supported,
+                    "model_version": model.metadata.model_version,
+                    "model_revision": MODEL_REVISION,
                 }
             )
         except Exception as exc:
@@ -143,13 +183,18 @@ class Naam(Base):
             weights_path = cls.load_model_data(
                 f"{lang}/model.safetensors", latest=latest
             )
-            vocabulary_path = cls.load_model_data(
-                f"{lang}/vocabulary.txt", latest=latest
-            )
+            metadata_path = cls.load_model_data(f"{lang}/metadata.json", latest=latest)
+            metadata = ModelArtifactMetadata.from_file(metadata_path)
+            if metadata.language != lang:
+                raise ValueError(
+                    f"Model metadata language is {metadata.language!r}, "
+                    f"expected {lang!r}"
+                )
             logger.info("Loading %s model from %s", lang, weights_path)
             return _LanguageModel(
-                classifier=load_classifier(weights_path, cls._config),
-                tokenizer=NameTokenizer.from_file(vocabulary_path, cls._config),
+                classifier=load_byte_classifier(weights_path, metadata.architecture),
+                tokenizer=ByteTokenizer(metadata.architecture.max_bytes),
+                metadata=metadata,
             )
         except Exception as exc:
             logger.error("Failed to load %s model: %s", lang, exc)

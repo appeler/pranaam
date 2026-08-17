@@ -14,8 +14,8 @@ people = pd.DataFrame(
     {"name": ["Shah Rukh Khan", "Amitabh Bachchan", "Shah Rukh Khan"]}
 )
 predictions = pred_rel(people["name"], lang="eng")
-people[["pred_label", "pred_prob_muslim"]] = predictions[
-    ["pred_label", "pred_prob_muslim"]
+people[["name_pattern_estimate", "muslim_score", "abstained"]] = predictions[
+    ["name_pattern_estimate", "muslim_score", "abstained"]
 ].to_numpy()
 ```
 
@@ -33,8 +33,9 @@ if not names.dropna().map(lambda value: isinstance(value, str)).all():
 
 valid = names.notna() & names.str.strip().ne("")
 predictions = pred_rel(names.loc[valid], lang="eng")
-people.loc[valid, ["pred_label", "pred_prob_muslim"]] = predictions[
-    ["pred_label", "pred_prob_muslim"]
+columns = ["name_pattern_estimate", "muslim_score", "abstained"]
+people.loc[valid, columns] = predictions[
+    columns
 ].to_numpy()
 people.to_csv("people_with_predictions.csv", index=False)
 ```
@@ -42,7 +43,7 @@ people.to_csv("people_with_predictions.csv", index=False)
 `pred_rel` requires every input to be a nonempty string. The CSV example keeps
 missing and blank names in the output with missing prediction values.
 
-These estimates describe patterns learned from Bihar land-record names. They do
-not verify any person's religion. Use them for aggregate research only, validate
-them for the population being studied, and do not use them to make decisions
-about individuals.
+These estimates describe patterns learned from land and survey names. They do
+not verify any person's religion. Use them for aggregate research only,
+validate them for the population being studied, and do not use them to label
+individuals or make consequential decisions.

@@ -1,10 +1,22 @@
 # Changelog
 
-## Unreleased
+## [Unreleased]
+
+## 0.7.0 - 2026-08-16
+
+* Introduce model v3, replacing the v1/v2 whole-word averaging architecture
+  with ordered byte-level PyTorch convolutional models for Latin and
+  Devanagari names.
+* Return calibrated 0-to-1 name-pattern scores, explicit abstention and script
+  support status, and immutable model provenance.
+* Add grouped, non-overlapping training, validation, calibration, and evaluation
+  splits with reproducible training reports.
+* Document the external SEPRI audit and prohibit individual or consequential
+  uses in the supported product scope.
 
 ## 0.6.0 - 2026-08-16
 
-* Correct probability reporting by using the model's calibrated output directly.
+* Correct probability reporting by exposing the model's softmax output directly.
 * Verify downloaded model files and store them in the user cache.
 * Replace the TensorFlow runtime with parity-tested PyTorch safetensors hosted
   at a pinned `gojiberries/pranaam` Hugging Face revision.
