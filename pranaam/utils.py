@@ -11,19 +11,19 @@ from huggingface_hub import hf_hub_download
 from huggingface_hub.errors import HfHubHTTPError, LocalEntryNotFoundError
 
 MODEL_REPO_ID: Final[str] = "gojiberries/pranaam"
-MODEL_REVISION: Final[str] = "6b92b6a5a5d8abe69f0cd10429dd48e079c00e5f"
+MODEL_REVISION: Final[str] = "96f9cd59cdfe91a8f73f4c72677ec6eeec891a1f"
 MODEL_SHA256: Final[dict[str, str]] = {
     "eng/model.safetensors": (
-        "c3b84bd87966f826d44ff594bdfb9dbd4c7ce7e59ae251651a7634c1931f41f7"
+        "b95746bbcb55431b8ea668f2cfdb018caf4c1c67cd914511b4a822d508774f65"
     ),
-    "eng/vocabulary.txt": (
-        "a12fa985bb21c4202332821f05d8d1497f202954e71c3999c9a3532eccc68332"
+    "eng/metadata.json": (
+        "0548a2e15dec8477c3f6bea0ee44c55e21d561cc6ab7a6096e1483c0e8243d01"
     ),
     "hin/model.safetensors": (
-        "3d31954c85115e37dd9cebcc7654d6fb2d11f69e52ac7a67922544b974d1421b"
+        "d147664f071b2bd336b10cbf9172f6b80efa14d7da9870f68ac1665640fc016e"
     ),
-    "hin/vocabulary.txt": (
-        "9dceef46783307a364f9e440c3f14bd4b2ed99688cc43ac3e0a73f9a3ebbcd37"
+    "hin/metadata.json": (
+        "802bbccbd33f1210bc2d3d7680c82c18e2de7378ffa8c65839521d3d8d1e472d"
     ),
 }
 

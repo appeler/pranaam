@@ -1,7 +1,7 @@
-"""Pranaam - Religion prediction from names.
+"""Pranaam - calibrated name-pattern estimates.
 
-A Python package for predicting religion from names using machine learning
-models trained on Bihar Land Records data.
+The estimates describe statistical patterns in training data and are not
+statements about a person's identity.
 """
 
 from importlib.metadata import PackageNotFoundError, version

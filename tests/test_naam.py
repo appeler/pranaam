@@ -10,7 +10,31 @@ import pandas as pd
 import pytest
 import torch
 
+from pranaam.model_v3 import (
+    ByteModelConfig,
+    CalibrationConfig,
+    ModelArtifactMetadata,
+)
 from pranaam.naam import Naam, _LanguageModel, is_english
+from pranaam.utils import MODEL_REVISION
+
+
+def metadata(
+    language: str = "eng", scripts: tuple[str, ...] = ("LATIN",)
+) -> ModelArtifactMetadata:
+    return ModelArtifactMetadata(
+        model_version="3.0",
+        language=language,
+        supported_scripts=scripts,
+        confidence_threshold=0.8,
+        architecture=ByteModelConfig(),
+        calibration=CalibrationConfig(
+            slope=1,
+            intercept=0,
+            source="test",
+            rows=10,
+        ),
+    )
 
 
 @pytest.mark.parametrize(
@@ -38,12 +62,16 @@ def test_language_model_batches_predictions() -> None:
         torch.tensor([[4]]),
     ]
     classifier = Mock()
-    classifier.predict_proba.side_effect = [
-        torch.tensor([[0.9, 0.1], [0.8, 0.2]]),
-        torch.tensor([[0.7, 0.3], [0.6, 0.4]]),
-        torch.tensor([[0.5, 0.5]]),
+    classifier.predict_logits.side_effect = [
+        torch.tensor([-2.0, -1.0]),
+        torch.tensor([0.0, 1.0]),
+        torch.tensor([2.0]),
     ]
-    model = _LanguageModel(classifier=classifier, tokenizer=tokenizer)
+    model = _LanguageModel(
+        classifier=classifier,
+        tokenizer=tokenizer,
+        metadata=metadata(),
+    )
 
     probabilities = model.predict(["one", "two", "three", "four", "five"])
 
@@ -54,13 +82,7 @@ def test_language_model_batches_predictions() -> None:
     ]
     np.testing.assert_allclose(
         probabilities,
-        [
-            [0.9, 0.1],
-            [0.8, 0.2],
-            [0.7, 0.3],
-            [0.6, 0.4],
-            [0.5, 0.5],
-        ],
+        1 / (1 + np.exp(-np.array([-2.0, -1.0, 0.0, 1.0, 2.0]))),
     )
 
 
@@ -68,7 +90,8 @@ def test_language_model_batches_predictions() -> None:
 def test_single_string_input(mock_model_for: Mock) -> None:
     """A single name becomes a one-row result."""
     model = Mock()
-    model.predict.return_value = np.array([[0.2, 0.8]])
+    model.metadata = metadata()
+    model.predict.return_value = np.array([0.8])
     mock_model_for.return_value = model
 
     result = Naam.pred_rel("Test Name")
@@ -76,8 +99,13 @@ def test_single_string_input(mock_model_for: Mock) -> None:
     assert result.to_dict(orient="records") == [
         {
             "name": "Test Name",
-            "pred_label": "muslim",
-            "pred_prob_muslim": 80.0,
+            "name_pattern_estimate": "muslim-associated",
+            "muslim_score": 0.8,
+            "abstained": False,
+            "abstention_reason": None,
+            "script_supported": True,
+            "model_version": "3.0",
+            "model_revision": MODEL_REVISION,
         }
     ]
     model.predict.assert_called_once_with(["Test Name"])
@@ -87,7 +115,8 @@ def test_single_string_input(mock_model_for: Mock) -> None:
 def test_list_and_series_inputs(mock_model_for: Mock) -> None:
     """Lists and pandas Series retain their row order."""
     model = Mock()
-    model.predict.return_value = np.array([[0.3, 0.7], [0.8, 0.2]])
+    model.metadata = metadata()
+    model.predict.return_value = np.array([0.9, 0.1])
     mock_model_for.return_value = model
 
     names = ["Name One", "Name Two"]
@@ -96,7 +125,31 @@ def test_list_and_series_inputs(mock_model_for: Mock) -> None:
 
     assert list(list_result["name"]) == names
     assert list(series_result["name"]) == names
-    assert list_result["pred_label"].tolist() == ["muslim", "not-muslim"]
+    assert list_result["name_pattern_estimate"].tolist() == [
+        "muslim-associated",
+        "not-muslim-associated",
+    ]
+
+
+@patch.object(Naam, "_model_for")
+def test_uncertain_and_unsupported_names_abstain(mock_model_for: Mock) -> None:
+    model = Mock()
+    model.metadata = metadata()
+    model.predict.return_value = np.array([0.5])
+    mock_model_for.return_value = model
+
+    result = Naam.pred_rel(["Shared Name", "محمد خان"])
+
+    assert result["name_pattern_estimate"].tolist() == ["uncertain", "uncertain"]
+    assert result["abstained"].tolist() == [True, True]
+    assert result["abstention_reason"].tolist() == [
+        "uncertain-score",
+        "unsupported-script",
+    ]
+    assert result["script_supported"].tolist() == [True, False]
+    assert result.iloc[0]["muslim_score"] == 0.5
+    assert pd.isna(result.iloc[1]["muslim_score"])
+    model.predict.assert_called_once_with(["Shared Name"])
 
 
 @pytest.mark.parametrize("names", [[], "", "   "])
@@ -121,20 +174,21 @@ def test_invalid_language_is_rejected() -> None:
 
 @patch.object(Naam, "_model_for")
 @pytest.mark.parametrize(
-    ("probabilities", "message"),
+    ("scores", "message"),
     [
-        (np.array([[0.5, 0.5], [0.2, 0.8]]), "must have shape"),
-        (np.array([[np.nan, np.nan]]), "non-finite"),
-        (np.array([[-0.1, 1.1]]), "between zero and one"),
-        (np.array([[0.2, 0.2]]), "sum to one"),
+        (np.array([0.5, 0.8]), "must have shape"),
+        (np.array([np.nan]), "non-finite"),
+        (np.array([-0.1]), "between zero and one"),
+        (np.array([1.1]), "between zero and one"),
     ],
 )
 def test_invalid_model_probabilities_fail(
-    mock_model_for: Mock, probabilities: np.ndarray, message: str
+    mock_model_for: Mock, scores: np.ndarray, message: str
 ) -> None:
     """Malformed model output cannot be presented as a prediction."""
     model = Mock()
-    model.predict.return_value = probabilities
+    model.metadata = metadata()
+    model.predict.return_value = scores
     mock_model_for.return_value = model
 
     with pytest.raises(RuntimeError, match=message):
@@ -142,32 +196,33 @@ def test_invalid_model_probabilities_fail(
 
 
 @patch.object(Naam, "load_model_data")
-@patch("pranaam.naam.NameTokenizer.from_file")
-@patch("pranaam.naam.load_classifier")
+@patch("pranaam.naam.ModelArtifactMetadata.from_file")
+@patch("pranaam.naam.load_byte_classifier")
 def test_load_model_assembles_verified_bundle(
     mock_load_classifier: Mock,
-    mock_tokenizer_from_file: Mock,
+    mock_metadata_from_file: Mock,
     mock_load_data: Mock,
 ) -> None:
-    """Weights and vocabulary are loaded from separate pinned artifacts."""
+    """Weights and inference metadata are loaded from pinned artifacts."""
     weights = Path("/cache/eng/model.safetensors")
-    vocabulary = Path("/cache/eng/vocabulary.txt")
+    metadata_path = Path("/cache/eng/metadata.json")
     classifier = Mock()
-    tokenizer = Mock()
-    mock_load_data.side_effect = [weights, vocabulary]
+    model_metadata = metadata()
+    mock_load_data.side_effect = [weights, metadata_path]
     mock_load_classifier.return_value = classifier
-    mock_tokenizer_from_file.return_value = tokenizer
+    mock_metadata_from_file.return_value = model_metadata
 
     bundle = Naam._load_model("eng", latest=True)
 
     assert mock_load_data.call_args_list == [
         call("eng/model.safetensors", latest=True),
-        call("eng/vocabulary.txt", latest=True),
+        call("eng/metadata.json", latest=True),
     ]
-    mock_load_classifier.assert_called_once_with(weights, Naam._config)
-    mock_tokenizer_from_file.assert_called_once_with(vocabulary, Naam._config)
+    mock_metadata_from_file.assert_called_once_with(metadata_path)
+    mock_load_classifier.assert_called_once_with(weights, model_metadata.architecture)
     assert bundle.classifier is classifier
-    assert bundle.tokenizer is tokenizer
+    assert bundle.metadata is model_metadata
+    assert bundle.tokenizer.max_bytes == model_metadata.architecture.max_bytes
 
 
 @patch.object(Naam, "load_model_data", side_effect=OSError("offline"))
@@ -183,6 +238,8 @@ def test_models_are_cached_by_language(mock_load_model: Mock) -> None:
     """Each language loads once and remains independently cached."""
     english_model = Mock()
     hindi_model = Mock()
+    english_model.metadata = metadata()
+    hindi_model.metadata = metadata("hin", ("DEVANAGARI",))
     mock_load_model.side_effect = [english_model, hindi_model]
 
     assert Naam._model_for("eng") is english_model
@@ -243,10 +300,12 @@ def test_concurrent_languages_keep_their_predictions(
     def predict_english(names: list[str]) -> np.ndarray:
         english_predicting.set()
         assert hindi_loaded.wait(timeout=2)
-        return np.array([[0.05, 0.95]])
+        return np.array([0.95])
 
     english_model.predict.side_effect = predict_english
-    hindi_model.predict.return_value = np.array([[0.9, 0.1]])
+    english_model.metadata = metadata()
+    hindi_model.predict.return_value = np.array([0.1])
+    hindi_model.metadata = metadata("hin", ("DEVANAGARI",))
 
     def load_model(lang: str, latest: bool) -> Mock:
         if lang == "hin":
@@ -262,14 +321,15 @@ def test_concurrent_languages_keep_their_predictions(
         english_result = english_future.result(timeout=2)
         hindi_result = hindi_future.result(timeout=2)
 
-    assert english_result.iloc[0]["pred_label"] == "muslim"
-    assert hindi_result.iloc[0]["pred_label"] == "not-muslim"
+    assert english_result.iloc[0]["name_pattern_estimate"] == "muslim-associated"
+    assert hindi_result.iloc[0]["name_pattern_estimate"] == "not-muslim-associated"
 
 
 @patch.object(Naam, "_model_for")
 def test_prediction_error_preserves_cause(mock_model_for: Mock) -> None:
     """Inference failures surface through the documented runtime error."""
     model = Mock()
+    model.metadata = metadata()
     model.predict.side_effect = ValueError("bad tensor")
     mock_model_for.return_value = model
 

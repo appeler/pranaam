@@ -1,129 +1,165 @@
-# pranaam: predict religion from name
+# Pranaam
 
-[![ci](https://github.com/appeler/pranaam/actions/workflows/ci.yml/badge.svg)](https://github.com/appeler/pranaam/actions/workflows/ci.yml)
-[![image](https://img.shields.io/pypi/v/pranaam.svg)](https://pypi.python.org/pypi/pranaam)
+[![CI](https://github.com/appeler/pranaam/actions/workflows/ci.yml/badge.svg)](https://github.com/appeler/pranaam/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/pranaam.svg)](https://pypi.org/project/pranaam/)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://appeler.github.io/pranaam/)
-[![image](https://static.pepy.tech/badge/pranaam)](https://pepy.tech/project/pranaam)
+[![Downloads](https://static.pepy.tech/badge/pranaam)](https://pepy.tech/project/pranaam)
 
-Pranaam uses the Bihar Land Records data, including 41.87 million plot records
-for 12.13 million individuals or accounts across 35,626 villages, to build
-machine learning models from names. The package currently exposes binary
-religion classification. The final training dataset has around 4 million unique records. To
-learn how to transform the data and the models underlying the package,
-check the
-[notebooks](https://github.com/appeler/pranaam/tree/main/).
+Pranaam returns calibrated estimates of whether an English- or Hindi-script
+name follows patterns associated with Muslim or non-Muslim names in its
+training data. It does not observe or establish a person's religion.
 
-The production PyTorch weights, vocabularies, conversion hashes, and model card
-are published in the
-[gojiberries/pranaam Hugging Face repository](https://huggingface.co/gojiberries/pranaam).
+Pranaam is for validated aggregate research. **Do not use it to label
+individuals, make consequential decisions, determine eligibility, target
+people, or replace self-identified information.**
 
-The first function we are releasing with the package is
-pred_rel, which predicts religion based on the name
-(currently only muslim or not). (For
-context, nearly 95% of India\'s population are Hindu or Muslim, with
-Sikhs, Buddhists, Christians, and other groups making up the rest.) The
-OOS accuracy assessed on unseen names is nearly 98% for both
-[Hindi](https://github.com/appeler/pranaam/blob/main/model_training/05_train_hindi.ipynb)
-and
-[English](https://github.com/appeler/pranaam/blob/main/model_training/04_train_english.ipynb)
-models.
+Model v3 uses compact byte-level PyTorch models. Unlike the v1 and v2
+whole-word model, it retains local character order, represents every UTF-8
+input without an unknown-word token, does not average padded embeddings into
+each representation, and learns spelling fragments that generalize to unseen names.
 
-Our training data is in Hindi. To build models that classify names
-provided in English, we used the
-[indicate](https://github.com/in-rolls/indicate) package to
-transliterate our training data to English.
-
-We are releasing this software in the hope that it enables activists and
-researchers
-
-1)  Highlight biases
-2)  Fight biases
-3)  Prevent biases (regress out some of these biases in models built on
-    natural language corpus with person names).
+The historical v1 model was trained on complete recorded name strings. Model
+v2 migrated those same weights to newer serialization and runtime formats; it
+was not a new training run. Both versions nevertheless averaged whole-word
+embeddings, so accepting a full name did not preserve word order.
 
 ## Install
-
-We strongly recommend installing pranaam inside a Python virtual environment. (see [venv documentation](https://docs.python.org/3/library/venv.html#creating-virtual-environments))
-
-### Standard Installation
 
 ```bash
 pip install pranaam
 ```
 
-### Requirements
+Python 3.11 or newer is required. The first prediction downloads small,
+checksum-verified `safetensors` artifacts from an immutable revision of
+[`gojiberries/pranaam`](https://huggingface.co/gojiberries/pranaam).
 
-- Python 3.11 or newer
-- PyTorch, safetensors, and Hugging Face Hub support are installed automatically
+## Use
 
-The first prediction downloads the requested language model from an immutable
-Hugging Face revision and verifies every file against a pinned SHA-256 digest.
+```python
+from pranaam import pred_rel
 
-## General API
+result = pred_rel(
+    ["Shah Rukh Khan", "Amitabh Bachchan", "محمد خان"],
+    lang="eng",
+)
+print(result)
+```
 
-1.  pranaam.pred_rel takes a list of Hindi/English names and predicts
-    whether the person is Muslim or not.
+`pred_rel` accepts one name, a list of names, or a pandas Series. Use
+`lang="hin"` for Devanagari names.
 
-## Examples
+The returned columns are:
 
-By using names in English :
+| Column | Meaning |
+|---|---|
+| `name` | Original input |
+| `name_pattern_estimate` | `muslim-associated`, `not-muslim-associated`, or `uncertain` |
+| `muslim_score` | Platt-calibrated score from 0 to 1; missing for unsupported scripts |
+| `abstained` | Whether Pranaam declined to return an associated pattern |
+| `abstention_reason` | `uncertain-score`, `unsupported-script`, or missing |
+| `script_supported` | Whether every input letter is supported by the selected model |
+| `model_version` | Model-family version |
+| `model_revision` | Immutable Hugging Face commit used for inference |
 
-    from pranaam import pranaam
-    names = ["Shah Rukh Khan", "Amitabh Bachchan"]
-    result = pranaam.pred_rel(names)
-    print(result)
+The default confidence threshold is 0.8: scores strictly between 0.2 and 0.8
+abstain. The English model supports Latin letters and the Hindi model supports
+Devanagari letters. Selecting the wrong model therefore produces an explicit
+unsupported-script abstention rather than a fabricated score.
 
-output -:
+The command-line interface exposes the same result:
 
-    name  pred_label  pred_prob_muslim
-    0    Shah Rukh Khan      muslim              95.0
-    1  Amitabh Bachchan  not-muslim              10.0
+```bash
+pranaam --input "Shah Rukh Khan" --lang eng
+```
 
-By using names in Hindi :
+## Evaluation
 
-    from pranaam import pranaam
-    names = ["शाहरुख खान", "अमिताभ बच्चन"]
-    result = pranaam.pred_rel(names, lang="hin")
-    print(result)
+### Pranaam v0.6.0 audit
 
-output -:
+On all 92,897 directly labeled SEPRI household heads, v0.6.0 achieved:
 
-    name  pred_label  pred_prob_muslim
-    0    शाहरुख खान      muslim              97.0
-    1  अमिताभ बच्चन  not-muslim               5.0
+- Accuracy: **96.43%**
+- Muslim precision: **87.49%**
+- Muslim recall: **73.74%**
+- Muslim F1: **0.800**
+- Recall on names not overlapping the translated land corpus: **69.10%**
 
-## Functions
+The last measure uses exact normalized-name overlap. This external audit showed
+why overall accuracy and the old random-row notebook results were insufficient:
+the model missed more Muslim names when names were not represented in the land
+corpus.
 
-We expose one function, which takes Hindi/English text (name) and predicts a
-binary religion label.
+### Model v3
 
-- **pranaam.pred_rel(input)**
-  - What it does:
-    - predicts religion based on hindi/english text (name)
-  - Output
-    - Returns pandas with name and label (muslim/not-muslim)
+The released v2 and new v3 English pipelines were compared on the same
+18,133-row SEPRI evaluation partition. Normalized names do not cross training,
+validation, calibration, and evaluation partitions.
+
+| Model | Accuracy | Muslim precision | Muslim recall | Muslim F1 | Brier | 10-bin ECE |
+|---|---:|---:|---:|---:|---:|---:|
+| v2 (Pranaam 0.6.0) | 96.51% | 87.75% | 74.14% | 0.804 | 0.0357 | 0.0395 |
+| v3 | 97.46% | 90.29% | 82.49% | 0.862 | 0.0205 | 0.0052 |
+
+With the default abstention rule, English v3 covers 96.54% of evaluation rows and is
+98.54% accurate on retained estimates. Hindi v3 was evaluated on a disjoint
+152,390-name grouped land-record test partition: Muslim precision 94.30%,
+recall 93.05%, F1 0.937, and Brier score 0.0116. The Hindi result is an
+in-source evaluation and should not be interpreted as national performance.
+
+A paired audit also recalibrated v2 on v3's 13,665-row calibration partition.
+Against that stronger baseline, v3 improved accuracy by 1.19 percentage points
+(95% name-cluster bootstrap interval: 0.95 to 1.43), Muslim recall by 15.62
+points (13.55 to 17.75), Muslim F1 by 0.086 (0.071 to 0.103), and Brier score by
+0.0122 (0.0106 to 0.0139). Muslim precision was 2.04 points lower (-3.44 to
+-0.67) because recalibrated v2 used a more conservative operating point. On
+2,737 rows for which every word was outside v2's vocabulary, recall rose from
+0% to 63.85%.
+
+These results support v3 on the available SEPRI population, not universal
+superiority. The v3 pipeline changes architecture, training data, and
+calibration together, so this comparison does not identify the architecture's
+effect alone. The evaluation partition was held out from parameter fitting and
+calibration but was inspected during architecture development; it is therefore
+developmental evidence rather than a pristine confirmatory test. See the
+reproducible [paired audit](scripts/adhoc/compare_model_v2_v3.py) and its
+[aggregate report](scripts/adhoc/v2_v3_comparison.json).
+
+## Data and limitations
+
+The models combine Bihar land-record names carrying caste/community-derived
+silver labels with authorized SEPRI household-head data for the English model.
+Conflicting labels for the same normalized land name are removed. SEPRI names
+are assigned to deterministic, non-overlapping train, validation, calibration,
+and test partitions.
+
+Names are imperfect and culturally contingent proxies. Recorded caste,
+household religion, transliteration, OCR, geography, gender, and time can all
+introduce systematic error. Scores may be poorly calibrated outside the
+evaluated populations. Validation against self-identified information at the
+appropriate aggregate level remains the user's responsibility.
+
+Raw personal names are not published with the package or model. Hugging Face
+contains only weights, non-identifying training reports, metadata, and the
+model card.
+
+## Development
+
+```bash
+uv sync --all-groups
+make ci
+make docs
+uv build
+```
+
+The reproducible v3 entry point is [`training/train_v3.py`](training/train_v3.py).
+It reads authorized local source data and writes only weights and aggregate
+reports.
 
 ## Authors
 
-Rajashekar Chintalapati, Aaditya Dar, and Gaurav Sood
-
-
-## 🔗 Adjacent Repositories
-
-- [appeler/naampy](https://github.com/appeler/naampy) — Infer Sociodemographic Characteristics from Names Using Indian Electoral Rolls
-- [appeler/namesexdata](https://github.com/appeler/namesexdata) — Data on international first names and sex of people with that name
-- [appeler/parsernaam](https://github.com/appeler/parsernaam) — AI name parsing. Predict first or last name using a DL model.
-- [appeler/graphic_names](https://github.com/appeler/graphic_names) — Infer the gender of person with a particular first name using Google image search and Clarifai
-- [appeler/ethnicolr2](https://github.com/appeler/ethnicolr2) — Ethnicolr implementation with new models in pytorch
-## Contributor Code of Conduct
-
-The project welcomes contributions from everyone! It depends on it. To
-maintain this welcoming atmosphere and to collaborate in a fun and
-productive way, we expect contributors to the project to abide by the
-[Contributor Code of
-Conduct](http://contributor-covenant.org/version/1/0/0/).
+Rajashekar Chintalapati, Aaditya Dar, and Gaurav Sood.
 
 ## License
 
-The package is released under the [MIT
-License](https://opensource.org/licenses/MIT).
+The package is released under the [MIT License](LICENSE). The responsible-use
+requirements above describe the supported scope of the model.

@@ -1340,6 +1340,9 @@ test = [
     { name = "pytest-xdist" },
     { name = "streamlit" },
 ]
+train = [
+    { name = "pyarrow" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -1379,6 +1382,7 @@ test = [
     { name = "pytest-xdist", specifier = ">=3.0" },
     { name = "streamlit", specifier = ">=1.20" },
 ]
+train = [{ name = "pyarrow", specifier = ">=18" }]
 
 [[package]]
 name = "pre-commit"

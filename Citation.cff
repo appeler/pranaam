@@ -9,16 +9,16 @@ authors:
 - family-names: "Sood"
   given-names: "Gaurav"
   email: "gsood07@gmail.com"
-title: "pranaam: Predict religion from names"
-version: 0.6.0
+title: "Pranaam: Calibrated name-pattern estimates"
+version: 0.7.0
 date-released: 2026-08-16
 url: "https://github.com/appeler/pranaam"
 repository-code: "https://github.com/appeler/pranaam"
 repository-artifact: "https://pypi.org/project/pranaam/"
-abstract: "Predict religion from Hindi and English names using machine learning models"
+abstract: "Estimate patterns associated with English and Hindi names for validated aggregate research"
 keywords:
-  - predict
-  - religion
+  - calibration
+  - aggregate-research
   - name
   - hindi
   - english

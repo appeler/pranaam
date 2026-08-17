@@ -1,4 +1,4 @@
-"""Interactive web interface for Pranaam predictions."""
+"""Interactive web interface for Pranaam name-pattern estimates."""
 
 import re
 from typing import Literal
@@ -27,7 +27,7 @@ def parse_names(value: str) -> list[str]:
 def predict_dataframe(
     df: pd.DataFrame, name_column: str, lang: Literal["eng", "hin"]
 ) -> pd.DataFrame:
-    """Add predictions without changing row order or multiplying duplicates."""
+    """Add estimates without changing row order or multiplying duplicates."""
     result = df.copy()
     valid_rows = result[name_column].notna()
     names = result.loc[valid_rows, name_column]
@@ -43,13 +43,31 @@ def predict_dataframe(
         raise ValueError(f"Column {name_column!r} has no names to predict")
 
     predictions = pranaam.pred_rel(names.tolist(), lang=lang)
-    result["pred_label"] = pd.Series(pd.NA, index=result.index, dtype="string")
-    result["pred_prob_muslim"] = pd.Series(pd.NA, index=result.index, dtype="Float64")
-    result.loc[valid_rows, "pred_label"] = predictions["pred_label"].to_numpy()
-    result.loc[valid_rows, "pred_prob_muslim"] = predictions[
-        "pred_prob_muslim"
-    ].to_numpy()
+    dtypes = {
+        "name_pattern_estimate": "string",
+        "muslim_score": "Float64",
+        "abstained": "boolean",
+        "abstention_reason": "string",
+        "script_supported": "boolean",
+        "model_version": "string",
+        "model_revision": "string",
+    }
+    for column, dtype in dtypes.items():
+        result[column] = pd.Series(pd.NA, index=result.index, dtype=dtype)
+        result.loc[valid_rows, column] = predictions[column].to_numpy()
     return result
+
+
+def render_summary(result: pd.DataFrame) -> None:
+    """Render aggregate counts without presenting estimates as identities."""
+    muslim_count = result["name_pattern_estimate"].eq("muslim-associated").sum()
+    non_muslim_count = result["name_pattern_estimate"].eq("not-muslim-associated").sum()
+    abstained_count = result["abstained"].fillna(False).sum()
+    st.write(
+        f"**Model summary**: {muslim_count} Muslim-associated, "
+        f"{non_muslim_count} non-Muslim-associated, and "
+        f"{abstained_count} abstained name-pattern estimates"
+    )
 
 
 def app() -> None:
@@ -59,10 +77,10 @@ def app() -> None:
     with st.sidebar:
         st.header("About")
         st.write(
-            "Pranaam was trained on about 4 million unique records derived "
-            "from Bihar Land Records data."
+            "Pranaam estimates patterns in names using calibrated PyTorch "
+            "models trained on Bihar land and SEPRI survey data."
         )
-        st.write("**Reported accuracy**: ~98% on held-out names")
+        st.write("See the model card for split-specific evaluation results.")
         st.write("[GitHub Repository](https://github.com/appeler/pranaam)")
         st.write("[Documentation](https://appeler.github.io/pranaam/)")
         st.write("[Model card](https://huggingface.co/gojiberries/pranaam)")
@@ -108,29 +126,23 @@ def app() -> None:
                 height=100,
             )
 
-        if st.button("Predict Religion"):
+        if st.button("Estimate name patterns"):
             if names_input.strip():
                 names = parse_names(names_input)
 
-                with st.spinner("Making predictions..."):
+                with st.spinner("Estimating name patterns..."):
                     try:
                         result = pranaam.pred_rel(names, lang=lang)
 
                         st.subheader("Results")
                         st.dataframe(result, use_container_width=True)
 
-                        muslim_count = (result["pred_label"] == "muslim").sum()
-                        total_count = len(result)
-                        st.write(
-                            f"**Model summary**: {muslim_count} Muslim-pattern, "
-                            f"{total_count - muslim_count} non-Muslim-pattern "
-                            f"predictions across {total_count} names"
-                        )
+                        render_summary(result)
 
                         download_file(result)
 
                     except Exception as e:
-                        st.error(f"Error making predictions: {e!s}")
+                        st.error(f"Error estimating name patterns: {e!s}")
             else:
                 st.warning("Please enter at least one name.")
 
@@ -156,7 +168,7 @@ def app() -> None:
                     format_func=lambda x: "English" if x == "eng" else "Hindi",
                 )
 
-                if st.button("Predict Religion for All Names"):
+                if st.button("Estimate name patterns for all names"):
                     with st.spinner("Processing names..."):
                         try:
                             result_df = predict_dataframe(df, name_col, lang)
@@ -164,13 +176,7 @@ def app() -> None:
                             st.subheader("Results")
                             st.dataframe(result_df, use_container_width=True)
 
-                            muslim_count = (result_df["pred_label"] == "muslim").sum()
-                            total_count = result_df["pred_label"].notna().sum()
-                            st.write(
-                                f"**Model summary**: {muslim_count} Muslim-pattern, "
-                                f"{total_count - muslim_count} non-Muslim-pattern "
-                                f"predictions across {total_count} names"
-                            )
+                            render_summary(result_df)
 
                             download_file(result_df)
 
@@ -185,7 +191,7 @@ def app() -> None:
     st.markdown("---")
     st.markdown(
         """
-    **Note**: This tool is for aggregate research and education. Its predictions
+    **Note**: This tool is for aggregate research and education. Its estimates
     are based on statistical patterns and must not be treated as facts about
     individuals or used for consequential decisions.
     """

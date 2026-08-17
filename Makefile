@@ -42,7 +42,7 @@ pydoclint: ## Check docstring signatures
 	uv run pydoclint --config=pyproject.toml pranaam
 
 docs: ## Build documentation
-	uv run sphinx-build -W --keep-going -b html docs docs/_build/html
+	uv run --group docs sphinx-build -W --keep-going -b html docs docs/_build/html
 
 docs-serve: ## Serve documentation locally
 	cd docs/_build/html && python -m http.server 8000

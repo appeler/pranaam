@@ -11,6 +11,17 @@ import pytest
 import pranaam
 from pranaam.naam import Naam
 
+OUTPUT_COLUMNS = [
+    "name",
+    "name_pattern_estimate",
+    "muslim_score",
+    "abstained",
+    "abstention_reason",
+    "script_supported",
+    "model_version",
+    "model_revision",
+]
+
 
 class TestRealModelDownloadAndPrediction:
     """Test real model download and prediction functionality."""
@@ -41,22 +52,30 @@ class TestRealModelDownloadAndPrediction:
 
         # Verify DataFrame structure
         assert isinstance(result, pd.DataFrame)
-        assert list(result.columns) == ["name", "pred_label", "pred_prob_muslim"]
+        assert list(result.columns) == OUTPUT_COLUMNS
         assert len(result) == len(test_names)
 
         # Verify all names are present
         assert set(result["name"]) == set(test_names)
 
         # Verify prediction labels are valid
-        valid_labels = {"muslim", "not-muslim"}
-        assert all(label in valid_labels for label in result["pred_label"])
+        valid_estimates = {
+            "muslim-associated",
+            "not-muslim-associated",
+            "uncertain",
+        }
+        assert all(
+            estimate in valid_estimates for estimate in result["name_pattern_estimate"]
+        )
 
-        # Verify probabilities are reasonable (0-100)
-        assert all(0 <= prob <= 100 for prob in result["pred_prob_muslim"])
+        assert all(0 <= score <= 1 for score in result["muslim_score"])
+        assert result["script_supported"].all()
 
         # Verify expected patterns (these are actual predictions, not mocks)
         khan_results = result[result["name"].str.contains("Khan")]
-        muslim_khans = khan_results[khan_results["pred_label"] == "muslim"]
+        muslim_khans = khan_results[
+            khan_results["name_pattern_estimate"] == "muslim-associated"
+        ]
 
         # Should predict most Khans as Muslim (this is what the model should do)
         assert len(muslim_khans) >= 3, (
@@ -79,18 +98,24 @@ class TestRealModelDownloadAndPrediction:
 
         # Verify DataFrame structure
         assert isinstance(result, pd.DataFrame)
-        assert list(result.columns) == ["name", "pred_label", "pred_prob_muslim"]
+        assert list(result.columns) == OUTPUT_COLUMNS
         assert len(result) == len(test_names)
 
         # Verify all names are present
         assert set(result["name"]) == set(test_names)
 
         # Verify prediction labels are valid
-        valid_labels = {"muslim", "not-muslim"}
-        assert all(label in valid_labels for label in result["pred_label"])
+        valid_estimates = {
+            "muslim-associated",
+            "not-muslim-associated",
+            "uncertain",
+        }
+        assert all(
+            estimate in valid_estimates for estimate in result["name_pattern_estimate"]
+        )
 
-        # Verify probabilities are reasonable
-        assert all(0 <= prob <= 100 for prob in result["pred_prob_muslim"])
+        assert all(0 <= score <= 1 for score in result["muslim_score"])
+        assert result["script_supported"].all()
 
     @pytest.mark.integration
     def test_model_caching_behavior(self) -> None:
@@ -123,7 +148,7 @@ class TestRealModelDownloadAndPrediction:
 
         # All results should have same structure
         for result in [eng_result, hin_result, eng_result2]:
-            assert list(result.columns) == ["name", "pred_label", "pred_prob_muslim"]
+            assert list(result.columns) == OUTPUT_COLUMNS
 
     @pytest.mark.integration
     def test_pandas_series_integration(self) -> None:
@@ -144,10 +169,17 @@ class TestRealModelDownloadAndPrediction:
         assert all(name in df["actor_name"].values for name in result["name"])
 
         # Create combined result
-        combined = pd.concat([df, result[["pred_label", "pred_prob_muslim"]]], axis=1)
+        combined = pd.concat(
+            [df, result[["name_pattern_estimate", "muslim_score"]]], axis=1
+        )
 
         # Verify combined structure
-        expected_cols = ["actor_name", "movie_count", "pred_label", "pred_prob_muslim"]
+        expected_cols = [
+            "actor_name",
+            "movie_count",
+            "name_pattern_estimate",
+            "muslim_score",
+        ]
         assert list(combined.columns) == expected_cols
 
     @pytest.mark.integration
@@ -220,7 +252,7 @@ class TestRealWorldScenarios:
 
         # Verify structure
         assert len(result) == len(mixed_names)
-        assert all(0 <= prob <= 100 for prob in result["pred_prob_muslim"])
+        assert all(0 <= score <= 1 for score in result["muslim_score"])
 
     @pytest.mark.integration
     def test_edge_case_names(self) -> None:

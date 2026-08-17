@@ -1,4 +1,4 @@
-"""Entry point module for pranaam CLI."""
+"""Entry point for Pranaam name-pattern estimation."""
 
 import argparse
 import sys
@@ -12,7 +12,7 @@ pred_rel = Naam.pred_rel
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Main CLI entry point for religion prediction.
+    """Run name-pattern estimation from the command line.
 
     Args:
         argv: Command line arguments, defaults to sys.argv[1:]
@@ -27,12 +27,10 @@ def main(argv: list[str] | None = None) -> int:
         argv = sys.argv[1:]
 
     parser = argparse.ArgumentParser(
-        description="Predict religion based on name",
+        description="Estimate patterns associated with a name",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument(
-        "--input", required=True, help="Name to analyze (single name as string)"
-    )
+    parser.add_argument("--input", required=True, help="Name to analyze")
     parser.add_argument(
         "--lang", default="eng", choices=["eng", "hin"], help="Language of input name"
     )
