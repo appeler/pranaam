@@ -207,3 +207,4 @@ source-include = [
     "training/**",
     "uv.lock",
 ]
+source-exclude = ["/docs/_build"]

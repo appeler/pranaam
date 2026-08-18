@@ -16,6 +16,7 @@
 * Keep the training-only PyArrow dependency compatible with the current
   Streamlit interface dependency.
 * Use the standard bounded uv build backend and explicit package version.
+* Exclude generated documentation output from source distributions.
 
 ## 0.7.0 - 2026-08-16
 
