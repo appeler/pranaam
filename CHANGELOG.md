@@ -13,6 +13,8 @@
   immutable v3 schema 1 artifacts.
 * Define pinned refreshes for local mirrors as reread-and-verify operations;
   local mirror files are never downloaded or replaced.
+* Keep the training-only PyArrow dependency compatible with the current
+  Streamlit interface dependency.
 
 ## 0.7.0 - 2026-08-16
 

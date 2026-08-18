@@ -68,7 +68,7 @@ docs = [
     "sphinx-copybutton",
 ]
 train = [
-    "pyarrow>=18",
+    "pyarrow>=18,<25",
 ]
 
 [project.urls]
