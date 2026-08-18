@@ -17,6 +17,8 @@
   Streamlit interface dependency.
 * Use the standard bounded uv build backend and explicit package version.
 * Exclude generated documentation output from source distributions.
+* Apply the serving byte limit to every training split before fitting,
+  calibration, or evaluation, and record excluded row counts.
 
 ## 0.7.0 - 2026-08-16
 

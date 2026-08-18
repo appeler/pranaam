@@ -12,6 +12,7 @@ import torch
 
 from pranaam.model_v3 import (
     ByteModelConfig,
+    ByteTokenizer,
     CalibrationConfig,
     LabelSource,
     ModelArtifactMetadata,
@@ -57,6 +58,17 @@ def metadata(
             normalization="Unicode NFKC, casefold, collapse whitespace",
         ),
     )
+
+
+def mock_language_model(
+    model_metadata: ModelArtifactMetadata | None = None,
+) -> Mock:
+    """Return a model mock with a real serving tokenizer contract."""
+    selected_metadata = model_metadata or metadata()
+    model = Mock()
+    model.metadata = selected_metadata
+    model.tokenizer = ByteTokenizer(selected_metadata.architecture.max_bytes)
+    return model
 
 
 @pytest.mark.parametrize(
@@ -111,8 +123,7 @@ def test_language_model_batches_predictions() -> None:
 @patch.object(Naam, "_model_for")
 def test_single_string_input(mock_model_for: Mock) -> None:
     """A single name becomes a one-row result."""
-    model = Mock()
-    model.metadata = metadata()
+    model = mock_language_model()
     model.predict.return_value = np.array([0.8])
     mock_model_for.return_value = model
 
@@ -146,8 +157,7 @@ def test_single_string_input(mock_model_for: Mock) -> None:
 @patch.object(Naam, "_model_for")
 def test_list_and_series_inputs(mock_model_for: Mock) -> None:
     """Lists and pandas Series retain their row order."""
-    model = Mock()
-    model.metadata = metadata()
+    model = mock_language_model()
     model.predict.return_value = np.array([0.9, 0.1])
     mock_model_for.return_value = model
 
@@ -165,8 +175,7 @@ def test_list_and_series_inputs(mock_model_for: Mock) -> None:
 
 @patch.object(Naam, "_model_for")
 def test_uncertain_and_unsupported_names_abstain(mock_model_for: Mock) -> None:
-    model = Mock()
-    model.metadata = metadata()
+    model = mock_language_model()
     model.predict.return_value = np.array([0.5])
     mock_model_for.return_value = model
 
@@ -186,8 +195,7 @@ def test_uncertain_and_unsupported_names_abstain(mock_model_for: Mock) -> None:
 
 @patch.object(Naam, "_model_for")
 def test_utf8_byte_truncation_is_an_explicit_abstention(mock_model_for: Mock) -> None:
-    model = Mock()
-    model.metadata = metadata()
+    model = mock_language_model()
     mock_model_for.return_value = model
     name = "é" * 64
 
@@ -235,8 +243,7 @@ def test_invalid_model_probabilities_fail(
     mock_model_for: Mock, scores: np.ndarray, message: str
 ) -> None:
     """Malformed model output cannot be presented as a prediction."""
-    model = Mock()
-    model.metadata = metadata()
+    model = mock_language_model()
     model.predict.return_value = scores
     mock_model_for.return_value = model
 
@@ -285,10 +292,8 @@ def test_load_model_wraps_artifact_failure(mock_load_data: Mock) -> None:
 @patch.object(Naam, "_load_model")
 def test_models_are_cached_by_language(mock_load_model: Mock) -> None:
     """Each language loads once and remains independently cached."""
-    english_model = Mock()
-    hindi_model = Mock()
-    english_model.metadata = metadata()
-    hindi_model.metadata = metadata("hin", ("DEVANAGARI",))
+    english_model = mock_language_model()
+    hindi_model = mock_language_model(metadata("hin", ("DEVANAGARI",)))
     mock_load_model.side_effect = [english_model, hindi_model]
 
     assert Naam._model_for("eng") is english_model
@@ -343,8 +348,8 @@ def test_concurrent_languages_keep_their_predictions(
     """A Hindi load cannot redirect an in-flight English prediction."""
     english_predicting = Event()
     hindi_loaded = Event()
-    english_model = Mock()
-    hindi_model = Mock()
+    english_model = mock_language_model()
+    hindi_model = mock_language_model(metadata("hin", ("DEVANAGARI",)))
 
     def predict_english(names: list[str]) -> np.ndarray:
         english_predicting.set()
@@ -352,9 +357,7 @@ def test_concurrent_languages_keep_their_predictions(
         return np.array([0.95])
 
     english_model.predict.side_effect = predict_english
-    english_model.metadata = metadata()
     hindi_model.predict.return_value = np.array([0.1])
-    hindi_model.metadata = metadata("hin", ("DEVANAGARI",))
 
     def load_model(lang: str, refresh_pinned: bool) -> Mock:
         if lang == "hin":
@@ -381,8 +384,7 @@ def test_concurrent_languages_keep_their_predictions(
 @patch.object(Naam, "_model_for")
 def test_prediction_error_preserves_cause(mock_model_for: Mock) -> None:
     """Inference failures surface through the documented runtime error."""
-    model = Mock()
-    model.metadata = metadata()
+    model = mock_language_model()
     model.predict.side_effect = ValueError("bad tensor")
     mock_model_for.return_value = model
 

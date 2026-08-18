@@ -16,7 +16,6 @@ from .model_v3 import (
     ByteTokenizer,
     ModelArtifactMetadata,
     load_byte_classifier,
-    normalize_name,
     supports_name_script,
 )
 from .utils import MODEL_REVISION
@@ -116,9 +115,9 @@ class Naam(Base):
                 dtype=bool,
             )
             normalized_utf8_bytes = np.array(
-                [len(normalize_name(name).encode("utf-8")) for name in name_list]
+                [model.tokenizer.normalized_utf8_length(name) for name in name_list]
             )
-            max_name_bytes = model.metadata.architecture.max_bytes - 2
+            max_name_bytes = model.tokenizer.max_content_bytes
             input_truncated = np.array(
                 normalized_utf8_bytes > max_name_bytes, dtype=bool
             )

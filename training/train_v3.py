@@ -215,6 +215,15 @@ def limit_training_rows(
     return pd.concat(sampled, ignore_index=True)
 
 
+def filter_names_within_byte_limit(
+    frame: pd.DataFrame,
+    tokenizer: ByteTokenizer,
+) -> pd.DataFrame:
+    """Retain names that serving can encode without truncation."""
+    byte_counts = frame["name"].map(tokenizer.normalized_utf8_length)
+    return frame.loc[byte_counts.le(tokenizer.max_content_bytes)].copy()
+
+
 def _batches(
     frame: pd.DataFrame,
     batch_size: int,
@@ -485,12 +494,37 @@ def run_training(args: argparse.Namespace) -> None:
     language: Language = args.language
     output_dir = args.output_dir / language
     output_dir.mkdir(parents=True, exist_ok=True)
+    config = ByteModelConfig(
+        max_bytes=args.max_bytes,
+        embedding_dim=args.embedding_dim,
+        hidden_dim=args.hidden_dim,
+        output_dim=args.output_dim,
+        dropout=args.dropout,
+    )
+    tokenizer = ByteTokenizer(config.max_bytes)
     splits = prepare_splits(
         args.land_dir,
         args.reds_dir,
         language,
         survey_weight=args.survey_weight,
     )
+    max_name_bytes = tokenizer.max_content_bytes
+    split_rows_before_byte_filter = {name: len(frame) for name, frame in splits.items()}
+    splits = {
+        name: filter_names_within_byte_limit(frame, tokenizer)
+        for name, frame in splits.items()
+    }
+    excluded_overlength_rows = {
+        name: split_rows_before_byte_filter[name] - len(frame)
+        for name, frame in splits.items()
+    }
+    empty_splits = [name for name, frame in splits.items() if frame.empty]
+    if empty_splits:
+        split_names = ", ".join(empty_splits)
+        raise ValueError(
+            f"No names remain within the {max_name_bytes}-byte serving limit "
+            f"for split(s): {split_names}"
+        )
     if args.max_train_rows is not None:
         splits["train"] = limit_training_rows(
             splits["train"],
@@ -506,13 +540,6 @@ def run_training(args: argparse.Namespace) -> None:
     }
     logger.info("split_counts=%s", json.dumps(counts))
 
-    config = ByteModelConfig(
-        max_bytes=args.max_bytes,
-        embedding_dim=args.embedding_dim,
-        hidden_dim=args.hidden_dim,
-        output_dim=args.output_dim,
-        dropout=args.dropout,
-    )
     device = _device(args.device)
     logger.info("device=%s", device)
     model, history = train_model(
@@ -526,7 +553,6 @@ def run_training(args: argparse.Namespace) -> None:
         device=device,
     )
     model.to(device)
-    tokenizer = ByteTokenizer(config.max_bytes)
     calibration_logits = evaluate_logits(
         model,
         tokenizer,
@@ -585,6 +611,10 @@ def run_training(args: argparse.Namespace) -> None:
                 else "Bihar land names with caste-derived binary labels"
             ),
             "splits": counts,
+            "name_byte_limit": {
+                "maximum_normalized_utf8_bytes": max_name_bytes,
+                "excluded_rows_by_split": excluded_overlength_rows,
+            },
             **(
                 {"survey_weight": args.survey_weight}
                 if language == "eng" and args.survey_weight > 0

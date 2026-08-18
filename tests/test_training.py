@@ -9,12 +9,17 @@ import pandas as pd
 import pytest
 import torch
 
-from pranaam.model_v3 import CURRENT_METADATA_SCHEMA_VERSION, ByteModelConfig
+from pranaam.model_v3 import (
+    CURRENT_METADATA_SCHEMA_VERSION,
+    ByteModelConfig,
+    ByteTokenizer,
+)
 from training.train_v3 import (
     _sigmoid,
     binary_log_loss,
     binary_metrics,
     confidence_threshold,
+    filter_names_within_byte_limit,
     fit_platt_scaler,
     limit_training_rows,
     run_training,
@@ -22,6 +27,19 @@ from training.train_v3 import (
     survey_weight,
     train_model,
 )
+
+
+def test_name_byte_filter_matches_serving_capacity() -> None:
+    frame = pd.DataFrame(
+        {
+            "name": ["  ASHA  ", "आशा", "a" * 15],
+            "label": [0.0, 0.0, 1.0],
+        }
+    )
+
+    filtered = filter_names_within_byte_limit(frame, ByteTokenizer(max_bytes=16))
+
+    assert filtered["name"].tolist() == ["  ASHA  ", "आशा"]
 
 
 def test_stable_bucket_is_deterministic_and_bounded() -> None:
@@ -136,7 +154,12 @@ def test_train_model_enables_deterministic_algorithms() -> None:
 
 
 def test_training_writes_current_metadata_contract(tmp_path: Path) -> None:
-    frame = pd.DataFrame({"name": ["asha", "ali"], "label": [0.0, 1.0]})
+    frame = pd.DataFrame(
+        {
+            "name": ["asha", "ali", "a" * 15],
+            "label": [0.0, 1.0, 1.0],
+        }
+    )
     splits = {
         name: frame.copy() for name in ("train", "validation", "calibration", "test")
     }
@@ -164,11 +187,13 @@ def test_training_writes_current_metadata_contract(tmp_path: Path) -> None:
 
     with (
         patch("training.train_v3.prepare_splits", return_value=splits),
-        patch("training.train_v3.train_model", return_value=(model, [])),
+        patch(
+            "training.train_v3.train_model", return_value=(model, [])
+        ) as train_model_mock,
         patch(
             "training.train_v3.evaluate_logits",
             side_effect=[np.array([-1.0, 1.0]), np.array([-1.0, 1.0])],
-        ),
+        ) as evaluate_logits_mock,
         patch("training.train_v3.fit_platt_scaler", return_value=(1.0, 0.0)),
         patch("training.train_v3.save_file"),
         patch("training.train_v3._write_json") as write_json,
@@ -176,6 +201,10 @@ def test_training_writes_current_metadata_contract(tmp_path: Path) -> None:
         run_training(args)
 
     metadata = write_json.call_args_list[0].args[1]
+    assert len(train_model_mock.call_args.args[0]) == 2
+    assert len(train_model_mock.call_args.args[1]) == 2
+    assert len(evaluate_logits_mock.call_args_list[0].args[2]) == 2
+    assert len(evaluate_logits_mock.call_args_list[1].args[2]) == 2
     assert metadata["schema_version"] == CURRENT_METADATA_SCHEMA_VERSION == 2
     assert metadata["provenance"] == {
         "reference_population": "SEPRI household heads",
@@ -186,3 +215,47 @@ def test_training_writes_current_metadata_contract(tmp_path: Path) -> None:
         "training_seed": 7,
         "normalization": "Unicode NFKC, casefold, collapse whitespace",
     }
+    assert metadata["training"]["name_byte_limit"] == {
+        "maximum_normalized_utf8_bytes": 14,
+        "excluded_rows_by_split": {
+            "train": 1,
+            "validation": 1,
+            "calibration": 1,
+            "test": 1,
+        },
+    }
+
+
+def test_training_rejects_empty_split_after_byte_filter(tmp_path: Path) -> None:
+    short_names = pd.DataFrame({"name": ["asha", "ali"], "label": [0.0, 1.0]})
+    splits = {
+        "train": short_names,
+        "validation": short_names,
+        "calibration": pd.DataFrame({"name": ["a" * 15], "label": [1.0]}),
+        "test": short_names,
+    }
+    args = argparse.Namespace(
+        language="eng",
+        output_dir=tmp_path,
+        land_dir=Path("land"),
+        reds_dir=Path("reds"),
+        survey_weight=8.0,
+        max_train_rows=None,
+        seed=7,
+        max_bytes=16,
+        embedding_dim=4,
+        hidden_dim=4,
+        output_dim=4,
+        dropout=0.0,
+        device="cpu",
+        epochs=1,
+        batch_size=2,
+        learning_rate=0.001,
+        confidence=0.8,
+    )
+
+    with (
+        patch("training.train_v3.prepare_splits", return_value=splits),
+        pytest.raises(ValueError, match=r"14-byte serving limit.*calibration"),
+    ):
+        run_training(args)
