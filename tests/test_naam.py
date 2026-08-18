@@ -26,6 +26,7 @@ def metadata(
     language: str = "eng", scripts: tuple[str, ...] = ("LATIN",)
 ) -> ModelArtifactMetadata:
     return ModelArtifactMetadata(
+        schema_version=2,
         model_version="3.0",
         language=language,
         supported_scripts=scripts,
@@ -133,6 +134,7 @@ def test_single_string_input(mock_model_for: Mock) -> None:
             ),
             "calibration_population": "SEPRI household heads",
             "model_language": "eng",
+            "model_metadata_schema": 2,
             "model_version": "3.0",
             "model_revision": MODEL_REVISION,
             "model_max_name_bytes": 126,

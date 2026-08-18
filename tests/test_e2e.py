@@ -24,6 +24,7 @@ OUTPUT_COLUMNS = [
     "label_source",
     "calibration_population",
     "model_language",
+    "model_metadata_schema",
     "model_version",
     "model_revision",
     "model_max_name_bytes",
@@ -77,6 +78,7 @@ class TestRealModelDownloadAndPrediction:
 
         assert all(0 <= score <= 1 for score in result["muslim_score"])
         assert result["script_supported"].all()
+        assert result["model_metadata_schema"].eq(1).all()
 
         # Verify expected patterns (these are actual predictions, not mocks)
         khan_results = result[result["name"].str.contains("Khan")]
@@ -123,6 +125,7 @@ class TestRealModelDownloadAndPrediction:
 
         assert all(0 <= score <= 1 for score in result["muslim_score"])
         assert result["script_supported"].all()
+        assert result["model_metadata_schema"].eq(1).all()
 
     @pytest.mark.integration
     def test_model_caching_behavior(self) -> None:

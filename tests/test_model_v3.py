@@ -9,6 +9,7 @@ import torch
 from safetensors.torch import save_file
 
 from pranaam.model_v3 import (
+    CURRENT_METADATA_SCHEMA_VERSION,
     ByteModelConfig,
     ByteNameClassifier,
     ByteTokenizer,
@@ -154,7 +155,7 @@ def test_metadata_loads_validated_inference_contract(tmp_path: Path) -> None:
     path = tmp_path / "metadata.json"
     path.write_text(
         """{
-  "schema_version": 1,
+  "schema_version": 2,
   "model_version": "3.0",
   "language": "eng",
   "supported_scripts": ["LATIN"],
@@ -185,6 +186,7 @@ def test_metadata_loads_validated_inference_contract(tmp_path: Path) -> None:
 
     metadata = ModelArtifactMetadata.from_file(path)
 
+    assert metadata.schema_version == CURRENT_METADATA_SCHEMA_VERSION
     assert metadata.language == "eng"
     assert metadata.architecture.max_bytes == 64
     assert metadata.calibration.slope == 0.8
@@ -199,7 +201,7 @@ def test_metadata_rejects_invalid_abstention_threshold(
     path = tmp_path / "metadata.json"
     path.write_text(
         f"""{{
-  "schema_version": 1,
+  "schema_version": 2,
   "model_version": "3.0",
   "language": "eng",
   "supported_scripts": ["LATIN"],
@@ -219,4 +221,74 @@ def test_metadata_rejects_invalid_abstention_threshold(
     )
 
     with pytest.raises(ValueError, match="confidence_threshold"):
+        ModelArtifactMetadata.from_file(path)
+
+
+def test_metadata_adapts_only_the_shipped_schema_one_contract(tmp_path: Path) -> None:
+    path = tmp_path / "metadata.json"
+    path.write_text(
+        """{
+  "schema_version": 1,
+  "model_version": "3.0",
+  "language": "eng",
+  "supported_scripts": ["LATIN"],
+  "normalization": "Unicode NFKC, casefold, collapse whitespace",
+  "architecture": {},
+  "calibration": {
+    "slope": 1,
+    "intercept": 0,
+    "source": "SEPRI household heads, stable name-hash calibration split",
+    "rows": 10
+  },
+  "training": {"seed": 7},
+  "abstention": {"confidence_threshold": 0.8}
+}
+""",
+        encoding="utf-8",
+    )
+
+    metadata = ModelArtifactMetadata.from_file(path)
+
+    assert metadata.schema_version == 1
+    assert metadata.provenance.reference_population is (
+        ReferencePopulation.SEPRI_HOUSEHOLD_HEADS
+    )
+    assert metadata.calibration.population is (
+        ReferencePopulation.SEPRI_HOUSEHOLD_HEADS
+    )
+
+
+def test_metadata_rejects_reused_schema_one_version(tmp_path: Path) -> None:
+    path = tmp_path / "metadata.json"
+    path.write_text(
+        """{
+  "schema_version": 1,
+  "model_version": "3.0",
+  "language": "eng",
+  "supported_scripts": ["LATIN"],
+  "normalization": "Unicode NFKC, casefold, collapse whitespace",
+  "architecture": {},
+  "calibration": {"slope": 1, "intercept": 0, "rows": 10},
+  "provenance": {},
+  "training": {"seed": 7},
+  "abstention": {"confidence_threshold": 0.8}
+}
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="Unsupported schema 1"):
+        ModelArtifactMetadata.from_file(path)
+
+
+@pytest.mark.parametrize("schema_version", [True, 1.0, 3])
+def test_metadata_rejects_unsupported_schema_versions(
+    tmp_path: Path, schema_version: object
+) -> None:
+    path = tmp_path / "metadata.json"
+    path.write_text(
+        f'{{"schema_version": {str(schema_version).lower()}}}', encoding="utf-8"
+    )
+
+    with pytest.raises(ValueError, match="Unsupported model metadata schema"):
         ModelArtifactMetadata.from_file(path)

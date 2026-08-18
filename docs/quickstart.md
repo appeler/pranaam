@@ -21,8 +21,8 @@ The output columns are:
 * `normalized_utf8_bytes` and `input_truncated`: explicit byte-limit support
 * `reference_population`, `label_source`, and `calibration_population`: the
   population and labeling scope of the score
-* `model_language`, `model_version`, `model_revision`, and
-  `model_max_name_bytes`: model provenance and support boundary
+* `model_language`, `model_metadata_schema`, `model_version`, `model_revision`,
+  and `model_max_name_bytes`: model provenance and support boundary
 
 Pass `lang="hin"` for names written in Hindi:
 
@@ -57,9 +57,11 @@ pranaam --input "शाहरुख खान" --lang hin
 ```
 
 Set `refresh_pinned=True` in Python or pass `--refresh-pinned` on the command
-line to redownload and verify the files from the package's pinned Hugging Face
-revision, even when the requested language is already loaded. This does not
-follow a mutable branch or silently switch model versions.
+line to reload and verify a language's pinned files, even when that model is
+already in memory. Pranaam redownloads files from the pinned Hugging Face
+revision. When `PRANAAM_MODEL_DIR` is set, it instead rereads and verifies the
+local files without downloading or replacing them. Neither mode follows a
+mutable branch or switches model versions.
 
 Scores strictly between 0.2 and 0.8 abstain by default. A name written outside
 the selected model's supported script also abstains and has no score. Names

@@ -18,6 +18,7 @@ import torch
 from safetensors.torch import save_file
 
 from pranaam.model_v3 import (
+    CURRENT_METADATA_SCHEMA_VERSION,
     ByteModelConfig,
     ByteNameClassifier,
     ByteTokenizer,
@@ -556,7 +557,7 @@ def run_training(args: argparse.Namespace) -> None:
         reference_population = ReferencePopulation.BIHAR_LAND_RECORD_NAMES
         label_source = LabelSource.LAND_CASTE
     metadata: dict[str, Any] = {
-        "schema_version": 1,
+        "schema_version": CURRENT_METADATA_SCHEMA_VERSION,
         "model_version": "3.0",
         "language": language,
         "supported_scripts": ["LATIN" if language == "eng" else "DEVANAGARI"],

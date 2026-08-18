@@ -21,6 +21,8 @@ _START_ID: Final[int] = 1
 _END_ID: Final[int] = 2
 _BYTE_OFFSET: Final[int] = 3
 _BYTE_VOCABULARY_SIZE: Final[int] = 256 + _BYTE_OFFSET
+CURRENT_METADATA_SCHEMA_VERSION: Final[int] = 2
+_PINNED_V3_METADATA_SCHEMA_VERSION: Final[int] = 1
 
 
 class ReferencePopulation(StrEnum):
@@ -204,6 +206,7 @@ class ModelProvenance:
 class ModelArtifactMetadata:
     """Validated inference metadata stored beside each v3 model."""
 
+    schema_version: int
     model_version: str
     language: str
     supported_scripts: tuple[str, ...]
@@ -216,7 +219,16 @@ class ModelArtifactMetadata:
     def from_file(cls, path: Path) -> ModelArtifactMetadata:
         """Read and validate a v3 model metadata document."""
         document = json.loads(path.read_text(encoding="utf-8"))
-        if document.get("schema_version") != 1:
+        schema_version = document.get("schema_version")
+        if (
+            isinstance(schema_version, bool)
+            or not isinstance(schema_version, int)
+            or schema_version
+            not in {
+                _PINNED_V3_METADATA_SCHEMA_VERSION,
+                CURRENT_METADATA_SCHEMA_VERSION,
+            }
+        ):
             raise ValueError("Unsupported model metadata schema")
         threshold = float(document["abstention"]["confidence_threshold"])
         if not 0.5 < threshold < 1:
@@ -231,10 +243,12 @@ class ModelArtifactMetadata:
         if not model_version:
             raise ValueError("model_version cannot be empty")
         calibration_document = document["calibration"]
-        provenance_document = document.get("provenance")
-        if provenance_document is None:
+        if schema_version == _PINNED_V3_METADATA_SCHEMA_VERSION:
             provenance_document = _pinned_v3_provenance(language, document)
+        else:
+            provenance_document = document["provenance"]
         return cls(
+            schema_version=schema_version,
             model_version=model_version,
             language=language,
             supported_scripts=scripts,
@@ -261,15 +275,26 @@ class ModelArtifactMetadata:
 
 def _pinned_v3_provenance(language: str, document: dict[str, Any]) -> dict[str, Any]:
     """Normalize the immutable v3 release's original metadata schema."""
+    if document.get("model_version") != "3.0" or "provenance" in document:
+        raise ValueError("Unsupported schema 1 model metadata")
     training = document["training"]
+    calibration = document["calibration"]
     if not isinstance(training, dict):
         raise ValueError("training metadata must be an object")
+    if not isinstance(calibration, dict):
+        raise ValueError("calibration metadata must be an object")
     if language == "eng":
         population = ReferencePopulation.SEPRI_HOUSEHOLD_HEADS
         label_source = LabelSource.LAND_CASTE_AND_SEPRI_RELIGION
+        calibration_source = "SEPRI household heads, stable name-hash calibration split"
     else:
         population = ReferencePopulation.BIHAR_LAND_RECORD_NAMES
         label_source = LabelSource.LAND_CASTE
+        calibration_source = (
+            "Bihar land caste labels, stable name-hash calibration split"
+        )
+    if calibration.get("source") != calibration_source:
+        raise ValueError("Unsupported schema 1 calibration metadata")
     return {
         "reference_population": population,
         "label_source": label_source,

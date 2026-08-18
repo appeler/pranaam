@@ -7,6 +7,10 @@
 * Abstain explicitly when normalized UTF-8 input exceeds the model byte limit.
 * Return typed reference-population, label-source, calibration-population, and
   model provenance fields with every estimate.
+* Write model metadata schema 2 while retaining a strict reader adapter for the
+  immutable v3 schema 1 artifacts.
+* Define pinned refreshes for local mirrors as reread-and-verify operations;
+  local mirror files are never downloaded or replaced.
 
 ## 0.7.0 - 2026-08-16
 

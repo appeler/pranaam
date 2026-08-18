@@ -73,7 +73,9 @@ class Naam(Base):
         Args:
             names: One name, a list of names, or a pandas Series of names.
             lang: ``eng`` for the English model or ``hin`` for the Hindi model.
-            refresh_pinned: Redownload and verify the immutable model artifacts.
+            refresh_pinned: Reload and verify the immutable model artifacts.
+                Hub artifacts are redownloaded. Files under
+                ``PRANAAM_MODEL_DIR`` are reread without network access.
 
         Returns:
             A data frame with calibrated scores, explicit script and byte-limit
@@ -179,6 +181,7 @@ class Naam(Base):
                         model.metadata.calibration.population.value
                     ),
                     "model_language": model.metadata.language,
+                    "model_metadata_schema": model.metadata.schema_version,
                     "model_version": model.metadata.model_version,
                     "model_revision": MODEL_REVISION,
                     "model_max_name_bytes": max_name_bytes,

@@ -159,7 +159,7 @@ class TestCLIMain:
         parser.add_argument(
             "--refresh-pinned",
             action="store_true",
-            help="Redownload and verify the immutable pinned model artifacts",
+            help="Reload and verify the immutable pinned model artifacts",
         )
 
         # Test default parsing

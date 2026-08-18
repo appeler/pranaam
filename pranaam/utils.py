@@ -65,7 +65,8 @@ def download_model_file(
     """Resolve and verify one file from the pinned Hugging Face revision.
 
     Set ``PRANAAM_MODEL_DIR`` to a directory with the published repository
-    layout to run from an explicitly managed local mirror.
+    layout to run from an explicitly managed local mirror. ``force_download``
+    redownloads Hub files, but local mirror files are always read in place.
     """
     if filename not in MODEL_SHA256:
         raise ValueError(f"Unknown model artifact: {filename}")

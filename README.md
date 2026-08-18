@@ -64,6 +64,7 @@ The returned columns are:
 | `label_source` | Observed variables used to construct the selected model's labels |
 | `calibration_population` | Held-out population used for Platt calibration |
 | `model_language` | Selected language model |
+| `model_metadata_schema` | Version of the metadata document loaded with the model |
 | `model_version` | Model-family version |
 | `model_revision` | Immutable Hugging Face commit used for inference |
 | `model_max_name_bytes` | Maximum normalized UTF-8 content bytes accepted without truncation |
@@ -77,6 +78,11 @@ The byte limit applies after Unicode NFKC normalization, case folding, and
 whitespace collapsing. Inputs longer than `model_max_name_bytes` are not
 silently scored from a truncated prefix: they return `input_truncated=True`,
 `abstention_reason="input-truncated"`, and a missing score.
+
+New training runs write model metadata schema 2, which records the typed
+population and label provenance directly. The immutable v3 release uses schema
+1; Pranaam validates that exact legacy shape and adapts it to the same result
+columns without changing scoring.
 
 The command-line interface exposes the same result:
 

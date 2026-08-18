@@ -55,6 +55,7 @@ def predict_dataframe(
         "label_source": "string",
         "calibration_population": "string",
         "model_language": "string",
+        "model_metadata_schema": "Int64",
         "model_version": "string",
         "model_revision": "string",
         "model_max_name_bytes": "Int64",
