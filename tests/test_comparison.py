@@ -1,14 +1,62 @@
 """Regression tests for the v2-v3 aggregate comparison."""
 
+from pathlib import Path
+from unittest.mock import Mock, patch
+
 import numpy as np
 import pandas as pd
 import pytest
 
+from pranaam.model_v3 import ByteModelConfig
 from scripts.adhoc.compare_model_v2_v3 import (
+    _prepare_comparison_splits,
     _survey_weight,
     _validate_split_counts,
     _weighted_metrics,
 )
+
+
+def test_comparison_reconstructs_splits_with_candidate_byte_limit() -> None:
+    frame = pd.DataFrame(
+        {
+            "name": ["asha", "ali", "a" * 15],
+            "label": [0.0, 1.0, 1.0],
+        }
+    )
+    reconstructed = {
+        name: frame.copy() for name in ("train", "validation", "calibration", "test")
+    }
+    document = {
+        "training": {
+            "splits": {
+                "calibration": {"rows": 2, "muslim": 1},
+                "test": {"rows": 2, "muslim": 1},
+            }
+        }
+    }
+    metadata = Mock(architecture=ByteModelConfig(max_bytes=16))
+
+    with patch(
+        "scripts.adhoc.compare_model_v2_v3.prepare_splits",
+        return_value=reconstructed,
+    ) as prepare_splits_mock:
+        splits, tokenizer = _prepare_comparison_splits(
+            document,
+            metadata,
+            Path("land"),
+            Path("reds"),
+            8.0,
+        )
+
+    assert tokenizer.max_content_bytes == 14
+    assert splits["calibration"]["name"].tolist() == ["asha", "ali"]
+    assert splits["test"]["name"].tolist() == ["asha", "ali"]
+    prepare_splits_mock.assert_called_once_with(
+        Path("land"),
+        Path("reds"),
+        "eng",
+        survey_weight=8.0,
+    )
 
 
 def test_weighted_metrics_uses_artifact_confidence() -> None:
