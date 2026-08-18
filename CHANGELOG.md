@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 0.8.0 - 2026-08-17
+
 * Replace `pred_rel` with `estimate_muslim_name_pattern` and rename the model
   cache refresh option to the truthful `refresh_pinned`/`--refresh-pinned`.
 * Abstain explicitly when normalized UTF-8 input exceeds the model byte limit.

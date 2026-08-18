@@ -37,11 +37,11 @@ Pandas Series retain their order:
 import pandas as pd
 
 people = pd.DataFrame({"name": ["Shah Rukh Khan", "Amitabh Bachchan"]})
-predictions = pranaam.estimate_muslim_name_pattern(people["name"])
+estimates = pranaam.estimate_muslim_name_pattern(people["name"])
 people = pd.concat(
     [
         people,
-        predictions[
+        estimates[
             ["name_pattern_estimate", "muslim_score", "abstained"]
         ],
     ],

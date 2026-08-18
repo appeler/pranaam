@@ -29,7 +29,7 @@ embeddings, so accepting a full name did not preserve word order.
 pip install pranaam
 ```
 
-Python 3.11 or newer is required. The first prediction downloads small,
+Python 3.11 or newer is required. The first estimate downloads small,
 checksum-verified `safetensors` artifacts from an immutable revision of
 [`gojiberries/pranaam`](https://huggingface.co/gojiberries/pranaam).
 
@@ -69,7 +69,7 @@ The returned columns are:
 | `model_revision` | Immutable Hugging Face commit used for inference |
 | `model_max_name_bytes` | Maximum normalized UTF-8 content bytes accepted without truncation |
 
-The default confidence threshold is 0.8: scores strictly between 0.2 and 0.8
+The default association threshold is 0.8: scores strictly between 0.2 and 0.8
 abstain. The English model supports Latin letters and the Hindi model supports
 Devanagari letters. Selecting the wrong model therefore produces an explicit
 unsupported-script abstention rather than a fabricated score.

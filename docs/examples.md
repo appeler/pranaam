@@ -1,6 +1,6 @@
 # Examples
 
-## Add predictions to a DataFrame
+## Add estimates to a DataFrame
 
 `estimate_muslim_name_pattern` returns rows in the same order as the input.
 Assign the estimate columns by position so duplicate names remain duplicate
@@ -14,8 +14,8 @@ from pranaam import estimate_muslim_name_pattern
 people = pd.DataFrame(
     {"name": ["Shah Rukh Khan", "Amitabh Bachchan", "Shah Rukh Khan"]}
 )
-predictions = estimate_muslim_name_pattern(people["name"], lang="eng")
-people[["name_pattern_estimate", "muslim_score", "abstained"]] = predictions[
+estimates = estimate_muslim_name_pattern(people["name"], lang="eng")
+people[["name_pattern_estimate", "muslim_score", "abstained"]] = estimates[
     ["name_pattern_estimate", "muslim_score", "abstained"]
 ].to_numpy()
 ```
@@ -33,12 +33,12 @@ if not names.dropna().map(lambda value: isinstance(value, str)).all():
     raise TypeError("The name column contains a non-string value")
 
 valid = names.notna() & names.str.strip().ne("")
-predictions = estimate_muslim_name_pattern(names.loc[valid], lang="eng")
+estimates = estimate_muslim_name_pattern(names.loc[valid], lang="eng")
 columns = ["name_pattern_estimate", "muslim_score", "abstained"]
-people.loc[valid, columns] = predictions[
+people.loc[valid, columns] = estimates[
     columns
 ].to_numpy()
-people.to_csv("people_with_predictions.csv", index=False)
+people.to_csv("people_with_estimates.csv", index=False)
 ```
 
 `estimate_muslim_name_pattern` requires every input to be a nonempty string.

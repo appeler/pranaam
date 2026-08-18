@@ -8,7 +8,7 @@ python -m pip install pranaam
 ```
 
 PyTorch, safetensors, Hugging Face Hub support, and the other runtime
-dependencies are installed with the package. The first prediction downloads
+dependencies are installed with the package. The first estimate downloads
 only the requested language's `safetensors` weights and inference metadata from
 [`gojiberries/pranaam`](https://huggingface.co/gojiberries/pranaam) at an
 immutable revision. Pranaam verifies every file against a pinned SHA-256 digest
@@ -50,7 +50,7 @@ hin/metadata.json
 ```
 
 Local mirror files must match the same release checksums. A missing, corrupt,
-or unavailable artifact causes prediction to fail without replacing an already
+or unavailable artifact causes estimation to fail without replacing an already
 loaded language model. `refresh_pinned=True` and `--refresh-pinned` reread and
 verify these local files; they never download into or replace the mirror.
 
