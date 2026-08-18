@@ -9,6 +9,6 @@ class Base:
     """Base class for loading files from the pinned model release."""
 
     @classmethod
-    def load_model_data(cls, file_name: str, latest: bool = False) -> Path:
+    def load_model_data(cls, file_name: str, refresh_pinned: bool = False) -> Path:
         """Return a verified local path for a released model artifact."""
-        return download_model_file(file_name, force_download=latest)
+        return download_model_file(file_name, force_download=refresh_pinned)

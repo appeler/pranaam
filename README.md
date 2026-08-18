@@ -36,17 +36,17 @@ checksum-verified `safetensors` artifacts from an immutable revision of
 ## Use
 
 ```python
-from pranaam import pred_rel
+from pranaam import estimate_muslim_name_pattern
 
-result = pred_rel(
+result = estimate_muslim_name_pattern(
     ["Shah Rukh Khan", "Amitabh Bachchan", "محمد خان"],
     lang="eng",
 )
 print(result)
 ```
 
-`pred_rel` accepts one name, a list of names, or a pandas Series. Use
-`lang="hin"` for Devanagari names.
+`estimate_muslim_name_pattern` accepts one name, a list of names, or a pandas
+Series. Use `lang="hin"` for Devanagari names.
 
 The returned columns are:
 
@@ -54,17 +54,29 @@ The returned columns are:
 |---|---|
 | `name` | Original input |
 | `name_pattern_estimate` | `muslim-associated`, `not-muslim-associated`, or `uncertain` |
-| `muslim_score` | Platt-calibrated score from 0 to 1; missing for unsupported scripts |
+| `muslim_score` | Platt-calibrated score from 0 to 1; missing when Pranaam abstains before scoring |
 | `abstained` | Whether Pranaam declined to return an associated pattern |
-| `abstention_reason` | `uncertain-score`, `unsupported-script`, or missing |
+| `abstention_reason` | `uncertain-score`, `unsupported-script`, `input-truncated`, or missing |
 | `script_supported` | Whether every input letter is supported by the selected model |
+| `normalized_utf8_bytes` | Byte length after the model's Unicode and whitespace normalization |
+| `input_truncated` | Whether the normalized input exceeds the tokenizer's byte capacity; these rows abstain without a score |
+| `reference_population` | Population against which the selected model's score is calibrated |
+| `label_source` | Observed variables used to construct the selected model's labels |
+| `calibration_population` | Held-out population used for Platt calibration |
+| `model_language` | Selected language model |
 | `model_version` | Model-family version |
 | `model_revision` | Immutable Hugging Face commit used for inference |
+| `model_max_name_bytes` | Maximum normalized UTF-8 content bytes accepted without truncation |
 
 The default confidence threshold is 0.8: scores strictly between 0.2 and 0.8
 abstain. The English model supports Latin letters and the Hindi model supports
 Devanagari letters. Selecting the wrong model therefore produces an explicit
 unsupported-script abstention rather than a fabricated score.
+
+The byte limit applies after Unicode NFKC normalization, case folding, and
+whitespace collapsing. Inputs longer than `model_max_name_bytes` are not
+silently scored from a truncated prefix: they return `input_truncated=True`,
+`abstention_reason="input-truncated"`, and a missing score.
 
 The command-line interface exposes the same result:
 

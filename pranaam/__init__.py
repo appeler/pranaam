@@ -8,10 +8,10 @@ from importlib.metadata import PackageNotFoundError, version
 
 from .naam import Naam
 
-pred_rel = Naam.pred_rel
+estimate_muslim_name_pattern = Naam.estimate_muslim_name_pattern
 
 try:
     __version__ = version("pranaam")
 except PackageNotFoundError:
     __version__ = "0+unknown"
-__all__ = ["Naam", "pred_rel"]
+__all__ = ["Naam", "estimate_muslim_name_pattern"]

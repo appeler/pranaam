@@ -6,7 +6,8 @@ import json
 import math
 import unicodedata
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Final
+from enum import StrEnum
+from typing import TYPE_CHECKING, Any, Final
 
 import torch
 from safetensors.torch import load_file
@@ -20,6 +21,22 @@ _START_ID: Final[int] = 1
 _END_ID: Final[int] = 2
 _BYTE_OFFSET: Final[int] = 3
 _BYTE_VOCABULARY_SIZE: Final[int] = 256 + _BYTE_OFFSET
+
+
+class ReferencePopulation(StrEnum):
+    """Population against which an estimate's score is calibrated."""
+
+    SEPRI_HOUSEHOLD_HEADS = "SEPRI household heads"
+    BIHAR_LAND_RECORD_NAMES = "Bihar land-record names"
+
+
+class LabelSource(StrEnum):
+    """Observed variables used to construct binary training labels."""
+
+    LAND_CASTE_AND_SEPRI_RELIGION = (
+        "Bihar land caste/community labels and SEPRI household religion"
+    )
+    LAND_CASTE = "Bihar land caste/community labels"
 
 
 @dataclass(frozen=True)
@@ -81,6 +98,19 @@ class ByteTokenizer:
             rows.append(token_ids)
         return torch.tensor(rows, dtype=torch.long)
 
+    def normalized_utf8_length(self, name: str) -> int:
+        """Return the byte length used to determine tokenizer support."""
+        return len(normalize_name(name).encode("utf-8"))
+
+    def truncates(self, name: str) -> bool:
+        """Return whether encoding drops normalized UTF-8 content bytes."""
+        return self.normalized_utf8_length(name) > self.max_content_bytes
+
+    @property
+    def max_content_bytes(self) -> int:
+        """Return the UTF-8 content capacity after boundary tokens."""
+        return self.max_bytes - 2
+
 
 class ByteNameClassifier(nn.Module):
     """Compact convolutional classifier that retains local byte order."""
@@ -140,7 +170,7 @@ class CalibrationConfig:
 
     slope: float
     intercept: float
-    source: str
+    population: ReferencePopulation
     rows: int
 
     def __post_init__(self) -> None:
@@ -149,10 +179,25 @@ class CalibrationConfig:
             raise ValueError("calibration slope must be finite and positive")
         if not math.isfinite(self.intercept):
             raise ValueError("calibration intercept must be finite")
-        if not self.source:
-            raise ValueError("calibration source cannot be empty")
         if self.rows < 1:
             raise ValueError("calibration rows must be positive")
+
+
+@dataclass(frozen=True)
+class ModelProvenance:
+    """Typed population, labeling, and training lineage for one model."""
+
+    reference_population: ReferencePopulation
+    label_source: LabelSource
+    training_seed: int
+    normalization: str
+
+    def __post_init__(self) -> None:
+        """Reject incomplete training provenance."""
+        if self.training_seed < 0:
+            raise ValueError("training_seed cannot be negative")
+        if not self.normalization:
+            raise ValueError("normalization cannot be empty")
 
 
 @dataclass(frozen=True)
@@ -165,6 +210,7 @@ class ModelArtifactMetadata:
     confidence_threshold: float
     architecture: ByteModelConfig
     calibration: CalibrationConfig
+    provenance: ModelProvenance
 
     @classmethod
     def from_file(cls, path: Path) -> ModelArtifactMetadata:
@@ -184,14 +230,53 @@ class ModelArtifactMetadata:
         model_version = str(document["model_version"])
         if not model_version:
             raise ValueError("model_version cannot be empty")
+        calibration_document = document["calibration"]
+        provenance_document = document.get("provenance")
+        if provenance_document is None:
+            provenance_document = _pinned_v3_provenance(language, document)
         return cls(
             model_version=model_version,
             language=language,
             supported_scripts=scripts,
             confidence_threshold=threshold,
             architecture=ByteModelConfig(**document["architecture"]),
-            calibration=CalibrationConfig(**document["calibration"]),
+            calibration=CalibrationConfig(
+                slope=float(calibration_document["slope"]),
+                intercept=float(calibration_document["intercept"]),
+                population=ReferencePopulation(
+                    provenance_document["calibration_population"]
+                ),
+                rows=int(calibration_document["rows"]),
+            ),
+            provenance=ModelProvenance(
+                reference_population=ReferencePopulation(
+                    provenance_document["reference_population"]
+                ),
+                label_source=LabelSource(provenance_document["label_source"]),
+                training_seed=int(provenance_document["training_seed"]),
+                normalization=str(provenance_document["normalization"]),
+            ),
         )
+
+
+def _pinned_v3_provenance(language: str, document: dict[str, Any]) -> dict[str, Any]:
+    """Normalize the immutable v3 release's original metadata schema."""
+    training = document["training"]
+    if not isinstance(training, dict):
+        raise ValueError("training metadata must be an object")
+    if language == "eng":
+        population = ReferencePopulation.SEPRI_HOUSEHOLD_HEADS
+        label_source = LabelSource.LAND_CASTE_AND_SEPRI_RELIGION
+    else:
+        population = ReferencePopulation.BIHAR_LAND_RECORD_NAMES
+        label_source = LabelSource.LAND_CASTE
+    return {
+        "reference_population": population,
+        "label_source": label_source,
+        "calibration_population": population,
+        "training_seed": training["seed"],
+        "normalization": document["normalization"],
+    }
 
 
 def load_byte_classifier(path: Path, config: ByteModelConfig) -> ByteNameClassifier:

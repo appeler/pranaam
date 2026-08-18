@@ -13,7 +13,9 @@ from pranaam.model_v3 import (
     ByteNameClassifier,
     ByteTokenizer,
     CalibrationConfig,
+    LabelSource,
     ModelArtifactMetadata,
+    ReferencePopulation,
     load_byte_classifier,
     normalize_name,
     supports_name_script,
@@ -56,9 +58,13 @@ def test_tokenizer_preserves_order_and_encodes_every_utf8_byte() -> None:
 
 
 def test_tokenizer_truncates_content_without_dropping_end_boundary() -> None:
-    encoded = ByteTokenizer(max_bytes=5).encode(["abcdef"])
+    tokenizer = ByteTokenizer(max_bytes=5)
+    encoded = tokenizer.encode(["abcdef"])
 
     assert encoded.tolist() == [[1, ord("a") + 3, ord("b") + 3, ord("c") + 3, 2]]
+    assert tokenizer.max_content_bytes == 3
+    assert tokenizer.normalized_utf8_length("éé") == 4
+    assert tokenizer.truncates("éé")
 
 
 def test_tokenizer_rejects_impossible_sequence_length() -> None:
@@ -90,14 +96,18 @@ def test_model_config_rejects_invalid_architecture(
         ({"slope": 0}, "slope"),
         ({"slope": float("inf")}, "slope"),
         ({"intercept": float("nan")}, "intercept"),
-        ({"source": ""}, "source"),
         ({"rows": 0}, "rows"),
     ],
 )
 def test_calibration_config_rejects_invalid_parameters(
     settings: dict[str, object], message: str
 ) -> None:
-    values = {"slope": 1.0, "intercept": 0.0, "source": "test", "rows": 1}
+    values = {
+        "slope": 1.0,
+        "intercept": 0.0,
+        "population": ReferencePopulation.SEPRI_HOUSEHOLD_HEADS,
+        "rows": 1,
+    }
     values.update(settings)
     with pytest.raises(ValueError, match=message):
         CalibrationConfig(**values)  # type: ignore[arg-type]
@@ -158,8 +168,14 @@ def test_metadata_loads_validated_inference_contract(tmp_path: Path) -> None:
   "calibration": {
     "slope": 0.8,
     "intercept": -0.2,
-    "source": "held-out survey names",
     "rows": 100
+  },
+  "provenance": {
+    "reference_population": "SEPRI household heads",
+    "label_source": "Bihar land caste/community labels and SEPRI household religion",
+    "calibration_population": "SEPRI household heads",
+    "training_seed": 7,
+    "normalization": "Unicode NFKC, casefold, collapse whitespace"
   },
   "abstention": {"confidence_threshold": 0.8}
 }
@@ -172,6 +188,8 @@ def test_metadata_loads_validated_inference_contract(tmp_path: Path) -> None:
     assert metadata.language == "eng"
     assert metadata.architecture.max_bytes == 64
     assert metadata.calibration.slope == 0.8
+    assert metadata.calibration.population is ReferencePopulation.SEPRI_HOUSEHOLD_HEADS
+    assert metadata.provenance.label_source is LabelSource.LAND_CASTE_AND_SEPRI_RELIGION
 
 
 @pytest.mark.parametrize("threshold", [0.5, 1.0])
@@ -186,7 +204,14 @@ def test_metadata_rejects_invalid_abstention_threshold(
   "language": "eng",
   "supported_scripts": ["LATIN"],
   "architecture": {{}},
-  "calibration": {{"slope": 1, "intercept": 0, "source": "test", "rows": 1}},
+  "calibration": {{"slope": 1, "intercept": 0, "rows": 1}},
+  "provenance": {{
+    "reference_population": "SEPRI household heads",
+    "label_source": "Bihar land caste/community labels and SEPRI household religion",
+    "calibration_population": "SEPRI household heads",
+    "training_seed": 7,
+    "normalization": "Unicode NFKC, casefold, collapse whitespace"
+  }},
   "abstention": {{"confidence_threshold": {threshold}}}
 }}
 """,

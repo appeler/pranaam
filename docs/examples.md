@@ -2,18 +2,19 @@
 
 ## Add predictions to a DataFrame
 
-`pred_rel` returns rows in the same order as the input. Assign the prediction
-columns by position so duplicate names remain duplicate rows.
+`estimate_muslim_name_pattern` returns rows in the same order as the input.
+Assign the estimate columns by position so duplicate names remain duplicate
+rows.
 
 ```python
 import pandas as pd
 
-from pranaam import pred_rel
+from pranaam import estimate_muslim_name_pattern
 
 people = pd.DataFrame(
     {"name": ["Shah Rukh Khan", "Amitabh Bachchan", "Shah Rukh Khan"]}
 )
-predictions = pred_rel(people["name"], lang="eng")
+predictions = estimate_muslim_name_pattern(people["name"], lang="eng")
 people[["name_pattern_estimate", "muslim_score", "abstained"]] = predictions[
     ["name_pattern_estimate", "muslim_score", "abstained"]
 ].to_numpy()
@@ -24,7 +25,7 @@ people[["name_pattern_estimate", "muslim_score", "abstained"]] = predictions[
 ```python
 import pandas as pd
 
-from pranaam import pred_rel
+from pranaam import estimate_muslim_name_pattern
 
 people = pd.read_csv("people.csv")
 names = people["name"]
@@ -32,7 +33,7 @@ if not names.dropna().map(lambda value: isinstance(value, str)).all():
     raise TypeError("The name column contains a non-string value")
 
 valid = names.notna() & names.str.strip().ne("")
-predictions = pred_rel(names.loc[valid], lang="eng")
+predictions = estimate_muslim_name_pattern(names.loc[valid], lang="eng")
 columns = ["name_pattern_estimate", "muslim_score", "abstained"]
 people.loc[valid, columns] = predictions[
     columns
@@ -40,8 +41,9 @@ people.loc[valid, columns] = predictions[
 people.to_csv("people_with_predictions.csv", index=False)
 ```
 
-`pred_rel` requires every input to be a nonempty string. The CSV example keeps
-missing and blank names in the output with missing prediction values.
+`estimate_muslim_name_pattern` requires every input to be a nonempty string.
+The CSV example keeps missing and blank names in the output with missing
+estimate values.
 
 These estimates describe patterns learned from land and survey names. They do
 not verify any person's religion. Use them for aggregate research only,

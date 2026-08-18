@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+* Replace `pred_rel` with `estimate_muslim_name_pattern` and rename the model
+  cache refresh option to the truthful `refresh_pinned`/`--refresh-pinned`.
+* Abstain explicitly when normalized UTF-8 input exceeds the model byte limit.
+* Return typed reference-population, label-source, calibration-population, and
+  model provenance fields with every estimate.
+
 ## 0.7.0 - 2026-08-16
 
 * Introduce model v3, replacing the v1/v2 whole-word averaging architecture

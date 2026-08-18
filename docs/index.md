@@ -17,20 +17,21 @@ model_v3_audit
 ## Basic use
 
 ```python
-from pranaam import pred_rel
+from pranaam import estimate_muslim_name_pattern
 
-result = pred_rel(["Shah Rukh Khan", "Amitabh Bachchan"], lang="eng")
+result = estimate_muslim_name_pattern(["Shah Rukh Khan", "Amitabh Bachchan"], lang="eng")
 print(result)
 ```
 
 The result contains a calibrated 0-to-1 score, an associated pattern or
-abstention, script-support status, and immutable model provenance. Pranaam
-downloads checksum-verified PyTorch model files from a pinned
+abstention, explicit script and UTF-8 byte-limit support, the score's reference
+and calibration populations, its label source, and immutable model provenance.
+Pranaam downloads checksum-verified PyTorch model files from a pinned
 [Hugging Face release](https://huggingface.co/gojiberries/pranaam) on first use
 and stores them in the Hugging Face cache.
 
 ```python
-hindi = pred_rel(["शाहरुख खान", "अमिताभ बच्चन"], lang="hin")
+hindi = estimate_muslim_name_pattern(["शाहरुख खान", "अमिताभ बच्चन"], lang="hin")
 ```
 
 Use these estimates only for aggregate research with suitable validation. Do
