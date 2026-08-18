@@ -16,6 +16,7 @@ from .model_v3 import (
     ByteTokenizer,
     ModelArtifactMetadata,
     load_byte_classifier,
+    normalize_name,
     supports_name_script,
 )
 from .utils import MODEL_REVISION
@@ -61,22 +62,24 @@ class Naam(Base):
     _model_lock: ClassVar[RLock] = RLock()
 
     @classmethod
-    def pred_rel(
+    def estimate_muslim_name_pattern(
         cls,
         names: str | list[str] | pd.Series,
         lang: Literal["eng", "hin"] = "eng",
-        latest: bool = False,
+        refresh_pinned: bool = False,
     ) -> pd.DataFrame:
         """Return calibrated name-pattern estimates with abstention metadata.
 
         Args:
             names: One name, a list of names, or a pandas Series of names.
             lang: ``eng`` for the English model or ``hin`` for the Hindi model.
-            latest: Refresh the pinned model artifacts in the local Hub cache.
+            refresh_pinned: Reload and verify the immutable model artifacts.
+                Hub artifacts are redownloaded. Files under
+                ``PRANAAM_MODEL_DIR`` are reread without network access.
 
         Returns:
-            A data frame with calibrated scores, abstention and script status,
-            and immutable model provenance.
+            A data frame with calibrated scores, explicit script and byte-limit
+            support, abstention reasons, population scope, and model provenance.
 
         Raises:
             TypeError: If an input value is not a string.
@@ -104,14 +107,22 @@ class Naam(Base):
                 )
 
         try:
-            model = cls._model_for(lang, latest)
-            supported = np.array(
+            model = cls._model_for(lang, refresh_pinned)
+            script_supported = np.array(
                 [
                     supports_name_script(name, model.metadata.supported_scripts)
                     for name in name_list
                 ],
                 dtype=bool,
             )
+            normalized_utf8_bytes = np.array(
+                [len(normalize_name(name).encode("utf-8")) for name in name_list]
+            )
+            max_name_bytes = model.metadata.architecture.max_bytes - 2
+            input_truncated = np.array(
+                normalized_utf8_bytes > max_name_bytes, dtype=bool
+            )
+            supported = script_supported & ~input_truncated
             scores = np.full(len(name_list), np.nan, dtype=float)
             if np.any(supported):
                 supported_names = [
@@ -141,9 +152,13 @@ class Naam(Base):
             estimates[supported & (scores <= 1 - threshold)] = "not-muslim-associated"
             estimates[supported & (scores >= threshold)] = "muslim-associated"
             reasons: list[str | None] = []
-            for is_supported, is_uncertain in zip(supported, uncertain, strict=True):
-                if not is_supported:
+            for script_ok, was_truncated, is_uncertain in zip(
+                script_supported, input_truncated, uncertain, strict=True
+            ):
+                if not script_ok:
                     reasons.append("unsupported-script")
+                elif was_truncated:
+                    reasons.append("input-truncated")
                 elif is_uncertain:
                     reasons.append("uncertain-score")
                 else:
@@ -155,9 +170,21 @@ class Naam(Base):
                     "muslim_score": pd.array(scores.tolist(), dtype="Float64"),
                     "abstained": abstained,
                     "abstention_reason": pd.array(reasons, dtype="string"),
-                    "script_supported": supported,
+                    "script_supported": script_supported,
+                    "normalized_utf8_bytes": normalized_utf8_bytes,
+                    "input_truncated": input_truncated,
+                    "reference_population": (
+                        model.metadata.provenance.reference_population.value
+                    ),
+                    "label_source": model.metadata.provenance.label_source.value,
+                    "calibration_population": (
+                        model.metadata.calibration.population.value
+                    ),
+                    "model_language": model.metadata.language,
+                    "model_metadata_schema": model.metadata.schema_version,
                     "model_version": model.metadata.model_version,
                     "model_revision": MODEL_REVISION,
+                    "model_max_name_bytes": max_name_bytes,
                 }
             )
         except Exception as exc:
@@ -166,24 +193,26 @@ class Naam(Base):
 
     @classmethod
     def _model_for(
-        cls, lang: Literal["eng", "hin"], latest: bool = False
+        cls, lang: Literal["eng", "hin"], refresh_pinned: bool = False
     ) -> _LanguageModel:
         """Return the cached, language-specific model bundle."""
         with cls._model_lock:
-            if latest or lang not in cls._models:
-                cls._models[lang] = cls._load_model(lang, latest)
+            if refresh_pinned or lang not in cls._models:
+                cls._models[lang] = cls._load_model(lang, refresh_pinned)
             return cls._models[lang]
 
     @classmethod
     def _load_model(
-        cls, lang: Literal["eng", "hin"], latest: bool = False
+        cls, lang: Literal["eng", "hin"], refresh_pinned: bool = False
     ) -> _LanguageModel:
         """Load and validate one language's tokenizer and classifier."""
         try:
             weights_path = cls.load_model_data(
-                f"{lang}/model.safetensors", latest=latest
+                f"{lang}/model.safetensors", refresh_pinned=refresh_pinned
             )
-            metadata_path = cls.load_model_data(f"{lang}/metadata.json", latest=latest)
+            metadata_path = cls.load_model_data(
+                f"{lang}/metadata.json", refresh_pinned=refresh_pinned
+            )
             metadata = ModelArtifactMetadata.from_file(metadata_path)
             if metadata.language != lang:
                 raise ValueError(

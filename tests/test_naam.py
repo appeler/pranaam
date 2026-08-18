@@ -13,7 +13,10 @@ import torch
 from pranaam.model_v3 import (
     ByteModelConfig,
     CalibrationConfig,
+    LabelSource,
     ModelArtifactMetadata,
+    ModelProvenance,
+    ReferencePopulation,
 )
 from pranaam.naam import Naam, _LanguageModel, is_english
 from pranaam.utils import MODEL_REVISION
@@ -23,6 +26,7 @@ def metadata(
     language: str = "eng", scripts: tuple[str, ...] = ("LATIN",)
 ) -> ModelArtifactMetadata:
     return ModelArtifactMetadata(
+        schema_version=2,
         model_version="3.0",
         language=language,
         supported_scripts=scripts,
@@ -31,8 +35,26 @@ def metadata(
         calibration=CalibrationConfig(
             slope=1,
             intercept=0,
-            source="test",
+            population=(
+                ReferencePopulation.SEPRI_HOUSEHOLD_HEADS
+                if language == "eng"
+                else ReferencePopulation.BIHAR_LAND_RECORD_NAMES
+            ),
             rows=10,
+        ),
+        provenance=ModelProvenance(
+            reference_population=(
+                ReferencePopulation.SEPRI_HOUSEHOLD_HEADS
+                if language == "eng"
+                else ReferencePopulation.BIHAR_LAND_RECORD_NAMES
+            ),
+            label_source=(
+                LabelSource.LAND_CASTE_AND_SEPRI_RELIGION
+                if language == "eng"
+                else LabelSource.LAND_CASTE
+            ),
+            training_seed=7,
+            normalization="Unicode NFKC, casefold, collapse whitespace",
         ),
     )
 
@@ -94,7 +116,7 @@ def test_single_string_input(mock_model_for: Mock) -> None:
     model.predict.return_value = np.array([0.8])
     mock_model_for.return_value = model
 
-    result = Naam.pred_rel("Test Name")
+    result = Naam.estimate_muslim_name_pattern("Test Name")
 
     assert result.to_dict(orient="records") == [
         {
@@ -104,8 +126,18 @@ def test_single_string_input(mock_model_for: Mock) -> None:
             "abstained": False,
             "abstention_reason": None,
             "script_supported": True,
+            "normalized_utf8_bytes": 9,
+            "input_truncated": False,
+            "reference_population": "SEPRI household heads",
+            "label_source": (
+                "Bihar land caste/community labels and SEPRI household religion"
+            ),
+            "calibration_population": "SEPRI household heads",
+            "model_language": "eng",
+            "model_metadata_schema": 2,
             "model_version": "3.0",
             "model_revision": MODEL_REVISION,
+            "model_max_name_bytes": 126,
         }
     ]
     model.predict.assert_called_once_with(["Test Name"])
@@ -120,8 +152,8 @@ def test_list_and_series_inputs(mock_model_for: Mock) -> None:
     mock_model_for.return_value = model
 
     names = ["Name One", "Name Two"]
-    list_result = Naam.pred_rel(names)
-    series_result = Naam.pred_rel(pd.Series(names))
+    list_result = Naam.estimate_muslim_name_pattern(names)
+    series_result = Naam.estimate_muslim_name_pattern(pd.Series(names))
 
     assert list(list_result["name"]) == names
     assert list(series_result["name"]) == names
@@ -138,7 +170,7 @@ def test_uncertain_and_unsupported_names_abstain(mock_model_for: Mock) -> None:
     model.predict.return_value = np.array([0.5])
     mock_model_for.return_value = model
 
-    result = Naam.pred_rel(["Shared Name", "محمد خان"])
+    result = Naam.estimate_muslim_name_pattern(["Shared Name", "محمد خان"])
 
     assert result["name_pattern_estimate"].tolist() == ["uncertain", "uncertain"]
     assert result["abstained"].tolist() == [True, True]
@@ -152,24 +184,41 @@ def test_uncertain_and_unsupported_names_abstain(mock_model_for: Mock) -> None:
     model.predict.assert_called_once_with(["Shared Name"])
 
 
+@patch.object(Naam, "_model_for")
+def test_utf8_byte_truncation_is_an_explicit_abstention(mock_model_for: Mock) -> None:
+    model = Mock()
+    model.metadata = metadata()
+    mock_model_for.return_value = model
+    name = "é" * 64
+
+    result = Naam.estimate_muslim_name_pattern(name)
+
+    assert result.iloc[0]["normalized_utf8_bytes"] == 128
+    assert result.iloc[0]["input_truncated"]
+    assert result.iloc[0]["abstained"]
+    assert result.iloc[0]["abstention_reason"] == "input-truncated"
+    assert pd.isna(result.iloc[0]["muslim_score"])
+    model.predict.assert_not_called()
+
+
 @pytest.mark.parametrize("names", [[], "", "   "])
 def test_empty_inputs_are_rejected(names: object) -> None:
     """Empty collections, strings, and whitespace fail before model loading."""
     with pytest.raises(ValueError, match="empty"):
-        Naam.pred_rel(names)  # type: ignore[arg-type]
+        Naam.estimate_muslim_name_pattern(names)  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize("names", [["Valid", None], pd.Series(["Valid", 1])])
 def test_nonstring_values_are_rejected(names: object) -> None:
     """Mixed collections report the offending input position."""
     with pytest.raises(TypeError, match="index 1 must be a string"):
-        Naam.pred_rel(names)  # type: ignore[arg-type]
+        Naam.estimate_muslim_name_pattern(names)  # type: ignore[arg-type]
 
 
 def test_invalid_language_is_rejected() -> None:
     """Only published language models can be requested."""
     with pytest.raises(ValueError, match="Unsupported language"):
-        Naam.pred_rel("Test", lang="fra")  # type: ignore[arg-type]
+        Naam.estimate_muslim_name_pattern("Test", lang="fra")  # type: ignore[arg-type]
 
 
 @patch.object(Naam, "_model_for")
@@ -192,7 +241,7 @@ def test_invalid_model_probabilities_fail(
     mock_model_for.return_value = model
 
     with pytest.raises(RuntimeError, match=message):
-        Naam.pred_rel(["Test"])
+        Naam.estimate_muslim_name_pattern(["Test"])
 
 
 @patch.object(Naam, "load_model_data")
@@ -212,11 +261,11 @@ def test_load_model_assembles_verified_bundle(
     mock_load_classifier.return_value = classifier
     mock_metadata_from_file.return_value = model_metadata
 
-    bundle = Naam._load_model("eng", latest=True)
+    bundle = Naam._load_model("eng", refresh_pinned=True)
 
     assert mock_load_data.call_args_list == [
-        call("eng/model.safetensors", latest=True),
-        call("eng/metadata.json", latest=True),
+        call("eng/model.safetensors", refresh_pinned=True),
+        call("eng/metadata.json", refresh_pinned=True),
     ]
     mock_metadata_from_file.assert_called_once_with(metadata_path)
     mock_load_classifier.assert_called_once_with(weights, model_metadata.architecture)
@@ -250,7 +299,7 @@ def test_models_are_cached_by_language(mock_load_model: Mock) -> None:
 
 
 @patch.object(Naam, "_load_model")
-def test_latest_replaces_only_requested_language(mock_load_model: Mock) -> None:
+def test_refresh_pinned_replaces_only_requested_language(mock_load_model: Mock) -> None:
     """Refreshing English does not evict an already loaded Hindi model."""
     old_english = Mock()
     hindi = Mock()
@@ -258,7 +307,7 @@ def test_latest_replaces_only_requested_language(mock_load_model: Mock) -> None:
     Naam._models.update(eng=old_english, hin=hindi)
     mock_load_model.return_value = new_english
 
-    assert Naam._model_for("eng", latest=True) is new_english
+    assert Naam._model_for("eng", refresh_pinned=True) is new_english
     assert Naam._model_for("hin") is hindi
     mock_load_model.assert_called_once_with("eng", True)
 
@@ -270,7 +319,7 @@ def test_concurrent_requests_load_one_shared_model(mock_load_model: Mock) -> Non
     release_load = Event()
     english_model = Mock()
 
-    def load_model(lang: str, latest: bool) -> Mock:
+    def load_model(lang: str, refresh_pinned: bool) -> Mock:
         loading.set()
         assert release_load.wait(timeout=2)
         return english_model
@@ -307,7 +356,7 @@ def test_concurrent_languages_keep_their_predictions(
     hindi_model.predict.return_value = np.array([0.1])
     hindi_model.metadata = metadata("hin", ("DEVANAGARI",))
 
-    def load_model(lang: str, latest: bool) -> Mock:
+    def load_model(lang: str, refresh_pinned: bool) -> Mock:
         if lang == "hin":
             hindi_loaded.set()
             return hindi_model
@@ -315,9 +364,13 @@ def test_concurrent_languages_keep_their_predictions(
 
     mock_load_model.side_effect = load_model
     with ThreadPoolExecutor(max_workers=2) as executor:
-        english_future = executor.submit(Naam.pred_rel, ["Shah"], "eng")
+        english_future = executor.submit(
+            Naam.estimate_muslim_name_pattern, ["Shah"], "eng"
+        )
         assert english_predicting.wait(timeout=2)
-        hindi_future = executor.submit(Naam.pred_rel, ["अमिताभ"], "hin")
+        hindi_future = executor.submit(
+            Naam.estimate_muslim_name_pattern, ["अमिताभ"], "hin"
+        )
         english_result = english_future.result(timeout=2)
         hindi_result = hindi_future.result(timeout=2)
 
@@ -334,4 +387,4 @@ def test_prediction_error_preserves_cause(mock_model_for: Mock) -> None:
     mock_model_for.return_value = model
 
     with pytest.raises(RuntimeError, match="Prediction failed: bad tensor"):
-        Naam.pred_rel(["Test"])
+        Naam.estimate_muslim_name_pattern(["Test"])

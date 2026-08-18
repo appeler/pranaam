@@ -1,13 +1,15 @@
 """Tests for deterministic v3 training and evaluation helpers."""
 
 import argparse
+from pathlib import Path
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pandas as pd
 import pytest
 import torch
 
-from pranaam.model_v3 import ByteModelConfig
+from pranaam.model_v3 import CURRENT_METADATA_SCHEMA_VERSION, ByteModelConfig
 from training.train_v3 import (
     _sigmoid,
     binary_log_loss,
@@ -15,6 +17,7 @@ from training.train_v3 import (
     confidence_threshold,
     fit_platt_scaler,
     limit_training_rows,
+    run_training,
     stable_bucket,
     survey_weight,
     train_model,
@@ -130,3 +133,56 @@ def test_train_model_enables_deterministic_algorithms() -> None:
         assert not torch.backends.cudnn.benchmark
     finally:
         torch.use_deterministic_algorithms(previous)
+
+
+def test_training_writes_current_metadata_contract(tmp_path: Path) -> None:
+    frame = pd.DataFrame({"name": ["asha", "ali"], "label": [0.0, 1.0]})
+    splits = {
+        name: frame.copy() for name in ("train", "validation", "calibration", "test")
+    }
+    model = Mock()
+    model.state_dict.return_value = {}
+    args = argparse.Namespace(
+        language="eng",
+        output_dir=tmp_path,
+        land_dir=Path("land"),
+        reds_dir=Path("reds"),
+        survey_weight=8.0,
+        max_train_rows=None,
+        seed=7,
+        max_bytes=16,
+        embedding_dim=4,
+        hidden_dim=4,
+        output_dim=4,
+        dropout=0.0,
+        device="cpu",
+        epochs=1,
+        batch_size=2,
+        learning_rate=0.001,
+        confidence=0.8,
+    )
+
+    with (
+        patch("training.train_v3.prepare_splits", return_value=splits),
+        patch("training.train_v3.train_model", return_value=(model, [])),
+        patch(
+            "training.train_v3.evaluate_logits",
+            side_effect=[np.array([-1.0, 1.0]), np.array([-1.0, 1.0])],
+        ),
+        patch("training.train_v3.fit_platt_scaler", return_value=(1.0, 0.0)),
+        patch("training.train_v3.save_file"),
+        patch("training.train_v3._write_json") as write_json,
+    ):
+        run_training(args)
+
+    metadata = write_json.call_args_list[0].args[1]
+    assert metadata["schema_version"] == CURRENT_METADATA_SCHEMA_VERSION == 2
+    assert metadata["provenance"] == {
+        "reference_population": "SEPRI household heads",
+        "label_source": (
+            "Bihar land caste/community labels and SEPRI household religion"
+        ),
+        "calibration_population": "SEPRI household heads",
+        "training_seed": 7,
+        "normalization": "Unicode NFKC, casefold, collapse whitespace",
+    }

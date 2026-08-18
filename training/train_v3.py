@@ -18,9 +18,12 @@ import torch
 from safetensors.torch import save_file
 
 from pranaam.model_v3 import (
+    CURRENT_METADATA_SCHEMA_VERSION,
     ByteModelConfig,
     ByteNameClassifier,
     ByteTokenizer,
+    LabelSource,
+    ReferencePopulation,
     normalize_name,
 )
 
@@ -547,13 +550,14 @@ def run_training(args: argparse.Namespace) -> None:
 
     model.to("cpu")
     save_file(model.state_dict(), output_dir / "model.safetensors")
-    calibration_source = (
-        "SEPRI household heads, stable name-hash calibration split"
-        if language == "eng" and args.survey_weight > 0
-        else "Bihar land caste labels, stable name-hash calibration split"
-    )
+    if language == "eng" and args.survey_weight > 0:
+        reference_population = ReferencePopulation.SEPRI_HOUSEHOLD_HEADS
+        label_source = LabelSource.LAND_CASTE_AND_SEPRI_RELIGION
+    else:
+        reference_population = ReferencePopulation.BIHAR_LAND_RECORD_NAMES
+        label_source = LabelSource.LAND_CASTE
     metadata: dict[str, Any] = {
-        "schema_version": 1,
+        "schema_version": CURRENT_METADATA_SCHEMA_VERSION,
         "model_version": "3.0",
         "language": language,
         "supported_scripts": ["LATIN" if language == "eng" else "DEVANAGARI"],
@@ -562,8 +566,14 @@ def run_training(args: argparse.Namespace) -> None:
         "calibration": {
             "slope": slope,
             "intercept": intercept,
-            "source": calibration_source,
             "rows": len(splits["calibration"]),
+        },
+        "provenance": {
+            "reference_population": reference_population.value,
+            "label_source": label_source.value,
+            "calibration_population": reference_population.value,
+            "training_seed": args.seed,
+            "normalization": "Unicode NFKC, casefold, collapse whitespace",
         },
         "abstention": {"confidence_threshold": args.confidence},
         "training": {

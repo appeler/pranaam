@@ -17,10 +17,10 @@ def test_load_model_data_returns_downloaded_path(mock_download: Mock) -> None:
 
 
 @patch("pranaam.base.download_model_file")
-def test_latest_forces_cache_refresh(mock_download: Mock) -> None:
+def test_refresh_pinned_forces_cache_refresh(mock_download: Mock) -> None:
     """The public refresh flag reaches the Hub download layer."""
     mock_download.return_value = Path("/cache/model")
 
-    Base.load_model_data("hin/model.safetensors", latest=True)
+    Base.load_model_data("hin/model.safetensors", refresh_pinned=True)
 
     mock_download.assert_called_once_with("hin/model.safetensors", force_download=True)

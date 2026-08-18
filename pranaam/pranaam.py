@@ -8,7 +8,7 @@ from .naam import Naam
 
 logger = get_logger()
 
-pred_rel = Naam.pred_rel
+estimate_muslim_name_pattern = Naam.estimate_muslim_name_pattern
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -27,7 +27,7 @@ def main(argv: list[str] | None = None) -> int:
         argv = sys.argv[1:]
 
     parser = argparse.ArgumentParser(
-        description="Estimate patterns associated with a name",
+        description="Estimate Muslim-associated patterns in a name",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("--input", required=True, help="Name to analyze")
@@ -35,12 +35,18 @@ def main(argv: list[str] | None = None) -> int:
         "--lang", default="eng", choices=["eng", "hin"], help="Language of input name"
     )
     parser.add_argument(
-        "--latest", action="store_true", help="Download latest model version"
+        "--refresh-pinned",
+        action="store_true",
+        help="Reload and verify the immutable pinned model artifacts",
     )
 
     try:
         args = parser.parse_args(argv)
-        result = pred_rel(args.input, lang=args.lang, latest=args.latest)
+        result = estimate_muslim_name_pattern(
+            args.input,
+            lang=args.lang,
+            refresh_pinned=args.refresh_pinned,
+        )
         print(result.to_string(index=False))
         return 0
 

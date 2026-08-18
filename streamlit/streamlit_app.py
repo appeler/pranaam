@@ -42,15 +42,23 @@ def predict_dataframe(
     if names.empty:
         raise ValueError(f"Column {name_column!r} has no names to predict")
 
-    predictions = pranaam.pred_rel(names.tolist(), lang=lang)
+    predictions = pranaam.estimate_muslim_name_pattern(names.tolist(), lang=lang)
     dtypes = {
         "name_pattern_estimate": "string",
         "muslim_score": "Float64",
         "abstained": "boolean",
         "abstention_reason": "string",
         "script_supported": "boolean",
+        "normalized_utf8_bytes": "Int64",
+        "input_truncated": "boolean",
+        "reference_population": "string",
+        "label_source": "string",
+        "calibration_population": "string",
+        "model_language": "string",
+        "model_metadata_schema": "Int64",
         "model_version": "string",
         "model_revision": "string",
+        "model_max_name_bytes": "Int64",
     }
     for column, dtype in dtypes.items():
         result[column] = pd.Series(pd.NA, index=result.index, dtype=dtype)
@@ -72,13 +80,14 @@ def render_summary(result: pd.DataFrame) -> None:
 
 def app() -> None:
     """Render the Pranaam Streamlit interface."""
-    st.title("🔮 Pranaam: name-pattern classification")
+    st.title("🔮 Pranaam: Muslim name-pattern estimates")
 
     with st.sidebar:
         st.header("About")
         st.write(
-            "Pranaam estimates patterns in names using calibrated PyTorch "
-            "models trained on Bihar land and SEPRI survey data."
+            "The English model is calibrated against SEPRI household-head "
+            "labels. The Hindi model is calibrated against a held-out split "
+            "of Bihar land-record labels."
         )
         st.write("See the model card for split-specific evaluation results.")
         st.write("[GitHub Repository](https://github.com/appeler/pranaam)")
@@ -88,8 +97,8 @@ def app() -> None:
     st.write(
         """
     This app estimates whether a name follows patterns labeled **Muslim** or
-    **not-Muslim** in the training data. The models were trained on about 4
-    million unique records derived from 35,626 villages.
+    **not-Muslim** in the selected model's reference data. Results identify
+    that reference population and the source of its labels.
     """
     )
     st.warning(
@@ -132,7 +141,7 @@ def app() -> None:
 
                 with st.spinner("Estimating name patterns..."):
                     try:
-                        result = pranaam.pred_rel(names, lang=lang)
+                        result = pranaam.estimate_muslim_name_pattern(names, lang=lang)
 
                         st.subheader("Results")
                         st.dataframe(result, use_container_width=True)

@@ -18,8 +18,16 @@ OUTPUT_COLUMNS = [
     "abstained",
     "abstention_reason",
     "script_supported",
+    "normalized_utf8_bytes",
+    "input_truncated",
+    "reference_population",
+    "label_source",
+    "calibration_population",
+    "model_language",
+    "model_metadata_schema",
     "model_version",
     "model_revision",
+    "model_max_name_bytes",
 ]
 
 
@@ -48,7 +56,7 @@ class TestRealModelDownloadAndPrediction:
         ]
 
         # This will download models if not cached
-        result = pranaam.pred_rel(test_names, lang="eng")
+        result = pranaam.estimate_muslim_name_pattern(test_names, lang="eng")
 
         # Verify DataFrame structure
         assert isinstance(result, pd.DataFrame)
@@ -70,6 +78,7 @@ class TestRealModelDownloadAndPrediction:
 
         assert all(0 <= score <= 1 for score in result["muslim_score"])
         assert result["script_supported"].all()
+        assert result["model_metadata_schema"].eq(1).all()
 
         # Verify expected patterns (these are actual predictions, not mocks)
         khan_results = result[result["name"].str.contains("Khan")]
@@ -94,7 +103,7 @@ class TestRealModelDownloadAndPrediction:
         ]
 
         # This will download Hindi models if not cached
-        result = pranaam.pred_rel(test_names, lang="hin")
+        result = pranaam.estimate_muslim_name_pattern(test_names, lang="hin")
 
         # Verify DataFrame structure
         assert isinstance(result, pd.DataFrame)
@@ -116,16 +125,17 @@ class TestRealModelDownloadAndPrediction:
 
         assert all(0 <= score <= 1 for score in result["muslim_score"])
         assert result["script_supported"].all()
+        assert result["model_metadata_schema"].eq(1).all()
 
     @pytest.mark.integration
     def test_model_caching_behavior(self) -> None:
         """Test that models are properly cached after first download."""
         # First prediction - should trigger download
-        result1 = pranaam.pred_rel("Shah Rukh Khan", lang="eng")
+        result1 = pranaam.estimate_muslim_name_pattern("Shah Rukh Khan", lang="eng")
         assert "eng" in Naam._models
 
         # Second prediction - should use cached model
-        result2 = pranaam.pred_rel("Amitabh Bachchan", lang="eng")
+        result2 = pranaam.estimate_muslim_name_pattern("Amitabh Bachchan", lang="eng")
         assert list(Naam._models) == ["eng"]
 
         # Results should be consistent
@@ -135,15 +145,15 @@ class TestRealModelDownloadAndPrediction:
     def test_language_switching(self) -> None:
         """Test switching between English and Hindi models."""
         # Start with English
-        eng_result = pranaam.pred_rel("Shah Rukh Khan", lang="eng")
+        eng_result = pranaam.estimate_muslim_name_pattern("Shah Rukh Khan", lang="eng")
         assert set(Naam._models) == {"eng"}
 
         # Switch to Hindi - should reload model
-        hin_result = pranaam.pred_rel("शाहरुख खान", lang="hin")
+        hin_result = pranaam.estimate_muslim_name_pattern("शाहरुख खान", lang="hin")
         assert set(Naam._models) == {"eng", "hin"}
 
         # Switch back to English - should reload model again
-        eng_result2 = pranaam.pred_rel("Salman Khan", lang="eng")
+        eng_result2 = pranaam.estimate_muslim_name_pattern("Salman Khan", lang="eng")
         assert set(Naam._models) == {"eng", "hin"}
 
         # All results should have same structure
@@ -162,7 +172,7 @@ class TestRealModelDownloadAndPrediction:
         )
 
         # Use pandas Series as input
-        result = pranaam.pred_rel(df["actor_name"], lang="eng")
+        result = pranaam.estimate_muslim_name_pattern(df["actor_name"], lang="eng")
 
         # Verify integration
         assert len(result) == len(df)
@@ -204,7 +214,7 @@ class TestRealModelDownloadAndPrediction:
         ]
 
         start_time = time.time()
-        result = pranaam.pred_rel(names, lang="eng")
+        result = pranaam.estimate_muslim_name_pattern(names, lang="eng")
         end_time = time.time()
 
         processing_time = end_time - start_time
@@ -222,15 +232,15 @@ class TestRealModelDownloadAndPrediction:
         """Test error handling in real scenarios."""
         # Test with empty input
         with pytest.raises(ValueError, match="empty"):
-            pranaam.pred_rel("", lang="eng")
+            pranaam.estimate_muslim_name_pattern("", lang="eng")
 
         # Test with invalid language
         with pytest.raises(ValueError, match="Unsupported language"):
-            pranaam.pred_rel("Test Name", lang="invalid")  # type: ignore[arg-type]
+            pranaam.estimate_muslim_name_pattern("Test Name", lang="invalid")  # type: ignore[arg-type]
 
         # Test with None input
         with pytest.raises((ValueError, TypeError)):
-            pranaam.pred_rel(None, lang="eng")  # type: ignore[arg-type]
+            pranaam.estimate_muslim_name_pattern(None, lang="eng")  # type: ignore[arg-type]
 
 
 class TestRealWorldScenarios:
@@ -248,7 +258,7 @@ class TestRealWorldScenarios:
             "Raj Patel",  # Hindu
         ]
 
-        result = pranaam.pred_rel(mixed_names, lang="eng")
+        result = pranaam.estimate_muslim_name_pattern(mixed_names, lang="eng")
 
         # Verify structure
         assert len(result) == len(mixed_names)
@@ -265,7 +275,7 @@ class TestRealWorldScenarios:
             "Ram Singh",  # Hindu name
         ]
 
-        result = pranaam.pred_rel(edge_cases, lang="eng")
+        result = pranaam.estimate_muslim_name_pattern(edge_cases, lang="eng")
 
         assert len(result) == len(edge_cases)
 

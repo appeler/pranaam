@@ -9,7 +9,7 @@ python -m pip install pranaam
 
 PyTorch, safetensors, Hugging Face Hub support, and the other runtime
 dependencies are installed with the package. The first prediction downloads
-only the requested language's weights and vocabulary from
+only the requested language's `safetensors` weights and inference metadata from
 [`gojiberries/pranaam`](https://huggingface.co/gojiberries/pranaam) at an
 immutable revision. Pranaam verifies every file against a pinned SHA-256 digest
 before loading it from the Hugging Face cache.
@@ -44,11 +44,21 @@ the published repository layout:
 
 ```text
 eng/model.safetensors
-eng/vocabulary.txt
+eng/metadata.json
 hin/model.safetensors
-hin/vocabulary.txt
+hin/metadata.json
 ```
 
 Local mirror files must match the same release checksums. A missing, corrupt,
 or unavailable artifact causes prediction to fail without replacing an already
-loaded language model.
+loaded language model. `refresh_pinned=True` and `--refresh-pinned` reread and
+verify these local files; they never download into or replace the mirror.
+
+## Metadata schemas
+
+New training runs write metadata schema 2. It stores reference population,
+label source, calibration population, training seed, and normalization as
+typed provenance fields. The shipped immutable v3 artifacts use schema 1.
+Pranaam accepts schema 1 only through an internal adapter for that published v3
+shape, then exposes the same typed provenance as schema 2. Other schema 1
+documents fail validation.

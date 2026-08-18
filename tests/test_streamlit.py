@@ -38,19 +38,27 @@ def test_manual_app_flow_preserves_mixed_input_and_exposes_download(
             "abstained": [False, False, False],
             "abstention_reason": [None, None, None],
             "script_supported": [True, True, True],
+            "normalized_utf8_bytes": [14, 17, 14],
+            "input_truncated": [False, False, False],
+            "reference_population": ["SEPRI household heads"] * 3,
+            "label_source": ["test labels"] * 3,
+            "calibration_population": ["SEPRI household heads"] * 3,
+            "model_language": ["eng"] * 3,
+            "model_metadata_schema": [2, 2, 2],
             "model_version": ["3.0", "3.0", "3.0"],
             "model_revision": ["revision", "revision", "revision"],
+            "model_max_name_bytes": [126, 126, 126],
         }
     )
     predict = Mock(return_value=prediction)
-    monkeypatch.setattr("pranaam.pred_rel", predict)
+    monkeypatch.setattr("pranaam.estimate_muslim_name_pattern", predict)
 
     app = AppTest.from_file(PROJECT_ROOT / "streamlit" / "streamlit_app.py").run()
     app.text_area[0].input("Shah Rukh Khan, Amitabh Bachchan\nShah Rukh Khan").run()
     app.button[0].click().run()
 
     assert not app.exception
-    assert app.title[0].value == "🔮 Pranaam: name-pattern classification"
+    assert app.title[0].value == "🔮 Pranaam: Muslim name-pattern estimates"
     assert "sensitive personal information" in app.warning[0].value
     pd.testing.assert_frame_equal(
         app.dataframe[0].value,
@@ -106,12 +114,20 @@ def test_predict_dataframe_preserves_duplicates_and_missing_rows(
             "abstained": [False, False],
             "abstention_reason": [pd.NA, pd.NA],
             "script_supported": [True, True],
+            "normalized_utf8_bytes": [4, 4],
+            "input_truncated": [False, False],
+            "reference_population": ["SEPRI household heads"] * 2,
+            "label_source": ["test labels"] * 2,
+            "calibration_population": ["SEPRI household heads"] * 2,
+            "model_language": ["eng"] * 2,
+            "model_metadata_schema": [2, 2],
             "model_version": ["3.0", "3.0"],
             "model_revision": ["revision", "revision"],
+            "model_max_name_bytes": [126, 126],
         }
     )
     predict = Mock(return_value=prediction)
-    monkeypatch.setattr(namespace["pranaam"], "pred_rel", predict)
+    monkeypatch.setattr(namespace["pranaam"], "estimate_muslim_name_pattern", predict)
     source = pd.DataFrame({"name": ["Asha", None, "Asha"], "value": [1, 2, 3]})
 
     result = namespace["predict_dataframe"](source, "name", "eng")

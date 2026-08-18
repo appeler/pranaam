@@ -118,6 +118,22 @@ def test_local_mirror_is_verified_without_hub(
     mock_download.assert_not_called()
 
 
+@patch("pranaam.utils.hf_hub_download")
+def test_refresh_rereads_local_mirror_without_downloading(
+    mock_download: Mock, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Refreshing a local mirror verifies its file in place."""
+    path = tmp_path / FILENAME
+    path.parent.mkdir(parents=True)
+    path.write_bytes(PAYLOAD)
+    monkeypatch.setenv("PRANAAM_MODEL_DIR", str(tmp_path))
+
+    with patch.dict("pranaam.utils.MODEL_SHA256", {FILENAME: DIGEST}, clear=True):
+        assert download_model_file(FILENAME, force_download=True) == path
+
+    mock_download.assert_not_called()
+
+
 def test_local_mirror_checksum_mismatch_fails(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

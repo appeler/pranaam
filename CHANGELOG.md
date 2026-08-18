@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+* Replace `pred_rel` with `estimate_muslim_name_pattern` and rename the model
+  cache refresh option to the truthful `refresh_pinned`/`--refresh-pinned`.
+* Abstain explicitly when normalized UTF-8 input exceeds the model byte limit.
+* Return typed reference-population, label-source, calibration-population, and
+  model provenance fields with every estimate.
+* Write model metadata schema 2 while retaining a strict reader adapter for the
+  immutable v3 schema 1 artifacts.
+* Define pinned refreshes for local mirrors as reread-and-verify operations;
+  local mirror files are never downloaded or replaced.
+
 ## 0.7.0 - 2026-08-16
 
 * Introduce model v3, replacing the v1/v2 whole-word averaging architecture
