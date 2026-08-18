@@ -15,7 +15,7 @@ people, or replace self-identified information.**
 
 Model v3 uses compact byte-level PyTorch models. Unlike the v1 and v2
 whole-word model, it retains local character order, represents every UTF-8
-input without an unknown-word token, does not average padded embeddings into
+byte without an unknown-word token, does not average padded embeddings into
 each representation, and learns spelling fragments that generalize to unseen names.
 
 The historical v1 model was trained on complete recorded name strings. Model

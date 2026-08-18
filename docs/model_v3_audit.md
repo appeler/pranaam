@@ -128,8 +128,8 @@ semantics.
 
 ## Plan
 
-1. Release the package as Pranaam 0.7.0 with model family 3.0. Preserve the
-   immutable Hugging Face revision and the paired audit report.
+1. Preserve the immutable Hugging Face revision and paired audit report
+   published with Pranaam 0.7.0 and model family 3.0.
 2. Freeze an external confirmatory benchmark before collecting labels. A
    stratified sample of electoral-roll names across states can test geography,
    script, word count, OCR quality, and land-corpus overlap. Annotation should
