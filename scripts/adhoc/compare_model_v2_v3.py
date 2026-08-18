@@ -37,6 +37,7 @@ from pranaam.model_v3 import (
 from training.train_v3 import (
     _sigmoid,
     evaluate_logits,
+    filter_names_within_byte_limit,
     fit_platt_scaler,
     load_land_names,
     prepare_splits,
@@ -227,6 +228,29 @@ def _validate_split_counts(
         raise ValueError("v3 metadata must include training split counts") from exc
 
 
+def _prepare_comparison_splits(
+    document: dict[str, Any],
+    metadata: ModelArtifactMetadata,
+    land_dir: Path,
+    reds_dir: Path,
+    survey_weight: float,
+) -> tuple[dict[str, pd.DataFrame], ByteTokenizer]:
+    """Reconstruct the exact splits supported by the candidate model."""
+    tokenizer = ByteTokenizer(metadata.architecture.max_bytes)
+    splits = prepare_splits(
+        land_dir,
+        reds_dir,
+        "eng",
+        survey_weight=survey_weight,
+    )
+    supported_splits = {
+        name: filter_names_within_byte_limit(frame, tokenizer)
+        for name, frame in splits.items()
+    }
+    _validate_split_counts(document, supported_splits)
+    return supported_splits, tokenizer
+
+
 def compare(args: argparse.Namespace) -> dict[str, Any]:
     """Execute the paired audit and return its aggregate report."""
     metadata_path = args.v3_dir / "metadata.json"
@@ -234,14 +258,16 @@ def compare(args: argparse.Namespace) -> dict[str, Any]:
     if not isinstance(document, dict):
         raise ValueError("v3 metadata must be a JSON object")
     metadata = ModelArtifactMetadata.from_file(metadata_path)
+    if metadata.model_version != "3.0" or metadata.language != "eng":
+        raise ValueError("Expected English model v3 metadata")
     survey_weight = _survey_weight(document)
-    splits = prepare_splits(
+    splits, v3_tokenizer = _prepare_comparison_splits(
+        document,
+        metadata,
         args.land_dir,
         args.reds_dir,
-        "eng",
-        survey_weight=survey_weight,
+        survey_weight,
     )
-    _validate_split_counts(document, splits)
     calibration = splits["calibration"].reset_index(drop=True)
     test = splits["test"].reset_index(drop=True)
 
@@ -262,15 +288,13 @@ def compare(args: argparse.Namespace) -> dict[str, Any]:
     v2_raw = _sigmoid(v2_test_logits)
     v2_calibrated = _sigmoid(v2_slope * v2_test_logits + v2_intercept)
 
-    if metadata.model_version != "3.0" or metadata.language != "eng":
-        raise ValueError("Expected English model v3 metadata")
     v3_model = load_byte_classifier(
         args.v3_dir / "model.safetensors",
         metadata.architecture,
     )
     v3_logits = evaluate_logits(
         v3_model,
-        ByteTokenizer(metadata.architecture.max_bytes),
+        v3_tokenizer,
         test,
         args.batch_size,
         torch.device("cpu"),

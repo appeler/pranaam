@@ -1,19 +1,15 @@
 [build-system]
-requires = ["hatchling", "uv-dynamic-versioning"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.12.5,<0.13"]
+build-backend = "uv_build"
 
 [project]
 name = "pranaam"
+version = "0.8.0"
 description = "Calibrated name-pattern estimates for aggregate research"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
-authors = [
-  { name = "Rajashekar Chintalapati", email = "rajshekar.ch@gmail.com" },
-  { name = "Aaditya Dar" },
-  { name = "Gaurav Sood", email = "gsood07@gmail.com" }
-]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
@@ -37,8 +33,6 @@ dependencies = [
   "safetensors>=0.5",
   "torch>=2.7",
 ]
-dynamic = ["version"]
-
 [project.optional-dependencies]
 streamlit = [
     "streamlit>=1.20",
@@ -68,7 +62,7 @@ docs = [
     "sphinx-copybutton",
 ]
 train = [
-    "pyarrow>=18",
+    "pyarrow>=18,<25",
 ]
 
 [project.urls]
@@ -78,6 +72,17 @@ train = [
 
 [project.scripts]
 pranaam = "pranaam.pranaam:main"
+
+[[project.authors]]
+name = "Rajashekar Chintalapati"
+email = "rajshekar.ch@gmail.com"
+
+[[project.authors]]
+name = "Aaditya Dar"
+
+[[project.authors]]
+name = "Gaurav Sood"
+email = "gsood07@gmail.com"
 
 [tool.pytest.ini_options]
 python_files = "test_*.py"
@@ -187,15 +192,19 @@ typeCheckingMode = "standard"
 [tool.preen]
 src_layout = false
 
-[tool.hatch.version]
-source = "uv-dynamic-versioning"
-
-[tool.hatch.build.targets.wheel]
-packages = ["pranaam"]
-
-[tool.hatch.build.targets.sdist]
-exclude = ["/.claude", "/CLAUDE.local.md"]
-
-[tool.uv-dynamic-versioning]
-vcs = "git"
-style = "pep440"
+[tool.uv.build-backend]
+module-name = "pranaam"
+module-root = ""
+source-include = [
+    "CHANGELOG.md",
+    "Citation.cff",
+    "Makefile",
+    "docs/**",
+    "model_training/**",
+    "scripts/**",
+    "streamlit/**",
+    "tests/**",
+    "training/**",
+    "uv.lock",
+]
+source-exclude = ["/docs/_build"]

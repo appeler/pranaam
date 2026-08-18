@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## 0.8.0 - 2026-08-17
+
 * Replace `pred_rel` with `estimate_muslim_name_pattern` and rename the model
   cache refresh option to the truthful `refresh_pinned`/`--refresh-pinned`.
 * Abstain explicitly when normalized UTF-8 input exceeds the model byte limit.
@@ -11,6 +13,13 @@
   immutable v3 schema 1 artifacts.
 * Define pinned refreshes for local mirrors as reread-and-verify operations;
   local mirror files are never downloaded or replaced.
+* Keep the training-only PyArrow dependency compatible with the current
+  Streamlit interface dependency.
+* Use the standard bounded uv build backend and explicit package version.
+* Exclude generated documentation output from source distributions.
+* Apply the serving byte limit to every training split and paired-audit
+  reconstruction before fitting, calibration, or evaluation, and record
+  excluded row counts.
 
 ## 0.7.0 - 2026-08-16
 
