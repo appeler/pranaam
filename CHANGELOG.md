@@ -15,6 +15,7 @@
   local mirror files are never downloaded or replaced.
 * Keep the training-only PyArrow dependency compatible with the current
   Streamlit interface dependency.
+* Use the standard bounded uv build backend and explicit package version.
 
 ## 0.7.0 - 2026-08-16
 

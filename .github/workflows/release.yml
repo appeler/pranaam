@@ -37,9 +37,8 @@ jobs:
   # here rather than in py-canon's reusable-release.
   publish:
     needs: release
-    # The version is derived from the tag, so anything built off a branch is a dev
-    # version (1.0.post3.dev0+abc1234). A PyPI upload cannot be withdrawn, so never
-    # publish a non-tag build, and make a manual run opt in explicitly.
+    # A PyPI upload cannot be withdrawn, so publish only a tag build and make a
+    # manual run opt in explicitly.
     if: >-
       startsWith(github.ref, 'refs/tags/') &&
       (github.event_name == 'push' || inputs.publish)
