@@ -8,7 +8,9 @@ from typing import ClassVar, Literal
 
 import numpy as np
 import pandas as pd
+from torch import nn
 
+from ._contract import ResultProvenance, metadata_columns, preserve_reserved_columns
 from .base import Base
 from .logging import get_logger
 from .model_v3 import (
@@ -23,11 +25,44 @@ from .utils import MODEL_REVISION
 logger = get_logger()
 
 PREDICTION_BATCH_SIZE = 1024
+SCORE_COLUMN = "muslim_score"
+
+_TARGET = "muslim-name-pattern"
+_INPUT_SCOPE = "full-name"
 
 
 def is_english(text: str) -> bool:
     """Return whether text contains only ASCII characters."""
     return text.isascii()
+
+
+def _calibrate(logits: np.ndarray, slope: float, intercept: float) -> np.ndarray:
+    """Apply the model's affine logit calibration and return probabilities."""
+    calibrated = slope * logits + intercept
+    scores = np.empty_like(calibrated, dtype=float)
+    positive = calibrated >= 0
+    scores[positive] = 1 / (1 + np.exp(-calibrated[positive]))
+    exponent = np.exp(calibrated[~positive])
+    scores[~positive] = exponent / (1 + exponent)
+    return scores
+
+
+def _shift_prior(
+    scores: np.ndarray, reference_prior: float, target_prior: float
+) -> np.ndarray:
+    """Reweight calibrated probabilities to a different base rate.
+
+    Multiplies the posterior odds by the ratio of target to reference prior
+    odds, which is the correct adjustment when only the class balance, and
+    not the class-conditional name distribution, differs between the two
+    populations.
+    """
+    ratio = (target_prior / (1 - target_prior)) * (
+        (1 - reference_prior) / reference_prior
+    )
+    with np.errstate(divide="ignore", invalid="ignore"):
+        odds = np.where(scores < 1, scores / (1 - scores), np.inf) * ratio
+    return np.where(np.isfinite(odds), odds / (1 + odds), 1.0)
 
 
 @dataclass(frozen=True)
@@ -36,22 +71,59 @@ class _LanguageModel:
     tokenizer: ByteTokenizer
     metadata: ModelArtifactMetadata
 
-    def predict(self, names: list[str]) -> np.ndarray:
+    def _logits(self, names: list[str]) -> np.ndarray:
         logits = []
         for start in range(0, len(names), PREDICTION_BATCH_SIZE):
             token_ids = self.tokenizer.encode(
                 names[start : start + PREDICTION_BATCH_SIZE]
             )
             logits.append(self.classifier.predict_logits(token_ids).cpu().numpy())
-        raw_logits = np.concatenate(logits, axis=0)
+        return np.concatenate(logits, axis=0)
+
+    def predict(self, names: list[str]) -> np.ndarray:
+        """Return calibrated Muslim-pattern probabilities."""
         calibration = self.metadata.calibration
-        calibrated_logits = calibration.slope * raw_logits + calibration.intercept
-        scores = np.empty_like(calibrated_logits, dtype=float)
-        positive = calibrated_logits >= 0
-        scores[positive] = 1 / (1 + np.exp(-calibrated_logits[positive]))
-        exponent = np.exp(calibrated_logits[~positive])
-        scores[~positive] = exponent / (1 + exponent)
-        return scores
+        return _calibrate(self._logits(names), calibration.slope, calibration.intercept)
+
+    def predict_monte_carlo(self, names: list[str], iterations: int) -> np.ndarray:
+        """Return calibrated probabilities from repeated dropout samples.
+
+        Dropout stays active during the forward pass, so each iteration
+        samples a different thinned network. The spread across iterations
+        describes the model's own instability, not sampling error in the
+        training data.
+        """
+        dropout_layers = [
+            module
+            for module in self.classifier.modules()
+            if isinstance(module, nn.Dropout)
+        ]
+        was_training = [layer.training for layer in dropout_layers]
+        for layer in dropout_layers:
+            layer.train()
+        try:
+            calibration = self.metadata.calibration
+            samples = np.stack(
+                [
+                    _calibrate(
+                        self._logits(names), calibration.slope, calibration.intercept
+                    )
+                    for _ in range(iterations)
+                ]
+            )
+        finally:
+            for layer, training in zip(dropout_layers, was_training, strict=True):
+                layer.train(training)
+        return samples
+
+
+@dataclass(frozen=True)
+class _ClassifiedName:
+    """One input name after normalization."""
+
+    text: str
+    script_supported: bool | None
+    reason: str | None
 
 
 class Naam(Base):
@@ -63,132 +135,212 @@ class Naam(Base):
     @classmethod
     def estimate_muslim_name_pattern(
         cls,
-        names: str | list[str] | pd.Series,
+        data: pd.DataFrame | pd.Series | list[str | None] | str,
+        name_column: str | None = None,
+        *,
         lang: Literal["eng", "hin"] = "eng",
+        prior: float | None = None,
+        uncertainty_level: float | None = None,
+        mc_iterations: int = 64,
         refresh_pinned: bool = False,
     ) -> pd.DataFrame:
-        """Return calibrated name-pattern estimates with abstention metadata.
+        """Estimate how far a name follows Muslim-associated naming patterns.
+
+        The score is a calibrated probability on a 0 to 1 scale. Pranaam does
+        not return a label: for a binary target the score carries the whole
+        distribution, and the cutoff that would turn it into a decision
+        depends on the caller's costs, not on this package.
 
         Args:
-            names: One name, a list of names, or a pandas Series of names.
+            data: DataFrame of inputs, or a name string, list, or Series.
+            name_column: Column holding names for DataFrame input.
             lang: ``eng`` for the English model or ``hin`` for the Hindi model.
+            prior: Share of the target population expected to carry
+                Muslim-associated names. When given, scores are reweighted
+                from the model's reference base rate to this one.
+            uncertainty_level: Central interval to report from Monte Carlo
+                dropout, such as ``0.9``. Omit for point estimates only.
+            mc_iterations: Dropout samples drawn when ``uncertainty_level``
+                is requested.
             refresh_pinned: Reload and verify the immutable model artifacts.
                 Hub artifacts are redownloaded. Files under
                 ``PRANAAM_MODEL_DIR`` are reread without network access.
 
         Returns:
-            A data frame with calibrated scores, explicit script and byte-limit
-            support, abstention reasons, population scope, and model provenance.
+            A copy of the input with the calibrated score, the contract's
+            metadata columns, and, when requested, Monte Carlo summaries.
 
         Raises:
-            TypeError: If an input value is not a string.
-            ValueError: If the language or input collection is invalid.
+            ValueError: If an argument is outside its documented domain.
             RuntimeError: If model loading or inference fails.
         """
         if lang not in ("eng", "hin"):
             raise ValueError(f"Unsupported language: {lang}. Use 'eng' or 'hin'")
+        if prior is not None and not 0 < prior < 1:
+            raise ValueError("prior must be between zero and one, exclusive")
+        if uncertainty_level is not None and not 0 < uncertainty_level < 1:
+            raise ValueError(
+                "uncertainty_level must be between zero and one, exclusive"
+            )
+        if uncertainty_level is not None and mc_iterations < 2:
+            raise ValueError("mc_iterations must be at least two")
 
-        if isinstance(names, str):
-            name_list = [names]
-        elif isinstance(names, pd.Series):
-            name_list = names.tolist()
-        else:
-            name_list = list(names)
-
-        if not name_list:
-            raise ValueError("Input names list cannot be empty")
-        for index, name in enumerate(name_list):
-            if not isinstance(name, str):
-                raise TypeError(f"Name at index {index} must be a string")
-            if not name.strip():
-                raise ValueError(
-                    f"Name at index {index} is empty or contains only whitespace"
-                )
-
+        frame, column = cls._prepare(data, name_column)
         try:
             model = cls._model_for(lang, refresh_pinned)
-            script_supported = np.array(
-                [
-                    supports_name_script(name, model.metadata.supported_scripts)
-                    for name in name_list
-                ],
-                dtype=bool,
-            )
-            normalized_utf8_bytes = np.array(
-                [model.tokenizer.normalized_utf8_length(name) for name in name_list]
-            )
-            max_name_bytes = model.tokenizer.max_content_bytes
-            input_truncated = np.array(
-                normalized_utf8_bytes > max_name_bytes, dtype=bool
-            )
-            supported = script_supported & ~input_truncated
-            scores = np.full(len(name_list), np.nan, dtype=float)
-            if np.any(supported):
-                supported_names = [
-                    name
-                    for name, is_supported in zip(name_list, supported, strict=True)
-                    if is_supported
-                ]
-                supported_scores = np.asarray(
-                    model.predict(supported_names), dtype=float
-                )
-                expected_shape = (len(supported_names),)
-                if supported_scores.shape != expected_shape:
-                    raise ValueError(
-                        f"Model output must have shape {expected_shape}, got "
-                        f"{supported_scores.shape}"
-                    )
-                if not np.all(np.isfinite(supported_scores)):
-                    raise ValueError("Model output contains non-finite scores")
-                if np.any((supported_scores < 0) | (supported_scores > 1)):
-                    raise ValueError("Model scores must be between zero and one")
-                scores[supported] = supported_scores
-
-            threshold = model.metadata.confidence_threshold
-            uncertain = supported & (scores > 1 - threshold) & (scores < threshold)
-            abstained = ~supported | uncertain
-            estimates = np.full(len(name_list), "uncertain", dtype=object)
-            estimates[supported & (scores <= 1 - threshold)] = "not-muslim-associated"
-            estimates[supported & (scores >= threshold)] = "muslim-associated"
-            reasons: list[str | None] = []
-            for script_ok, was_truncated, is_uncertain in zip(
-                script_supported, input_truncated, uncertain, strict=True
-            ):
-                if not script_ok:
-                    reasons.append("unsupported-script")
-                elif was_truncated:
-                    reasons.append("input-truncated")
-                elif is_uncertain:
-                    reasons.append("uncertain-score")
-                else:
-                    reasons.append(None)
-            return pd.DataFrame(
-                {
-                    "name": name_list,
-                    "name_pattern_estimate": estimates,
-                    "muslim_score": pd.array(scores.tolist(), dtype="Float64"),
-                    "abstained": abstained,
-                    "abstention_reason": pd.array(reasons, dtype="string"),
-                    "script_supported": script_supported,
-                    "normalized_utf8_bytes": normalized_utf8_bytes,
-                    "input_truncated": input_truncated,
-                    "reference_population": (
-                        model.metadata.provenance.reference_population.value
-                    ),
-                    "label_source": model.metadata.provenance.label_source.value,
-                    "calibration_population": (
-                        model.metadata.calibration.population.value
-                    ),
-                    "model_language": model.metadata.language,
-                    "model_metadata_schema": model.metadata.schema_version,
-                    "model_version": model.metadata.model_version,
-                    "model_revision": MODEL_REVISION,
-                    "model_max_name_bytes": max_name_bytes,
-                }
-            )
         except Exception as exc:
             logger.error("Prediction failed: %s", exc)
             raise RuntimeError(f"Prediction failed: {exc}") from exc
+
+        classified = [cls._classify(value, model) for value in frame[column].to_numpy()]
+        scored = [item.reason is None for item in classified]
+        rows = len(classified)
+        scores = np.full(rows, np.nan)
+        monte_carlo: np.ndarray | None = None
+        usable = [row for row, ok in enumerate(scored) if ok]
+        if usable:
+            names = [classified[row].text for row in usable]
+            try:
+                point = np.asarray(model.predict(names), dtype=float)
+                if point.shape != (len(names),):
+                    raise ValueError(
+                        f"Model output must have shape {(len(names),)}, "
+                        f"got {point.shape}"
+                    )
+                if not np.all(np.isfinite(point)):
+                    raise ValueError("Model output contains non-finite scores")
+                if np.any((point < 0) | (point > 1)):
+                    raise ValueError("Model scores must be between zero and one")
+                if uncertainty_level is not None:
+                    monte_carlo = np.full((mc_iterations, rows), np.nan)
+                    monte_carlo[:, usable] = model.predict_monte_carlo(
+                        names, mc_iterations
+                    )
+            except Exception as exc:
+                logger.error("Prediction failed: %s", exc)
+                raise RuntimeError(f"Prediction failed: {exc}") from exc
+            scores[usable] = point
+
+        reference_prior = model.metadata.reference_prior
+        if prior is not None:
+            if reference_prior is None:
+                raise ValueError(
+                    "this model artifact reports no reference base rate, so "
+                    "prior shifting has nothing to shift from"
+                )
+            scores = _shift_prior(scores, reference_prior, prior)
+            if monte_carlo is not None:
+                monte_carlo = _shift_prior(monte_carlo, reference_prior, prior)
+
+        values: dict[str, object] = {
+            SCORE_COLUMN: pd.array(scores.tolist(), dtype="Float64"),
+            "normalized_utf8_bytes": pd.array(
+                [
+                    model.tokenizer.normalized_utf8_length(item.text)
+                    if item.text
+                    else None
+                    for item in classified
+                ],
+                dtype="Int64",
+            ),
+            "model_max_name_bytes": pd.array(
+                [model.tokenizer.max_content_bytes] * rows, dtype="Int64"
+            ),
+            "model_language": pd.array(
+                [model.metadata.language] * rows, dtype="string"
+            ),
+            "model_metadata_schema": pd.array(
+                [model.metadata.schema_version] * rows, dtype="Int64"
+            ),
+            "label_source": pd.array(
+                [model.metadata.provenance.label_source.value] * rows, dtype="string"
+            ),
+            "reference_prior": pd.array([reference_prior] * rows, dtype="Float64"),
+            "target_prior": pd.array([prior] * rows, dtype="Float64"),
+        }
+        if monte_carlo is not None and uncertainty_level is not None:
+            tail = (1 - uncertainty_level) / 2
+            values.update(
+                {
+                    f"{SCORE_COLUMN}_mc_mean": pd.array(
+                        np.nanmean(monte_carlo, axis=0).tolist(), dtype="Float64"
+                    ),
+                    f"{SCORE_COLUMN}_mc_std": pd.array(
+                        np.nanstd(monte_carlo, axis=0, ddof=1).tolist(),
+                        dtype="Float64",
+                    ),
+                    f"{SCORE_COLUMN}_mc_lower": pd.array(
+                        np.nanquantile(monte_carlo, tail, axis=0).tolist(),
+                        dtype="Float64",
+                    ),
+                    f"{SCORE_COLUMN}_mc_upper": pd.array(
+                        np.nanquantile(monte_carlo, 1 - tail, axis=0).tolist(),
+                        dtype="Float64",
+                    ),
+                }
+            )
+
+        provenance = ResultProvenance(
+            target=_TARGET,
+            input_scope=_INPUT_SCOPE,
+            model_id=f"pranaam-byte-classifier-{lang}",
+            model_version=str(model.metadata.model_version),
+            model_revision=MODEL_REVISION,
+            reference_population=(model.metadata.provenance.reference_population.value),
+            calibration_status="platt-scaled",
+            calibration_reference=model.metadata.calibration.population.value,
+            uncertainty_method=(
+                "monte-carlo-dropout" if uncertainty_level is not None else None
+            ),
+            uncertainty_level=uncertainty_level,
+        )
+        metadata = metadata_columns(
+            provenance,
+            scored=scored,
+            script_supported=[item.script_supported for item in classified],
+            abstention_reasons=[item.reason for item in classified],
+        )
+        result = preserve_reserved_columns(frame, [*values, *metadata])
+        for name, column_values in {**values, **metadata}.items():
+            result[name] = column_values
+        return result
+
+    @classmethod
+    def _prepare(
+        cls,
+        data: pd.DataFrame | pd.Series | list[str | None] | str,
+        name_column: str | None,
+    ) -> tuple[pd.DataFrame, str]:
+        """Validate input and return the working frame and its name column."""
+        if isinstance(data, pd.DataFrame):
+            if name_column is None:
+                raise ValueError("name_column is required for DataFrame input")
+            if list(data.columns).count(name_column) != 1:
+                raise ValueError(
+                    f"name column {name_column!r} must appear exactly once"
+                )
+            return data, name_column
+        if isinstance(data, str):
+            return pd.DataFrame({"name": [data]}), "name"
+        if isinstance(data, pd.Series):
+            return data.to_frame(name="name"), "name"
+        if isinstance(data, list):
+            return pd.DataFrame({"name": data}), "name"
+        raise TypeError("data must be a DataFrame, Series, list, or string")
+
+    @classmethod
+    def _classify(cls, value: object, model: _LanguageModel) -> _ClassifiedName:
+        """Map one raw input to a usable name or an abstention reason."""
+        if not isinstance(value, str) or not value.strip():
+            return _ClassifiedName("", None, "missing-name")
+        text = value.strip()
+        if not any(character.isalpha() for character in text):
+            return _ClassifiedName("", None, "no-letters")
+        if not supports_name_script(text, model.metadata.supported_scripts):
+            return _ClassifiedName(text, False, "unsupported-script")
+        if model.tokenizer.truncates(text):
+            return _ClassifiedName(text, True, "input-truncated")
+        return _ClassifiedName(text, True, None)
 
     @classmethod
     def _model_for(

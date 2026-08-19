@@ -29,20 +29,15 @@ def test_manual_app_flow_preserves_mixed_input_and_exposes_download(
     prediction = pd.DataFrame(
         {
             "name": ["Shah Rukh Khan", "Amitabh Bachchan", "Shah Rukh Khan"],
-            "name_pattern_estimate": [
-                "muslim-associated",
-                "not-muslim-associated",
-                "muslim-associated",
-            ],
             "muslim_score": [0.95, 0.1, 0.95],
+            "scored": [True, True, True],
             "abstained": [False, False, False],
             "abstention_reason": [None, None, None],
             "script_supported": [True, True, True],
             "normalized_utf8_bytes": [14, 17, 14],
-            "input_truncated": [False, False, False],
             "reference_population": ["SEPRI household heads"] * 3,
             "label_source": ["test labels"] * 3,
-            "calibration_population": ["SEPRI household heads"] * 3,
+            "calibration_reference": ["SEPRI household heads"] * 3,
             "model_language": ["eng"] * 3,
             "model_metadata_schema": [2, 2, 2],
             "model_version": ["3.0", "3.0", "3.0"],
@@ -106,19 +101,15 @@ def test_predict_dataframe_preserves_duplicates_and_missing_rows(
     prediction = pd.DataFrame(
         {
             "name": ["Asha", "Asha"],
-            "name_pattern_estimate": [
-                "not-muslim-associated",
-                "not-muslim-associated",
-            ],
             "muslim_score": [0.05, 0.05],
+            "scored": [True, True],
             "abstained": [False, False],
             "abstention_reason": [pd.NA, pd.NA],
             "script_supported": [True, True],
             "normalized_utf8_bytes": [4, 4],
-            "input_truncated": [False, False],
             "reference_population": ["SEPRI household heads"] * 2,
             "label_source": ["test labels"] * 2,
-            "calibration_population": ["SEPRI household heads"] * 2,
+            "calibration_reference": ["SEPRI household heads"] * 2,
             "model_language": ["eng"] * 2,
             "model_metadata_schema": [2, 2],
             "model_version": ["3.0", "3.0"],
@@ -134,11 +125,7 @@ def test_predict_dataframe_preserves_duplicates_and_missing_rows(
 
     assert len(result) == len(source)
     assert result["value"].tolist() == [1, 2, 3]
-    assert result["name_pattern_estimate"].tolist() == [
-        "not-muslim-associated",
-        pd.NA,
-        "not-muslim-associated",
-    ]
+    assert result["muslim_score"].tolist() == [0.05, pd.NA, 0.05]
     predict.assert_called_once_with(["Asha", "Asha"], lang="eng")
 
 

@@ -57,6 +57,7 @@ def metadata(
             training_seed=7,
             normalization="Unicode NFKC, casefold, collapse whitespace",
         ),
+        reference_prior=0.1,
     )
 
 
@@ -129,28 +130,31 @@ def test_single_string_input(mock_model_for: Mock) -> None:
 
     result = Naam.estimate_muslim_name_pattern("Test Name")
 
-    assert result.to_dict(orient="records") == [
-        {
-            "name": "Test Name",
-            "name_pattern_estimate": "muslim-associated",
-            "muslim_score": 0.8,
-            "abstained": False,
-            "abstention_reason": None,
-            "script_supported": True,
-            "normalized_utf8_bytes": 9,
-            "input_truncated": False,
-            "reference_population": "SEPRI household heads",
-            "label_source": (
-                "Bihar land caste/community labels and SEPRI household religion"
-            ),
-            "calibration_population": "SEPRI household heads",
-            "model_language": "eng",
-            "model_metadata_schema": 2,
-            "model_version": "3.0",
-            "model_revision": MODEL_REVISION,
-            "model_max_name_bytes": 126,
-        }
-    ]
+    assert len(result) == 1
+    row = result.iloc[0]
+    assert row["name"] == "Test Name"
+    assert row["muslim_score"] == 0.8
+    assert bool(row["scored"])
+    assert not bool(row["abstained"])
+    assert pd.isna(row["abstention_reason"])
+    assert bool(row["script_supported"])
+    assert row["normalized_utf8_bytes"] == 9
+    assert row["model_max_name_bytes"] == 126
+    assert row["reference_population"] == "SEPRI household heads"
+    assert row["label_source"] == (
+        "Bihar land caste/community labels and SEPRI household religion"
+    )
+    assert row["calibration_reference"] == "SEPRI household heads"
+    assert row["model_language"] == "eng"
+    assert row["model_version"] == "3.0"
+    assert row["model_revision"] == MODEL_REVISION
+    assert row["inference_contract_version"] == "1.1"
+    assert row["result_form"] == "score"
+    assert row["target"] == "muslim-name-pattern"
+    assert row["calibration_status"] == "platt-scaled"
+    assert pd.isna(row["uncertainty_method"])
+    assert "name_pattern_estimate" not in result.columns
+    assert "predicted_label" not in result.columns
     model.predict.assert_called_once_with(["Test Name"])
 
 
@@ -167,26 +171,24 @@ def test_list_and_series_inputs(mock_model_for: Mock) -> None:
 
     assert list(list_result["name"]) == names
     assert list(series_result["name"]) == names
-    assert list_result["name_pattern_estimate"].tolist() == [
-        "muslim-associated",
-        "not-muslim-associated",
-    ]
+    assert list_result["muslim_score"].tolist() == [0.9, 0.1]
+    assert series_result["muslim_score"].tolist() == [0.9, 0.1]
 
 
 @patch.object(Naam, "_model_for")
-def test_uncertain_and_unsupported_names_abstain(mock_model_for: Mock) -> None:
+def test_midrange_scores_are_returned_and_unsupported_scripts_abstain(
+    mock_model_for: Mock,
+) -> None:
+    """Score form withholds nothing it can compute, however mid-range."""
     model = mock_language_model()
     model.predict.return_value = np.array([0.5])
     mock_model_for.return_value = model
 
     result = Naam.estimate_muslim_name_pattern(["Shared Name", "محمد خان"])
 
-    assert result["name_pattern_estimate"].tolist() == ["uncertain", "uncertain"]
-    assert result["abstained"].tolist() == [True, True]
-    assert result["abstention_reason"].tolist() == [
-        "uncertain-score",
-        "unsupported-script",
-    ]
+    assert result["abstained"].tolist() == [False, True]
+    assert pd.isna(result.iloc[0]["abstention_reason"])
+    assert result.iloc[1]["abstention_reason"] == "unsupported-script"
     assert result["script_supported"].tolist() == [True, False]
     assert result.iloc[0]["muslim_score"] == 0.5
     assert pd.isna(result.iloc[1]["muslim_score"])
@@ -202,25 +204,48 @@ def test_utf8_byte_truncation_is_an_explicit_abstention(mock_model_for: Mock) ->
     result = Naam.estimate_muslim_name_pattern(name)
 
     assert result.iloc[0]["normalized_utf8_bytes"] == 128
-    assert result.iloc[0]["input_truncated"]
     assert result.iloc[0]["abstained"]
     assert result.iloc[0]["abstention_reason"] == "input-truncated"
     assert pd.isna(result.iloc[0]["muslim_score"])
     model.predict.assert_not_called()
 
 
-@pytest.mark.parametrize("names", [[], "", "   "])
-def test_empty_inputs_are_rejected(names: object) -> None:
-    """Empty collections, strings, and whitespace fail before model loading."""
-    with pytest.raises(ValueError, match="empty"):
-        Naam.estimate_muslim_name_pattern(names)  # type: ignore[arg-type]
+@patch.object(Naam, "_model_for")
+def test_empty_collection_returns_an_empty_frame(mock_model_for: Mock) -> None:
+    """No rows in means no rows out, not an exception."""
+    mock_model_for.return_value = mock_language_model()
+
+    result = Naam.estimate_muslim_name_pattern([])
+
+    assert len(result) == 0
+    assert "muslim_score" in result.columns
 
 
-@pytest.mark.parametrize("names", [["Valid", None], pd.Series(["Valid", 1])])
-def test_nonstring_values_are_rejected(names: object) -> None:
-    """Mixed collections report the offending input position."""
-    with pytest.raises(TypeError, match="index 1 must be a string"):
-        Naam.estimate_muslim_name_pattern(names)  # type: ignore[arg-type]
+@pytest.mark.parametrize("value", ["", "   "])
+@patch.object(Naam, "_model_for")
+def test_blank_names_abstain(mock_model_for: Mock, value: str) -> None:
+    """A blank cell is data the package cannot score, not a caller error."""
+    mock_model_for.return_value = mock_language_model()
+
+    result = Naam.estimate_muslim_name_pattern([value])
+
+    assert not bool(result.iloc[0]["scored"])
+    assert result.iloc[0]["abstention_reason"] == "missing-name"
+
+
+@pytest.mark.parametrize("names", [["Valid", None], ["Valid", 1]])
+@patch.object(Naam, "_model_for")
+def test_nonstring_values_abstain(mock_model_for: Mock, names: list[object]) -> None:
+    """Mixed collections abstain per row instead of failing the whole call."""
+    model = mock_language_model()
+    model.predict.return_value = np.array([0.7])
+    mock_model_for.return_value = model
+
+    result = Naam.estimate_muslim_name_pattern(names)  # type: ignore[arg-type]
+
+    assert result["scored"].tolist() == [True, False]
+    assert result.iloc[1]["abstention_reason"] == "missing-name"
+    model.predict.assert_called_once_with(["Valid"])
 
 
 def test_invalid_language_is_rejected() -> None:
@@ -368,17 +393,17 @@ def test_concurrent_languages_keep_their_predictions(
     mock_load_model.side_effect = load_model
     with ThreadPoolExecutor(max_workers=2) as executor:
         english_future = executor.submit(
-            Naam.estimate_muslim_name_pattern, ["Shah"], "eng"
+            Naam.estimate_muslim_name_pattern, ["Shah"], lang="eng"
         )
         assert english_predicting.wait(timeout=2)
         hindi_future = executor.submit(
-            Naam.estimate_muslim_name_pattern, ["अमिताभ"], "hin"
+            Naam.estimate_muslim_name_pattern, ["अमिताभ"], lang="hin"
         )
         english_result = english_future.result(timeout=2)
         hindi_result = hindi_future.result(timeout=2)
 
-    assert english_result.iloc[0]["name_pattern_estimate"] == "muslim-associated"
-    assert hindi_result.iloc[0]["name_pattern_estimate"] == "not-muslim-associated"
+    assert english_result.iloc[0]["muslim_score"] == pytest.approx(0.95)
+    assert hindi_result.iloc[0]["muslim_score"] == pytest.approx(0.1)
 
 
 @patch.object(Naam, "_model_for")

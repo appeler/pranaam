@@ -5,7 +5,7 @@ author_email: rajshekar.ch@gmail.com
 author_name: Rajashekar Chintalapati
 coverage_floor: 80
 default_branch: main
-description: Predict religion from names
+description: Calibrated Muslim name-pattern estimates with explicit abstention
 needs_cli: true
 org: appeler
 package_name: pranaam

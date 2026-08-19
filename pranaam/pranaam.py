@@ -35,6 +35,18 @@ def main(argv: list[str] | None = None) -> int:
         "--lang", default="eng", choices=["eng", "hin"], help="Language of input name"
     )
     parser.add_argument(
+        "--prior",
+        type=float,
+        default=None,
+        help="Share of the target population carrying Muslim-associated names",
+    )
+    parser.add_argument(
+        "--uncertainty-level",
+        type=float,
+        default=None,
+        help="Central Monte Carlo dropout interval to report, such as 0.9",
+    )
+    parser.add_argument(
         "--refresh-pinned",
         action="store_true",
         help="Reload and verify the immutable pinned model artifacts",
@@ -45,6 +57,8 @@ def main(argv: list[str] | None = None) -> int:
         result = estimate_muslim_name_pattern(
             args.input,
             lang=args.lang,
+            prior=args.prior,
+            uncertainty_level=args.uncertainty_level,
             refresh_pinned=args.refresh_pinned,
         )
         print(result.to_string(index=False))
