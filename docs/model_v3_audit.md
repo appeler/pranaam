@@ -147,7 +147,8 @@ semantics.
 6. Benchmark `ethnicolr` next. Consolidate `ethnicolr2` into it instead of
    maintaining two race and ethnicity model stacks.
 
-The reproducible comparison lives in
-[`scripts/adhoc/compare_model_v2_v3.py`](../scripts/adhoc/compare_model_v2_v3.py),
-and its non-identifying aggregate output lives in
-[`scripts/adhoc/v2_v3_comparison.json`](../scripts/adhoc/v2_v3_comparison.json).
+The non-identifying aggregate output of that comparison is recorded in
+`scripts/adhoc/v2_v3_comparison.json`. The script that produced it was
+removed in 0.9.0 along with the v1 and v2 model module it exercised, so the
+recorded numbers stand as a historical result rather than a reproducible
+one.

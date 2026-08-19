@@ -202,6 +202,29 @@ class ModelProvenance:
             raise ValueError("normalization cannot be empty")
 
 
+def _reference_prior(document: dict[str, object]) -> float | None:
+    """Return the positive-class share of the calibrated evaluation split.
+
+    This is the base rate the shipped calibration is anchored to, and the
+    reference point a caller shifts away from with ``prior``. Returns None
+    when the artifact reports no usable confusion matrix.
+    """
+    evaluation = document.get("evaluation")
+    if not isinstance(evaluation, dict):
+        return None
+    calibrated = evaluation.get("calibrated")
+    if not isinstance(calibrated, dict):
+        return None
+    try:
+        positives = int(calibrated["true_positive"]) + int(calibrated["false_negative"])
+        rows = int(calibrated["rows"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    if rows <= 0 or not 0 < positives < rows:
+        return None
+    return positives / rows
+
+
 @dataclass(frozen=True)
 class ModelArtifactMetadata:
     """Validated inference metadata stored beside each v3 model."""
@@ -214,6 +237,7 @@ class ModelArtifactMetadata:
     architecture: ByteModelConfig
     calibration: CalibrationConfig
     provenance: ModelProvenance
+    reference_prior: float | None = None
 
     @classmethod
     def from_file(cls, path: Path) -> ModelArtifactMetadata:
@@ -270,6 +294,7 @@ class ModelArtifactMetadata:
                 training_seed=int(provenance_document["training_seed"]),
                 normalization=str(provenance_document["normalization"]),
             ),
+            reference_prior=_reference_prior(document),
         )
 
 

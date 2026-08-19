@@ -14,10 +14,7 @@ from pranaam import estimate_muslim_name_pattern
 people = pd.DataFrame(
     {"name": ["Shah Rukh Khan", "Amitabh Bachchan", "Shah Rukh Khan"]}
 )
-estimates = estimate_muslim_name_pattern(people["name"], lang="eng")
-people[["name_pattern_estimate", "muslim_score", "abstained"]] = estimates[
-    ["name_pattern_estimate", "muslim_score", "abstained"]
-].to_numpy()
+people = estimate_muslim_name_pattern(people, "name", lang="eng")
 ```
 
 ## Process a CSV file
@@ -28,22 +25,13 @@ import pandas as pd
 from pranaam import estimate_muslim_name_pattern
 
 people = pd.read_csv("people.csv")
-names = people["name"]
-if not names.dropna().map(lambda value: isinstance(value, str)).all():
-    raise TypeError("The name column contains a non-string value")
-
-valid = names.notna() & names.str.strip().ne("")
-estimates = estimate_muslim_name_pattern(names.loc[valid], lang="eng")
-columns = ["name_pattern_estimate", "muslim_score", "abstained"]
-people.loc[valid, columns] = estimates[
-    columns
-].to_numpy()
-people.to_csv("people_with_estimates.csv", index=False)
+estimates = estimate_muslim_name_pattern(people, "name", lang="eng")
+estimates.to_csv("people_with_estimates.csv", index=False)
 ```
 
-`estimate_muslim_name_pattern` requires every input to be a nonempty string.
-The CSV example keeps missing and blank names in the output with missing
-estimate values.
+Every input row survives to the output. Missing, blank, and non-text cells
+abstain with `missing-name` and carry a missing score rather than raising or
+dropping out of the frame, so the result always aligns with the source.
 
 These estimates describe patterns learned from land and survey names. They do
 not verify any person's religion. Use them for aggregate research only,

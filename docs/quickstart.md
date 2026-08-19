@@ -14,15 +14,21 @@ print(result)
 The output columns are:
 
 * `name`: the input name
-* `name_pattern_estimate`: associated pattern or `uncertain`
-* `muslim_score`: calibrated score from 0 to 1
-* `abstained` and `abstention_reason`: whether and why no pattern was returned
+* `muslim_score`: calibrated probability from 0 to 1, missing when Pranaam
+  abstains. Pranaam returns no label: for a binary target the score carries
+  the whole distribution, and the cutoff belongs to your analysis.
+* `scored`, `abstained`, and `abstention_reason`: whether and why no score
+  was returned
 * `script_supported`: whether the selected model supports every input letter
-* `normalized_utf8_bytes` and `input_truncated`: explicit byte-limit support
-* `reference_population`, `label_source`, and `calibration_population`: the
+* `normalized_utf8_bytes`: byte length after normalization
+* `reference_prior` and `target_prior`: the base rate the calibration is
+  anchored to, and the one requested through `prior`
+* `reference_population`, `label_source`, and `calibration_reference`: the
   population and labeling scope of the score
 * `model_language`, `model_metadata_schema`, `model_version`, `model_revision`,
   and `model_max_name_bytes`: model provenance and support boundary
+* the contract's shared metadata, including `inference_contract_version`,
+  `result_form`, `target`, `calibration_status`, and `uncertainty_method`
 
 Pass `lang="hin"` for names written in Hindi:
 
@@ -41,9 +47,7 @@ estimates = pranaam.estimate_muslim_name_pattern(people["name"])
 people = pd.concat(
     [
         people,
-        estimates[
-            ["name_pattern_estimate", "muslim_score", "abstained"]
-        ],
+        estimates[["muslim_score", "abstained"]],
     ],
     axis=1,
 )
@@ -63,10 +67,9 @@ revision. When `PRANAAM_MODEL_DIR` is set, it instead rereads and verifies the
 local files without downloading or replacing them. Neither mode follows a
 mutable branch or switches model versions.
 
-Scores strictly between 0.2 and 0.8 abstain by default. A name written outside
-the selected model's supported script also abstains and has no score. Names
-whose normalized UTF-8 encoding exceeds `model_max_name_bytes` likewise
-abstain, with `input_truncated=True` and
-`abstention_reason="input-truncated"`. These are name-pattern estimates for
-aggregate research; never use them to label a person or make a consequential
-decision.
+Pranaam withholds nothing it can compute: every supported name gets its
+calibrated score, however mid-range. A name written outside the selected
+model's supported script abstains and has no score, as does a name whose
+normalized UTF-8 encoding exceeds `model_max_name_bytes`, and a blank or
+non-text cell. These are name-pattern estimates for aggregate research;
+never use them to label a person or make a consequential decision.

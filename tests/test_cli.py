@@ -34,7 +34,6 @@ class TestCLIMain:
         mock_result = pd.DataFrame(
             {
                 "name": ["Test Name"],
-                "name_pattern_estimate": ["muslim-associated"],
                 "muslim_score": [0.75],
             }
         )
@@ -45,7 +44,11 @@ class TestCLIMain:
 
         assert result == 0
         mock_estimate_muslim_name_pattern.assert_called_once_with(
-            "Test Name", lang="eng", refresh_pinned=False
+            "Test Name",
+            lang="eng",
+            prior=None,
+            uncertainty_level=None,
+            refresh_pinned=False,
         )
 
         # Check output contains expected data
@@ -62,7 +65,6 @@ class TestCLIMain:
         mock_result = pd.DataFrame(
             {
                 "name": ["टेस्ट नाम"],
-                "name_pattern_estimate": ["not-muslim-associated"],
                 "muslim_score": [0.25],
             }
         )
@@ -72,7 +74,11 @@ class TestCLIMain:
 
         assert result == 0
         mock_estimate_muslim_name_pattern.assert_called_once_with(
-            "टेस्ट नाम", lang="hin", refresh_pinned=False
+            "टेस्ट नाम",
+            lang="hin",
+            prior=None,
+            uncertainty_level=None,
+            refresh_pinned=False,
         )
 
     @patch("pranaam.pranaam.estimate_muslim_name_pattern")
@@ -83,7 +89,6 @@ class TestCLIMain:
         mock_result = pd.DataFrame(
             {
                 "name": ["Test Name"],
-                "name_pattern_estimate": ["muslim-associated"],
                 "muslim_score": [0.8],
             }
         )
@@ -93,7 +98,11 @@ class TestCLIMain:
 
         assert result == 0
         mock_estimate_muslim_name_pattern.assert_called_once_with(
-            "Test Name", lang="eng", refresh_pinned=True
+            "Test Name",
+            lang="eng",
+            prior=None,
+            uncertainty_level=None,
+            refresh_pinned=True,
         )
 
     @patch("pranaam.pranaam.estimate_muslim_name_pattern")
@@ -104,7 +113,6 @@ class TestCLIMain:
         mock_result = pd.DataFrame(
             {
                 "name": ["हिंदी नाम"],
-                "name_pattern_estimate": ["muslim-associated"],
                 "muslim_score": [0.65],
             }
         )
@@ -114,7 +122,11 @@ class TestCLIMain:
 
         assert result == 0
         mock_estimate_muslim_name_pattern.assert_called_once_with(
-            "हिंदी नाम", lang="hin", refresh_pinned=True
+            "हिंदी नाम",
+            lang="hin",
+            prior=None,
+            uncertainty_level=None,
+            refresh_pinned=True,
         )
 
     def test_invalid_language(self) -> None:
@@ -184,7 +196,6 @@ class TestCLIIntegration:
             mock_result = pd.DataFrame(
                 {
                     "name": ["Test Name"],
-                    "name_pattern_estimate": ["muslim-associated"],
                     "muslim_score": [0.75],
                 }
             )
@@ -267,7 +278,6 @@ class TestCLIArgumentValidation:
                 mock_result = pd.DataFrame(
                     {
                         "name": [test_input],
-                        "name_pattern_estimate": ["muslim-associated"],
                         "muslim_score": [0.5],
                     }
                 )
@@ -276,7 +286,11 @@ class TestCLIArgumentValidation:
                 result = main(["--input", test_input])
                 assert result == 0
                 mock_estimate_muslim_name_pattern.assert_called_once_with(
-                    test_input, lang="eng", refresh_pinned=False
+                    test_input,
+                    lang="eng",
+                    prior=None,
+                    uncertainty_level=None,
+                    refresh_pinned=False,
                 )
 
     def test_language_choices(self) -> None:
@@ -292,7 +306,6 @@ class TestCLIArgumentValidation:
                 mock_result = pd.DataFrame(
                     {
                         "name": ["Test"],
-                        "name_pattern_estimate": ["muslim-associated"],
                         "muslim_score": [0.5],
                     }
                 )

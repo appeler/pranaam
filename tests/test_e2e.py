@@ -11,23 +11,34 @@ import pytest
 import pranaam
 from pranaam.naam import Naam
 
+# The contract block plus Pranaam's target-specific columns. Asserted as a
+# subset so adding provenance does not break every end-to-end test.
 OUTPUT_COLUMNS = [
     "name",
-    "name_pattern_estimate",
     "muslim_score",
+    "inference_contract_version",
+    "estimate_type",
+    "result_form",
+    "target",
+    "input_scope",
+    "scored",
+    "script_supported",
     "abstained",
     "abstention_reason",
-    "script_supported",
-    "normalized_utf8_bytes",
-    "input_truncated",
-    "reference_population",
-    "label_source",
-    "calibration_population",
-    "model_language",
-    "model_metadata_schema",
+    "model_id",
     "model_version",
     "model_revision",
+    "reference_population",
+    "calibration_status",
+    "calibration_reference",
+    "uncertainty_method",
+    "uncertainty_level",
+    "normalized_utf8_bytes",
+    "label_source",
+    "model_language",
     "model_max_name_bytes",
+    "reference_prior",
+    "target_prior",
 ]
 
 
@@ -60,21 +71,13 @@ class TestRealModelDownloadAndPrediction:
 
         # Verify DataFrame structure
         assert isinstance(result, pd.DataFrame)
-        assert list(result.columns) == OUTPUT_COLUMNS
+        assert set(OUTPUT_COLUMNS) <= set(result.columns)
         assert len(result) == len(test_names)
 
         # Verify all names are present
         assert set(result["name"]) == set(test_names)
 
-        # Verify prediction labels are valid
-        valid_estimates = {
-            "muslim-associated",
-            "not-muslim-associated",
-            "uncertain",
-        }
-        assert all(
-            estimate in valid_estimates for estimate in result["name_pattern_estimate"]
-        )
+        assert all(0 <= score <= 1 for score in result["muslim_score"].dropna())
 
         assert all(0 <= score <= 1 for score in result["muslim_score"])
         assert result["script_supported"].all()
@@ -82,9 +85,7 @@ class TestRealModelDownloadAndPrediction:
 
         # Verify expected patterns (these are actual predictions, not mocks)
         khan_results = result[result["name"].str.contains("Khan")]
-        muslim_khans = khan_results[
-            khan_results["name_pattern_estimate"] == "muslim-associated"
-        ]
+        muslim_khans = khan_results[khan_results["muslim_score"] > 0.5]
 
         # Should predict most Khans as Muslim (this is what the model should do)
         assert len(muslim_khans) >= 3, (
@@ -107,21 +108,13 @@ class TestRealModelDownloadAndPrediction:
 
         # Verify DataFrame structure
         assert isinstance(result, pd.DataFrame)
-        assert list(result.columns) == OUTPUT_COLUMNS
+        assert set(OUTPUT_COLUMNS) <= set(result.columns)
         assert len(result) == len(test_names)
 
         # Verify all names are present
         assert set(result["name"]) == set(test_names)
 
-        # Verify prediction labels are valid
-        valid_estimates = {
-            "muslim-associated",
-            "not-muslim-associated",
-            "uncertain",
-        }
-        assert all(
-            estimate in valid_estimates for estimate in result["name_pattern_estimate"]
-        )
+        assert all(0 <= score <= 1 for score in result["muslim_score"].dropna())
 
         assert all(0 <= score <= 1 for score in result["muslim_score"])
         assert result["script_supported"].all()
@@ -158,7 +151,7 @@ class TestRealModelDownloadAndPrediction:
 
         # All results should have same structure
         for result in [eng_result, hin_result, eng_result2]:
-            assert list(result.columns) == OUTPUT_COLUMNS
+            assert set(OUTPUT_COLUMNS) <= set(result.columns)
 
     @pytest.mark.integration
     def test_pandas_series_integration(self) -> None:
@@ -179,15 +172,12 @@ class TestRealModelDownloadAndPrediction:
         assert all(name in df["actor_name"].values for name in result["name"])
 
         # Create combined result
-        combined = pd.concat(
-            [df, result[["name_pattern_estimate", "muslim_score"]]], axis=1
-        )
+        combined = pd.concat([df, result[["muslim_score"]]], axis=1)
 
         # Verify combined structure
         expected_cols = [
             "actor_name",
             "movie_count",
-            "name_pattern_estimate",
             "muslim_score",
         ]
         assert list(combined.columns) == expected_cols
@@ -231,8 +221,8 @@ class TestRealModelDownloadAndPrediction:
     def test_error_handling_real_scenarios(self) -> None:
         """Test error handling in real scenarios."""
         # Test with empty input
-        with pytest.raises(ValueError, match="empty"):
-            pranaam.estimate_muslim_name_pattern("", lang="eng")
+        blank = pranaam.estimate_muslim_name_pattern("", lang="eng")
+        assert blank.iloc[0]["abstention_reason"] == "missing-name"
 
         # Test with invalid language
         with pytest.raises(ValueError, match="Unsupported language"):

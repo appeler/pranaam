@@ -44,16 +44,15 @@ def predict_dataframe(
 
     predictions = pranaam.estimate_muslim_name_pattern(names.tolist(), lang=lang)
     dtypes = {
-        "name_pattern_estimate": "string",
         "muslim_score": "Float64",
+        "scored": "boolean",
         "abstained": "boolean",
         "abstention_reason": "string",
         "script_supported": "boolean",
         "normalized_utf8_bytes": "Int64",
-        "input_truncated": "boolean",
         "reference_population": "string",
         "label_source": "string",
-        "calibration_population": "string",
+        "calibration_reference": "string",
         "model_language": "string",
         "model_metadata_schema": "Int64",
         "model_version": "string",
@@ -66,15 +65,20 @@ def predict_dataframe(
     return result
 
 
-def render_summary(result: pd.DataFrame) -> None:
-    """Render aggregate counts without presenting estimates as identities."""
-    muslim_count = result["name_pattern_estimate"].eq("muslim-associated").sum()
-    non_muslim_count = result["name_pattern_estimate"].eq("not-muslim-associated").sum()
+def render_summary(result: pd.DataFrame, threshold: float) -> None:
+    """Render aggregate counts without presenting estimates as identities.
+
+    Pranaam returns a calibrated score and no label. The cutoff below is the
+    viewer's own choice, applied here only to summarize this table.
+    """
+    scores = result["muslim_score"]
+    above = scores.ge(threshold).fillna(False).sum()
+    below = scores.lt(threshold).fillna(False).sum()
     abstained_count = result["abstained"].fillna(False).sum()
     st.write(
-        f"**Model summary**: {muslim_count} Muslim-associated, "
-        f"{non_muslim_count} non-Muslim-associated, and "
-        f"{abstained_count} abstained name-pattern estimates"
+        f"**At your cutoff of {threshold:.2f}**: {above} names score at or "
+        f"above it, {below} below it, and {abstained_count} abstained. The "
+        "cutoff is yours, not the model's."
     )
 
 
@@ -135,6 +139,18 @@ def app() -> None:
                 height=100,
             )
 
+        threshold = st.slider(
+            "Your cutoff for summarizing scores",
+            min_value=0.05,
+            max_value=0.95,
+            value=0.5,
+            step=0.05,
+            help=(
+                "Pranaam returns a calibrated score and no label. Pick the "
+                "cutoff your own analysis calls for."
+            ),
+        )
+
         if st.button("Estimate name patterns"):
             if names_input.strip():
                 names = parse_names(names_input)
@@ -146,7 +162,7 @@ def app() -> None:
                         st.subheader("Results")
                         st.dataframe(result, use_container_width=True)
 
-                        render_summary(result)
+                        render_summary(result, threshold)
 
                         download_file(result)
 
@@ -185,7 +201,7 @@ def app() -> None:
                             st.subheader("Results")
                             st.dataframe(result_df, use_container_width=True)
 
-                            render_summary(result_df)
+                            render_summary(result_df, threshold)
 
                             download_file(result_df)
 

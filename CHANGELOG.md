@@ -2,6 +2,39 @@
 
 ## [Unreleased]
 
+## 0.9.0 - 2026-08-19
+
+Breaking release: the result shape and call signature change. There are no
+backward-compatibility aliases.
+
+* Adopt appeler inference contract 1.1, score form
+  (https://github.com/appeler/appellation): results carry
+  `inference_contract_version`, `estimate_type`, `result_form`, `target`,
+  `input_scope`, boolean `scored` and `abstained`, `model_id`,
+  `calibration_status`, `calibration_reference`, `uncertainty_method`, and
+  `uncertainty_level` alongside the calibrated score.
+* Remove the `name_pattern_estimate` label. For a binary target the score
+  already carries the whole distribution, and the cutoff that turns it into a
+  decision depends on the caller's costs. `uncertain-score` abstention goes
+  with it: a mid-range score is a real, calibrated answer and is now returned.
+* Take a DataFrame and a name column, with every option keyword-only. A
+  single string, list, or Series still works and returns the same columns.
+* Abstain instead of raising on blank, missing, and non-text names, which are
+  data rather than programming errors, using `missing-name` and `no-letters`.
+* Add Monte Carlo dropout intervals through `uncertainty_level` and
+  `mc_iterations`, reported as `muslim_score_mc_mean`, `_mc_std`,
+  `_mc_lower`, and `_mc_upper`.
+* Add `prior` to reweight scores from the calibration base rate, now reported
+  as `reference_prior`, to a target population's base rate.
+* Rename `calibration_population` to the contract's `calibration_reference`
+  and drop the redundant `input_truncated` column, whose abstention reason
+  already carries the fact.
+* Delete the unreachable v1 and v2 model module, its tests, and the adhoc
+  conversion and comparison scripts that depended on it.
+* State in the documentation that the negative class pools every non-Muslim
+  naming pattern, and that the Bihar sources contain too few Christian, Sikh,
+  Buddhist, and Jain names to separate them.
+
 ## 0.8.0 - 2026-08-17
 
 * Replace `pred_rel` with `estimate_muslim_name_pattern` and rename the model
