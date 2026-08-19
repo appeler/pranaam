@@ -220,6 +220,15 @@ introduce systematic error. Scores may be poorly calibrated outside the
 evaluated populations. Validation against self-identified information at the
 appropriate aggregate level remains the user's responsibility.
 
+The training sources are Bihari, and the models are weakest on names from
+Muslim communities elsewhere in India or the diaspora. Both `Salman Rushdie`
+and `Azim Premji` score below 0.1 under the English model, because Kashmiri
+and Gujarati Ismaili surnames barely appear in Bihar land records. Monte
+Carlo dropout does not rescue these cases: it reports how unstable the model
+is, not whether the name resembles anything the model was trained on, so an
+out-of-region name can receive a low score and a narrow interval at the same
+time. Treat regional coverage as a validation question for your own sample.
+
 Raw personal names are not published with the package or model. Hugging Face
 contains only weights, non-identifying training reports, metadata, and the
 model card.
