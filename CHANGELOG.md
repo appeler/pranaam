@@ -34,6 +34,14 @@ backward-compatibility aliases.
 * State in the documentation that the negative class pools every non-Muslim
   naming pattern, and that the Bihar sources contain too few Christian, Sikh,
   Buddhist, and Jain names to separate them.
+* Keep abstaining rows missing under `prior` and Monte Carlo summaries. Prior
+  shifting turned a missing score into a certain 1.0, because a missing value
+  failed the finite-odds test and fell through to the saturated branch.
+
+Released without the independent second-model review the project's release
+process normally requires: both reviewers were unavailable at release time.
+The maintainer accepted that gap knowingly. Every other gate ran, and the
+prior-shift defect above was found by a self-review afterwards.
 
 ## 0.8.0 - 2026-08-17
 

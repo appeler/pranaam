@@ -280,3 +280,42 @@ class TestModelOutputValidation:
 
         with pytest.raises(RuntimeError, match="Prediction failed"):
             Naam.estimate_muslim_name_pattern(["Name"])
+
+
+class TestAbstainingRowsKeepMissingValues:
+    """An abstaining row must never acquire a score from post-processing."""
+
+    @patch.object(Naam, "_model_for")
+    def test_prior_shift_leaves_abstained_rows_missing(self, mock_model_for: Mock):
+        model = mock_language_model()
+        model.predict.return_value = np.array([0.5])
+        mock_model_for.return_value = model
+
+        result = Naam.estimate_muslim_name_pattern(["Name", None], prior=0.5)
+
+        assert pd.isna(result.iloc[1]["muslim_score"])
+        assert not bool(result.iloc[1]["scored"])
+
+    def test_shift_preserves_missing_and_saturated_scores(self):
+        shifted = _shift_prior(
+            np.array([np.nan, 1.0, 0.0]), reference_prior=0.1, target_prior=0.5
+        )
+        assert np.isnan(shifted[0])
+        assert shifted[1] == 1.0
+        assert shifted[2] == 0.0
+
+    @pytest.mark.filterwarnings("error::RuntimeWarning")
+    @patch.object(Naam, "_model_for")
+    def test_monte_carlo_summaries_skip_abstained_rows(self, mock_model_for: Mock):
+        model = mock_language_model()
+        model.predict.return_value = np.array([0.6])
+        model.predict_monte_carlo.return_value = np.array([[0.5], [0.6], [0.7]])
+        mock_model_for.return_value = model
+
+        result = Naam.estimate_muslim_name_pattern(
+            ["Name", None], uncertainty_level=0.9, mc_iterations=3
+        )
+
+        assert result.iloc[0]["muslim_score_mc_mean"] == pytest.approx(0.6)
+        for column in ("_mc_mean", "_mc_std", "_mc_lower", "_mc_upper"):
+            assert pd.isna(result.iloc[1][f"muslim_score{column}"])

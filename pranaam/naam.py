@@ -61,8 +61,13 @@ def _shift_prior(
         (1 - reference_prior) / reference_prior
     )
     with np.errstate(divide="ignore", invalid="ignore"):
-        odds = np.where(scores < 1, scores / (1 - scores), np.inf) * ratio
-    return np.where(np.isfinite(odds), odds / (1 + odds), 1.0)
+        odds = (scores / (1 - scores)) * ratio
+        shifted = odds / (1 + odds)
+    # A score of exactly one carries infinite odds, whose shifted limit is one.
+    shifted = np.where(scores >= 1, 1.0, shifted)
+    # A missing score stays missing. An abstaining row must never acquire one
+    # here, and every arithmetic branch above turns NaN into something else.
+    return np.where(np.isnan(scores), np.nan, shifted)
 
 
 @dataclass(frozen=True)
@@ -260,25 +265,20 @@ class Naam(Base):
         }
         if monte_carlo is not None and uncertainty_level is not None:
             tail = (1 - uncertainty_level) / 2
-            values.update(
-                {
-                    f"{SCORE_COLUMN}_mc_mean": pd.array(
-                        np.nanmean(monte_carlo, axis=0).tolist(), dtype="Float64"
-                    ),
-                    f"{SCORE_COLUMN}_mc_std": pd.array(
-                        np.nanstd(monte_carlo, axis=0, ddof=1).tolist(),
-                        dtype="Float64",
-                    ),
-                    f"{SCORE_COLUMN}_mc_lower": pd.array(
-                        np.nanquantile(monte_carlo, tail, axis=0).tolist(),
-                        dtype="Float64",
-                    ),
-                    f"{SCORE_COLUMN}_mc_upper": pd.array(
-                        np.nanquantile(monte_carlo, 1 - tail, axis=0).tolist(),
-                        dtype="Float64",
-                    ),
-                }
-            )
+            # Summarize only the scored columns. Abstaining rows hold an
+            # all-missing sample, which every summary would reduce over an
+            # empty slice.
+            sampled = monte_carlo[:, usable]
+            summaries = {
+                f"{SCORE_COLUMN}_mc_mean": sampled.mean(axis=0),
+                f"{SCORE_COLUMN}_mc_std": sampled.std(axis=0, ddof=1),
+                f"{SCORE_COLUMN}_mc_lower": np.quantile(sampled, tail, axis=0),
+                f"{SCORE_COLUMN}_mc_upper": np.quantile(sampled, 1 - tail, axis=0),
+            }
+            for name, summary in summaries.items():
+                column = np.full(rows, np.nan)
+                column[usable] = summary
+                values[name] = pd.array(column.tolist(), dtype="Float64")
 
         provenance = ResultProvenance(
             target=_TARGET,
