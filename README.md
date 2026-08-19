@@ -119,11 +119,18 @@ Muslim-associated names differs, `prior` reweights the posterior odds
 accordingly:
 
 ```python
-result = estimate_muslim_name_pattern(["Shah Rukh Khan"], prior=0.30)
+result = estimate_muslim_name_pattern(["Shah Rukh Khan"], prior=0.14)
 ```
 
 This assumes only the class balance differs between the two populations,
-not the naming patterns within each class.
+not the naming patterns within each class. Choose the prior from your
+sample: India was about 14 percent Muslim in the 2011 census and Bihar
+about 17 percent, so priors far above that are rarely justified.
+
+Prior shifting multiplies posterior odds, so it magnifies whatever the
+model got wrong along with what it got right. A name the model scores at
+0.08 becomes 0.25 under a prior of 0.30. Read a shifted score as an
+adjusted estimate, not a more confident one.
 
 ### The target is binary, and its negative class is everything else
 
@@ -220,14 +227,29 @@ introduce systematic error. Scores may be poorly calibrated outside the
 evaluated populations. Validation against self-identified information at the
 appropriate aggregate level remains the user's responsibility.
 
-The training sources are Bihari, and the models are weakest on names from
-Muslim communities elsewhere in India or the diaspora. Both `Salman Rushdie`
-and `Azim Premji` score below 0.1 under the English model, because Kashmiri
-and Gujarati Ismaili surnames barely appear in Bihar land records. Monte
-Carlo dropout does not rescue these cases: it reports how unstable the model
-is, not whether the name resembles anything the model was trained on, so an
-out-of-region name can receive a low score and a narrow interval at the same
-time. Treat regional coverage as a validation question for your own sample.
+### Give it whole names, from northern India
+
+The training sources are Bihari full names, and the models degrade sharply
+outside that shape and region. Measured on the English model:
+
+| Input | Median score, Hindu examples | Worst case |
+| --- | --- | --- |
+| Full name | 0.003 | 0.007 |
+| Surname alone | 0.028 | `Iyer` 0.703, `Nair` 0.410 |
+| Given name alone | 0.130 | `Rahul` 0.722, `Amit` 0.485 |
+
+A bare given name is the worst case and is not what `input_scope` declares:
+`Rahul` and `Amit` are scored as more Muslim-associated than most actual
+Muslim full names. South Indian surnames fail the same way, and diaspora
+Muslim names fail in the opposite direction, with `Salman Rushdie` at 0.084
+and `Azim Premji` at 0.059.
+
+Monte Carlo dropout does not rescue any of these. It reports how unstable
+the model is, not whether the name resembles anything the model was trained
+on, so an out-of-distribution name can carry a wrong score and a narrow
+interval at the same time. Pass whole names, treat regional coverage as a
+validation question for your own sample, and validate against
+self-identified information before trusting an aggregate.
 
 Raw personal names are not published with the package or model. Hugging Face
 contains only weights, non-identifying training reports, metadata, and the

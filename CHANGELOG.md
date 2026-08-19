@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+* Document what the models actually support. Measured on the English model,
+  Hindu full names score a median of 0.003, surnames alone 0.028, and given
+  names alone 0.130, with `Rahul` at 0.722 and `Amit` at 0.485. Bare given
+  names, South Indian surnames, and diaspora Muslim names are all outside
+  the Bihari full-name training distribution, and Monte Carlo dropout does
+  not flag them because it measures model instability rather than
+  distribution shift.
+* Say in the prior-shift documentation that shifting multiplies posterior
+  odds and therefore magnifies model error, and use a base rate consistent
+  with the 2011 census rather than an illustrative 0.30.
+
 ## 0.9.0 - 2026-08-19
 
 Breaking release: the result shape and call signature change. There are no
