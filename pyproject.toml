@@ -87,20 +87,17 @@ email = "gsood07@gmail.com"
 [tool.pytest.ini_options]
 python_files = "test_*.py"
 testpaths = ["tests"]
-addopts = [
-    "-v",
-    "--tb=short",
-    "--strict-markers",
-    "--disable-warnings",
-    "--cov=pranaam",
-    "--cov-report=term-missing",
-]
+addopts = ["-v", "--tb=short", "--strict-markers", "--disable-warnings", "--cov=pranaam", "--cov-report=term-missing", "--strict-config", "-ra"]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests (requires model download)",
     "unit: marks tests as unit tests",
     "e2e: marks tests as end-to-end tests with real models"
 ]
+minversion = "6"
+log_level = "INFO"
+xfail_strict = true
+filterwarnings = ["error"]
 
 
 
