@@ -16,6 +16,13 @@ updates:
     cooldown:
       default-days: 7
     groups:
+      # pandas-stubs tracks pandas major.minor, so a stubs bump without the
+      # matching pandas bump type-checks an API the tests never run.
+      pandas:
+        applies-to: version-updates
+        patterns:
+          - "pandas"
+          - "pandas-stubs"
       minor-and-patch:
         applies-to: version-updates
         update-types:

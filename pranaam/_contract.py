@@ -84,7 +84,7 @@ def metadata_columns(
     scored: list[bool],
     script_supported: list[bool | None],
     abstention_reasons: list[str | None],
-) -> dict[str, object]:
+) -> dict[str, pd.api.extensions.ExtensionArray]:
     """Build the contract's common columns for one result frame.
 
     Args:
@@ -113,7 +113,7 @@ def metadata_columns(
         if reason is not None and reason not in ABSTENTION_REASONS:
             raise ValueError(f"unknown abstention reason: {reason}")
 
-    def constant(value: object) -> object:
+    def constant(value: str | None) -> pd.api.extensions.ExtensionArray:
         return pd.array([value] * rows, dtype="string")
 
     return {
