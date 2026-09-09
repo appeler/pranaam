@@ -237,7 +237,7 @@ class Naam(Base):
             if monte_carlo is not None:
                 monte_carlo = _shift_prior(monte_carlo, reference_prior, prior)
 
-        values: dict[str, object] = {
+        values: dict[str, pd.api.extensions.ExtensionArray] = {
             SCORE_COLUMN: pd.array(scores.tolist(), dtype="Float64"),
             "normalized_utf8_bytes": pd.array(
                 [
