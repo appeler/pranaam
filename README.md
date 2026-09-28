@@ -276,3 +276,13 @@ Rajashekar Chintalapati, Aaditya Dar, and Gaurav Sood.
 
 The package is released under the [MIT License](LICENSE). The responsible-use
 requirements above describe the supported scope of the model.
+
+<!-- adjacent:start -->
+
+## 🔗 Adjacent Repositories
+
+- [appeler/naampy](https://github.com/appeler/naampy) — Infer Sociodemographic Characteristics from Names Using Indian Electoral Rolls
+
+_Powered by [Adjacent](https://github.com/gojiplus/adjacent)_
+
+<!-- adjacent:end -->

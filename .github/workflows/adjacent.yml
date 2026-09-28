@@ -1,0 +1,60 @@
+name: Adjacent repositories
+
+on:
+  schedule:
+    - cron: '29 5 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: adjacent-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Update related repositories
+        uses: gojiplus/adjacent@a2f97a586c48d941f493a1f75af07b0b95dceff8 # v2.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          similarity_method: topics
+          min_score: '0.2'
+          max_repos: '3'
+          exclude_repos: 'ethnicolr2,ethnicolor,clean-names'
+
+      - name: Propose README update
+        id: pull-request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: automation/adjacent
+          delete-branch: true
+          add-paths: README.md
+          commit-message: 'docs: refresh adjacent repositories'
+          title: 'docs: refresh adjacent repositories'
+          body: |
+            Refresh the marked related-repository section using Adjacent v2.
+            Automatic refreshes run once a month. Review the recommendation diff
+            and the repository checks before merging.
+
+      - name: Run checks on the proposed update
+        if: steps.pull-request.outputs.pull-request-operation == 'created' || steps.pull-request.outputs.pull-request-operation == 'updated'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run ci.yml --ref automation/adjacent
+          gh workflow run docs.yml --ref automation/adjacent
