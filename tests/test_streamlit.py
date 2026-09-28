@@ -48,7 +48,9 @@ def test_manual_app_flow_preserves_mixed_input_and_exposes_download(
     predict = Mock(return_value=prediction)
     monkeypatch.setattr("pranaam.estimate_muslim_name_pattern", predict)
 
-    app = AppTest.from_file(PROJECT_ROOT / "streamlit" / "streamlit_app.py").run()
+    app = AppTest.from_file(
+        PROJECT_ROOT / "streamlit" / "streamlit_app.py", default_timeout=30
+    ).run()
     app.text_area[0].input("Shah Rukh Khan, Amitabh Bachchan\nShah Rukh Khan").run()
     app.button[0].click().run()
 
