@@ -282,6 +282,8 @@ requirements above describe the supported scope of the model.
 ## 🔗 Adjacent Repositories
 
 - [appeler/naampy](https://github.com/appeler/naampy) — Infer Sociodemographic Characteristics from Names Using Indian Electoral Rolls
+- [appeler/instate](https://github.com/appeler/instate) — instate: predict the state of residence from last name using the indian electoral rolls
+- [appeler/outkast](https://github.com/appeler/outkast) — Using data from over 140M+ Indians from the SECC 2011, we map last names to caste \(SC, ST, Other\)
 
 _Powered by [Adjacent](https://github.com/gojiplus/adjacent)_
 
