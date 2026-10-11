@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      force:
+        description: Run all checks even when only documentation changed
+        type: boolean
+        default: false
   schedule:
     - cron: "17 6 * * 1"  # weekly: surface ecosystem drift on quiet repos
 
@@ -16,9 +21,62 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  ci:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      code: ${{ github.event_name == 'schedule' || inputs.force || steps.filter.outputs.code == 'true' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: github.event_name != 'schedule' && !inputs.force && github.event_name != 'pull_request'
+        with:
+          persist-credentials: false
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        if: github.event_name != 'schedule' && !inputs.force
+        id: filter
+        with:
+          predicate-quantifier: every
+          # Docs builds and doctests live in docs.yml. Keep executable docs,
+          # configuration, and unknown file types in the full CI suite.
+          filters: |
+            code:
+              - '**'
+              - '!*.md'
+              - '!docs/**/*.md'
+              - '!docs/**/*.rst'
+              - '!docs/_static/**'
+              - '!scripts/**/README.md'
+
+  checks:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     uses: gojiplus/py-canon/.github/workflows/reusable-ci.yml@v1
     with:
       wheel-import: pranaam
       coverage-floor: 95
       run-preen: true
+
+  gate:
+    # Preserve the required context even when the reusable CI is skipped.
+    name: ci / gate
+    if: always()
+    needs: [changes, checks]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check results
+        env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          CODE_CHANGED: ${{ needs.changes.outputs.code }}
+          CHECKS_RESULT: ${{ needs.checks.result }}
+        run: |
+          test "$CHANGES_RESULT" = success
+          if [ "$CODE_CHANGED" = true ]; then
+            test "$CHECKS_RESULT" = success
+          else
+            test "$CODE_CHANGED" = false
+            test "$CHECKS_RESULT" = skipped
+          fi
