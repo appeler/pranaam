@@ -203,3 +203,10 @@ source-include = [
     "uv.lock",
 ]
 source-exclude = ["/docs/_build"]
+
+[tool.codespell]
+# Community and personal names, transliterations, and the time zone.
+ignore-words-list = "mising,lama,ist,som"
+builtin = "clear,rare,en-GB_to_en-US"
+# Preserve provider status values and the validation helper name.
+ignore-regex = '''["'`](?i:cancelled|cancelling)["'`]|\bnormalise(?=\()'''  # codespell:ignore cancelled,cancelling
