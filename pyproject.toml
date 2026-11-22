@@ -81,7 +81,6 @@ name = "Aaditya Dar"
 
 [[project.authors]]
 name = "Gaurav Sood"
-email = "gsood07@gmail.com"
 
 [tool.pytest.ini_options]
 python_files = "test_*.py"
