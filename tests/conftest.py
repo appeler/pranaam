@@ -6,7 +6,7 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def reset_naam_models() -> Generator[None, None, None]:
+def reset_naam_models() -> Generator[None]:
     """Keep class-level model caches isolated between tests."""
     from pranaam.naam import Naam
 
