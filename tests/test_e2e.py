@@ -46,7 +46,7 @@ class TestRealModelDownloadAndPrediction:
     """Test real model download and prediction functionality."""
 
     @pytest.fixture(autouse=True)
-    def setup_clean_environment(self) -> Generator[None, None, None]:
+    def setup_clean_environment(self) -> Generator[None]:
         """Ensure clean model state for each test."""
         Naam._models.clear()
         yield

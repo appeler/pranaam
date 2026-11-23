@@ -6,9 +6,7 @@ from typing import Any
 
 
 @contextmanager
-def capture(
-    command: Callable[..., Any], *args: Any, **kwargs: Any
-) -> Generator[str, None, None]:
+def capture(command: Callable[..., Any], *args: Any, **kwargs: Any) -> Generator[str]:
     out, sys.stdout = sys.stdout, StringIO()
     command(*args, **kwargs)
     sys.stdout.seek(0)
