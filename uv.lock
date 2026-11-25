@@ -1286,8 +1286,8 @@ train = [
 [package.metadata]
 requires-dist = [
     { name = "huggingface-hub", specifier = ">=1.0" },
-    { name = "numpy", specifier = ">=1.26" },
-    { name = "pandas", specifier = ">=2.2" },
+    { name = "numpy", specifier = ">=2.1.0" },
+    { name = "pandas", specifier = ">=2.2.3" },
     { name = "rich", specifier = ">=13.0.0" },
     { name = "safetensors", specifier = ">=0.5" },
     { name = "streamlit", marker = "extra == 'streamlit'", specifier = ">=1.20" },

@@ -55,6 +55,7 @@ jobs:
     if: needs.changes.outputs.code == 'true'
     uses: gojiplus/py-canon/.github/workflows/reusable-ci.yml@v1
     with:
+      run-lower-bounds: true
       wheel-import: pranaam
       coverage-floor: 95
       run-preen: true
