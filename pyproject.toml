@@ -24,16 +24,16 @@ classifiers = [
 ]
 keywords = ["name-pattern", "calibration", "aggregate-research", "hindi", "english", "machine-learning", "deep-learning", "nlp", "name-classification", "pytorch", "hugging-face"]
 dependencies = [
-  "huggingface-hub>=1.0",
-  "numpy>=1.26",
-  "pandas>=2.2",
+  "huggingface-hub>=1.27.0",
+  "numpy>=2.1.0",
+  "pandas>=2.2.3",
   "rich>=13.0.0",
   "safetensors>=0.5",
   "torch>=2.7",
 ]
 [project.optional-dependencies]
 streamlit = [
-    "streamlit>=1.20",
+    "streamlit>=1.41.0",
 ]
 
 [dependency-groups]
