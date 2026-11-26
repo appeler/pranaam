@@ -24,7 +24,7 @@ classifiers = [
 ]
 keywords = ["name-pattern", "calibration", "aggregate-research", "hindi", "english", "machine-learning", "deep-learning", "nlp", "name-classification", "pytorch", "hugging-face"]
 dependencies = [
-  "huggingface-hub>=1.0",
+  "huggingface-hub>=1.27.0",
   "numpy>=2.1.0",
   "pandas>=2.2.3",
   "rich>=13.0.0",
