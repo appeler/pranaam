@@ -33,7 +33,7 @@ dependencies = [
 ]
 [project.optional-dependencies]
 streamlit = [
-    "streamlit>=1.22.0",
+    "streamlit>=1.41.0",
 ]
 
 [dependency-groups]
